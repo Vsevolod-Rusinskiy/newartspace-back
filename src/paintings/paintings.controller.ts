@@ -11,6 +11,7 @@ import {
   Post,
 } from '@nestjs/common';
 
+// todo: Dany !!! Are we going to use swagger?
 import { CreatePaintingDto } from './dto/create-painting.dto';
 import { UpdatePaintingDto } from './dto/update-painting.dto';
 import { PaintingsService } from './paintings.service';
