@@ -15,6 +15,8 @@ import { CreatePaintingDto } from './dto/create-painting.dto';
 import { UpdatePaintingDto } from './dto/update-painting.dto';
 import { PaintingsService } from './paintings.service';
 
+// todo: Dany !!! Are we going to use swagger?
+
 @Controller('paintings')
 export class PaintingsController {
   constructor(private readonly paintingService: PaintingsService) {}
