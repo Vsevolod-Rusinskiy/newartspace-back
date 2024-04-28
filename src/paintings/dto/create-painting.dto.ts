@@ -10,6 +10,10 @@ import {
 export class CreatePaintingDto {
   @IsNotEmpty()
   @IsString()
+  readonly paintingUrl: string;
+
+  @IsNotEmpty()
+  @IsString()
   readonly name: string;
 
   @IsNotEmpty()

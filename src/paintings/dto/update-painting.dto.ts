@@ -5,51 +5,56 @@ import {
   Min,
   Max,
   IsInt,
+  IsNotEmpty,
 } from 'class-validator';
 
 export class UpdatePaintingDto {
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  readonly name?: string; // Название картины
+  readonly paintingUrl?: string;
 
   @IsOptional()
   @IsString()
-  readonly artType?: string; // Вид искусства
+  readonly name?: string;
+
+  @IsOptional()
+  @IsString()
+  readonly artType?: string;
 
   @IsOptional()
   @IsNumber()
-  readonly price?: number; // Цена
+  readonly price?: number;
 
   @IsOptional()
   @IsString()
-  readonly theme?: string; // Тематика
+  readonly theme?: string;
 
   @IsOptional()
   @IsString()
-  readonly style?: string; // Стиль
+  readonly style?: string;
 
   @IsOptional()
   @IsString()
-  readonly base?: string; // Основа
+  readonly base?: string;
 
   @IsOptional()
   @IsString()
-  readonly materials?: string; // Материалы
+  readonly materials?: string;
 
   @IsOptional()
   @IsString()
-  readonly dimensions?: string; // Размеры
+  readonly dimensions?: string;
 
   @IsInt()
   @Min(1000)
   @Max(9999)
-  readonly yearOfCreation?: number; // Год создания, четырёхзначное число
+  readonly yearOfCreation?: number;
 
   @IsOptional()
   @IsString()
-  readonly format?: string; // Формат
+  readonly format?: string;
 
   @IsOptional()
   @IsString()
-  readonly color?: string; // Цвет
+  readonly color?: string;
 }

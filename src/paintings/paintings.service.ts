@@ -17,15 +17,14 @@ export class PaintingsService {
 
   async findOne(id: string): Promise<Painting> {
     return this.paintingModel.findOne({
-      where: {
-        id,
-      },
+      where: { id },
     });
   }
 
   async create(createPainting: CreatePaintingDto): Promise<Painting> {
     const painting = new Painting();
 
+    painting.paintingUrl = createPainting.paintingUrl;
     painting.name = createPainting.name;
     painting.artType = createPainting.artType;
     painting.price = createPainting.price;
@@ -54,5 +53,15 @@ export class PaintingsService {
   async delete(id: string): Promise<void> {
     const painting = await this.findOne(id);
     await painting.destroy();
+  }
+
+  async deleteMany(ids: number[]): Promise<number> {
+    const result = await this.paintingModel.destroy({
+      where: {
+        id: ids,
+      },
+    });
+
+    return result; // Возвращает количество удаленных записей
   }
 }

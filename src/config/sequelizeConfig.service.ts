@@ -12,8 +12,8 @@ export class SequelizeConfigService implements SequelizeOptionsFactory {
   constructor(private readonly configService: ConfigService) {}
 
   createSequelizeOptions(): SequelizeModuleOptions {
-    const config = this.configService.get(EnumConfig.DATABASE);
-    console.log(config);
+    // const config = this.configService.get(EnumConfig.DATABASE);
+    // console.log(config);
 
     const {
       pg: { dialect, logging, host, port, username, password, database },

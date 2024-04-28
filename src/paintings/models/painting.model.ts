@@ -3,6 +3,9 @@ import { Table, Column, Model } from 'sequelize-typescript';
 @Table
 export class Painting extends Model {
   @Column
+  paintingUrl: string;
+
+  @Column
   name: string;
 
   @Column

@@ -1,4 +1,7 @@
+import { FileInterceptor } from '@nestjs/platform-express';
+
 import {
+  Bind,
   Body,
   Controller,
   Delete,
@@ -9,6 +12,8 @@ import {
   Param,
   Patch,
   Post,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 
 // todo: Dany !!! Are we going to use swagger?
@@ -19,6 +24,7 @@ import { PaintingsService } from './paintings.service';
 @Controller('paintings')
 export class PaintingsController {
   constructor(private readonly paintingService: PaintingsService) {}
+
   @Get()
   getAllPaintings() {
     return this.paintingService.findAll();
@@ -47,5 +53,17 @@ export class PaintingsController {
   @Delete(':id')
   deletePainting(@Param('id') id: string) {
     return this.paintingService.delete(id);
+  }
+
+  @Delete('deleteMany/:ids')
+  deleteManyPaintings(@Param('ids') ids: string) {
+    const idArray = JSON.parse(ids);
+    return this.paintingService.deleteMany(idArray);
+  }
+
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('file'))
+  uploadFile(@UploadedFile() file: Express.Multer.File) {
+    console.log(file);
   }
 }
