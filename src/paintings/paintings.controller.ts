@@ -1,7 +1,6 @@
 import { FileInterceptor } from '@nestjs/platform-express';
 
 import {
-  Bind,
   Body,
   Controller,
   Delete,
@@ -16,10 +15,10 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 
-// todo: Dany !!! Are we going to use swagger?
 import { CreatePaintingDto } from './dto/create-painting.dto';
 import { UpdatePaintingDto } from './dto/update-painting.dto';
 import { PaintingsService } from './paintings.service';
+import { storage } from '../config/multerConfig';
 
 @Controller('paintings')
 export class PaintingsController {
@@ -57,13 +56,19 @@ export class PaintingsController {
 
   @Delete('deleteMany/:ids')
   deleteManyPaintings(@Param('ids') ids: string) {
-    const idArray = JSON.parse(ids);
+    const idArray = JSON.parse(ids).map((id) => id.toString());
     return this.paintingService.deleteMany(idArray);
   }
 
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', { storage }))
   uploadFile(@UploadedFile() file: Express.Multer.File) {
     console.log(file);
+    return {
+      id: file.filename.split('.')[0],
+      originalName: file.originalname,
+      filename: file.filename,
+      path: file.path,
+    };
   }
 }
