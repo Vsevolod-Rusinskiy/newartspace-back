@@ -10,6 +10,7 @@ import { FindOptions, UpdateOptions } from 'sequelize';
 @Injectable()
 export class PaintingsService {
   private readonly uploadPath = path.join(__dirname, '../../uploads/paintings');
+
   constructor(
     @InjectModel(Painting)
     private paintingModel: typeof Painting,
@@ -66,7 +67,6 @@ export class PaintingsService {
     const url = painting.dataValues.paintingUrl;
     const paintingFileName = this.getPaintingFileName(url);
 
-    // Удаление файла изображения
     const filePath = path.join(this.uploadPath, paintingFileName);
     try {
       if (fs.existsSync(filePath)) {
