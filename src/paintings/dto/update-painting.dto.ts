@@ -15,6 +15,10 @@ export class UpdatePaintingDto {
 
   @IsOptional()
   @IsString()
+  readonly prevPaintingUrl?: string;
+
+  @IsOptional()
+  @IsString()
   readonly name?: string;
 
   @IsOptional()

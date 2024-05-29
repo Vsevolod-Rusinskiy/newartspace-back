@@ -63,7 +63,6 @@ export class PaintingsController {
   @Post('upload')
   @UseInterceptors(FileInterceptor('file', { storage }))
   uploadFile(@UploadedFile() file: Express.Multer.File) {
-    console.log(file);
     return {
       id: file.filename.split('.')[0],
       originalName: file.originalname,

@@ -10,13 +10,14 @@ export class UploadImagesController {
   async findOne(@Param('id') id: string, @Res() res: Response) {
     try {
       const fileBuffer = await this.uploadImagesService.findOne(id);
-      if (!fileBuffer) {
-        throw new NotFoundException(`File with id ${id} not found`);
-      }
-      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Content-Type', 'image/*');
       res.send(fileBuffer);
     } catch (error) {
-      throw new NotFoundException(error.message);
+      if (error instanceof NotFoundException) {
+        res.status(404).send({ message: error.message });
+      } else {
+        res.status(500).send({ message: 'Internal server error' });
+      }
     }
   }
 }
