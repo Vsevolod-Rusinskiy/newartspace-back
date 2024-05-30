@@ -14,6 +14,10 @@ export class CreatePaintingDto {
 
   @IsNotEmpty()
   @IsString()
+  readonly author: string;
+
+  @IsNotEmpty()
+  @IsString()
   readonly name: string;
 
   @IsNotEmpty()
@@ -41,8 +45,12 @@ export class CreatePaintingDto {
   readonly materials: string;
 
   @IsNotEmpty()
-  @IsString()
-  readonly dimensions: string;
+  @IsNumber()
+  readonly height: number;
+
+  @IsNotEmpty()
+  @IsNumber()
+  readonly width: number;
 
   @IsNotEmpty()
   @IsInt()

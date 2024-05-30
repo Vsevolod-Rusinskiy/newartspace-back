@@ -6,6 +6,9 @@ export class Painting extends Model {
   paintingUrl: string;
 
   @Column
+  author: string;
+
+  @Column
   name: string;
 
   @Column
@@ -27,7 +30,10 @@ export class Painting extends Model {
   materials: string;
 
   @Column
-  dimensions: string;
+  height: number;
+
+  @Column
+  width: number;
 
   @Column
   yearOfCreation: number;

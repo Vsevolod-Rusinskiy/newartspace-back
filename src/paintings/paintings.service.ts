@@ -56,6 +56,7 @@ export class PaintingsService {
   async create(createPainting: CreatePaintingDto): Promise<Painting> {
     const painting = new Painting();
 
+    painting.author = createPainting.author;
     painting.paintingUrl = createPainting.paintingUrl;
     painting.name = createPainting.name;
     painting.artType = createPainting.artType;
@@ -64,7 +65,8 @@ export class PaintingsService {
     painting.style = createPainting.style;
     painting.base = createPainting.base;
     painting.materials = createPainting.materials;
-    painting.dimensions = createPainting.dimensions;
+    painting.height = createPainting.height;
+    painting.width = createPainting.width;
     painting.yearOfCreation = createPainting.yearOfCreation;
     painting.format = createPainting.format;
     painting.color = createPainting.color;
