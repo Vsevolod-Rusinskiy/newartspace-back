@@ -50,9 +50,7 @@ export class PaintingsController {
     const data = await this.paintingService.findAll(sortField, order);
     return { data, total: data.length };
   }
-  // getAllPaintings() {
-  //   return this.paintingService.findAll();
-  // }
+
   @Get(':id')
   getOnePainting(@Param('id') id: string) {
     return this.paintingService.findOne(id);
