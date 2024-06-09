@@ -11,6 +11,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -25,10 +26,33 @@ export class PaintingsController {
   constructor(private readonly paintingService: PaintingsService) {}
 
   @Get()
-  getAllPaintings() {
-    return this.paintingService.findAll();
-  }
+  async getAllPaintings(
+    @Query('sort') sort: string,
+    @Query('order') order: 'ASC' | 'DESC' = 'ASC',
+  ) {
+    // Логирование параметров для отладки
+    console.log(`Received sort: ${sort}, order: ${order}`);
 
+    // Разбор параметра sort, если он представляет собой массив
+    let sortField = 'id'; // Значение по умолчанию
+    if (sort) {
+      try {
+        const parsedSort = JSON.parse(sort);
+        if (Array.isArray(parsedSort) && parsedSort.length === 2) {
+          sortField = parsedSort[0];
+          order = parsedSort[1];
+        }
+      } catch (error) {
+        console.error('Failed to parse sort parameter:', error);
+      }
+    }
+
+    const data = await this.paintingService.findAll(sortField, order);
+    return { data, total: data.length };
+  }
+  // getAllPaintings() {
+  //   return this.paintingService.findAll();
+  // }
   @Get(':id')
   getOnePainting(@Param('id') id: string) {
     return this.paintingService.findOne(id);
