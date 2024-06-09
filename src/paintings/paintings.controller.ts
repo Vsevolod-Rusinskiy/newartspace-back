@@ -30,11 +30,7 @@ export class PaintingsController {
     @Query('sort') sort: string,
     @Query('order') order: 'ASC' | 'DESC' = 'ASC',
   ) {
-    // Логирование параметров для отладки
-    console.log(`Received sort: ${sort}, order: ${order}`);
-
-    // Разбор параметра sort, если он представляет собой массив
-    let sortField = 'id'; // Значение по умолчанию
+    let sortField = 'id';
     if (sort) {
       try {
         const parsedSort = JSON.parse(sort);

@@ -42,25 +42,12 @@ export class PaintingsService {
     sort: string = 'id',
     order: 'ASC' | 'DESC' = 'ASC',
   ): Promise<Painting[]> {
-    // Логирование перед созданием опций
-    console.log(`Sort: ${sort}, Order: ${order}`, 888);
-
     const options: FindOptions = {
       order: [[sort, order]],
     };
 
-    // Логирование для отладки
-    console.log(
-      `Executing query with options: ${JSON.stringify(options)}`,
-      999,
-    );
-
     return this.paintingModel.findAll(options);
   }
-
-  // async findAll(): Promise<Painting[]> {
-  //   return this.paintingModel.findAll();
-  // }
 
   async findOne(id: string): Promise<Painting> {
     const options: FindOptions = {
