@@ -3,6 +3,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 dotenv.config();
 
+// pipeline check
+
 const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',');
 
 async function bootstrap() {
