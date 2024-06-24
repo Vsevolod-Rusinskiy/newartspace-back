@@ -11,6 +11,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -25,8 +26,25 @@ export class PaintingsController {
   constructor(private readonly paintingService: PaintingsService) {}
 
   @Get()
-  getAllPaintings() {
-    return this.paintingService.findAll();
+  async getAllPaintings(
+    @Query('sort') sort: string,
+    @Query('order') order: 'ASC' | 'DESC' = 'ASC',
+  ) {
+    let sortField = 'id';
+    if (sort) {
+      try {
+        const parsedSort = JSON.parse(sort);
+        if (Array.isArray(parsedSort) && parsedSort.length === 2) {
+          sortField = parsedSort[0];
+          order = parsedSort[1];
+        }
+      } catch (error) {
+        console.error('Failed to parse sort parameter:', error);
+      }
+    }
+
+    const data = await this.paintingService.findAll(sortField, order);
+    return { data, total: data.length };
   }
 
   @Get(':id')
@@ -63,7 +81,6 @@ export class PaintingsController {
   @Post('upload')
   @UseInterceptors(FileInterceptor('file', { storage }))
   uploadFile(@UploadedFile() file: Express.Multer.File) {
-    console.log(file);
     return {
       id: file.filename.split('.')[0],
       originalName: file.originalname,

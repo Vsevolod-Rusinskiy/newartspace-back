@@ -13,6 +13,14 @@ export class UpdatePaintingDto {
   @IsString()
   readonly paintingUrl?: string;
 
+  @IsNotEmpty()
+  @IsString()
+  readonly author?: string;
+
+  @IsOptional()
+  @IsString()
+  readonly prevPaintingUrl?: string;
+
   @IsOptional()
   @IsString()
   readonly name?: string;
@@ -42,8 +50,12 @@ export class UpdatePaintingDto {
   readonly materials?: string;
 
   @IsOptional()
-  @IsString()
-  readonly dimensions?: string;
+  @IsNumber()
+  readonly height?: number;
+
+  @IsOptional()
+  @IsNumber()
+  readonly width?: number;
 
   @IsInt()
   @Min(1000)

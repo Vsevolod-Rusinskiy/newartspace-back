@@ -1,14 +1,17 @@
-services:
-  db:
-    image: postgres:13
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    ports:
-      - '5432:5432'
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+version: '3.3'
 
-volumes:
-  postgres_data:
+services:
+  backend:
+    image: newspace-back
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: back
+    ports:
+      - "3000:3000"
+    volumes:
+      - /var/www/newartspace/backend/uploads/paintings:/app/uploads/paintings
+    env_file:
+      - .env
+    command: ["yarn", "start:prod"]
+
