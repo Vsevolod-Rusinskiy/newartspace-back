@@ -22,4 +22,4 @@ import { UploadImagesModule } from './upload-images/upload-images.module'
     UploadImagesModule,
   ],
 })
-export class AppModule {};
+export class AppModule {}
