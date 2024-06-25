@@ -1,11 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import {
   SequelizeModuleOptions,
   SequelizeOptionsFactory,
-} from '@nestjs/sequelize';
-import { EnumConfig } from './enumConfig/enumConfig';
-import { Painting } from '../paintings/models/painting.model';
+} from '@nestjs/sequelize'
+import { EnumConfig } from './enumConfig/enumConfig'
+import { Painting } from '../paintings/models/painting.model'
 
 @Injectable()
 export class SequelizeConfigService implements SequelizeOptionsFactory {
@@ -14,7 +14,7 @@ export class SequelizeConfigService implements SequelizeOptionsFactory {
   createSequelizeOptions(): SequelizeModuleOptions {
     const {
       pg: { dialect, logging, host, port, username, password, database },
-    } = this.configService.get(EnumConfig.DATABASE);
+    } = this.configService.get(EnumConfig.DATABASE)
 
     return {
       dialect,
@@ -27,6 +27,6 @@ export class SequelizeConfigService implements SequelizeOptionsFactory {
       models: [Painting],
       autoLoadModels: true,
       synchronize: true,
-    };
+    }
   }
 }

@@ -5,64 +5,64 @@ import {
   Min,
   Max,
   IsNotEmpty,
-} from 'class-validator';
+} from 'class-validator'
 
 export class CreatePaintingDto {
   @IsNotEmpty()
   @IsString()
-  readonly paintingUrl: string;
+  readonly paintingUrl: string
 
   @IsNotEmpty()
   @IsString()
-  readonly author: string;
+  readonly author: string
 
   @IsNotEmpty()
   @IsString()
-  readonly name: string;
+  readonly name: string
 
   @IsNotEmpty()
   @IsString()
-  readonly artType: string;
+  readonly artType: string
 
   @IsNotEmpty()
   @IsNumber()
-  readonly price: number;
+  readonly price: number
 
   @IsNotEmpty()
   @IsString()
-  readonly theme: string;
+  readonly theme: string
 
   @IsNotEmpty()
   @IsString()
-  readonly style: string;
+  readonly style: string
 
   @IsNotEmpty()
   @IsString()
-  readonly base: string;
+  readonly base: string
 
   @IsNotEmpty()
   @IsString()
-  readonly materials: string;
+  readonly materials: string
 
   @IsNotEmpty()
   @IsNumber()
-  readonly height: number;
+  readonly height: number
 
   @IsNotEmpty()
   @IsNumber()
-  readonly width: number;
+  readonly width: number
 
   @IsNotEmpty()
   @IsInt()
   @Min(1000)
   @Max(9999)
-  readonly yearOfCreation: number;
+  readonly yearOfCreation: number
 
   @IsNotEmpty()
   @IsString()
-  readonly format: string;
+  readonly format: string
 
   @IsNotEmpty()
   @IsString()
-  readonly color: string;
+  readonly color: string
 }

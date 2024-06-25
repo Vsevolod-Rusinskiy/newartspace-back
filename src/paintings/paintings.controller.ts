@@ -1,4 +1,4 @@
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor } from '@nestjs/platform-express'
 
 import {
   Body,
@@ -14,12 +14,12 @@ import {
   Query,
   UploadedFile,
   UseInterceptors,
-} from '@nestjs/common';
+} from '@nestjs/common'
 
-import { CreatePaintingDto } from './dto/create-painting.dto';
-import { UpdatePaintingDto } from './dto/update-painting.dto';
-import { PaintingsService } from './paintings.service';
-import { storage } from '../config/multerConfig';
+import { CreatePaintingDto } from './dto/create-painting.dto'
+import { UpdatePaintingDto } from './dto/update-painting.dto'
+import { PaintingsService } from './paintings.service'
+import { storage } from '../config/multerConfig'
 
 @Controller('paintings')
 export class PaintingsController {
@@ -30,33 +30,33 @@ export class PaintingsController {
     @Query('sort') sort: string,
     @Query('order') order: 'ASC' | 'DESC' = 'ASC',
   ) {
-    let sortField = 'id';
+    let sortField = 'id'
     if (sort) {
       try {
-        const parsedSort = JSON.parse(sort);
+        const parsedSort = JSON.parse(sort)
         if (Array.isArray(parsedSort) && parsedSort.length === 2) {
-          sortField = parsedSort[0];
-          order = parsedSort[1];
+          sortField = parsedSort[0]
+          order = parsedSort[1]
         }
       } catch (error) {
-        console.error('Failed to parse sort parameter:', error);
+        console.error('Failed to parse sort parameter:', error)
       }
     }
 
-    const data = await this.paintingService.findAll(sortField, order);
-    return { data, total: data.length };
+    const data = await this.paintingService.findAll(sortField, order)
+    return { data, total: data.length }
   }
 
   @Get(':id')
   getOnePainting(@Param('id') id: string) {
-    return this.paintingService.findOne(id);
+    return this.paintingService.findOne(id)
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Header('Content-Type', 'application/json')
   createPainting(@Body() createPainting: CreatePaintingDto) {
-    return this.paintingService.create(createPainting);
+    return this.paintingService.create(createPainting)
   }
 
   @Patch(':id')
@@ -64,18 +64,18 @@ export class PaintingsController {
     @Body() updatePainting: UpdatePaintingDto,
     @Param('id') id: string,
   ) {
-    return this.paintingService.update(+id, updatePainting);
+    return this.paintingService.update(+id, updatePainting)
   }
 
   @Delete(':id')
   deletePainting(@Param('id') id: string) {
-    return this.paintingService.delete(id);
+    return this.paintingService.delete(id)
   }
 
   @Delete('deleteMany/:ids')
   deleteManyPaintings(@Param('ids') ids: string) {
-    const idArray = JSON.parse(ids).map((id) => id.toString());
-    return this.paintingService.deleteMany(idArray);
+    const idArray = JSON.parse(ids).map((id) => id.toString())
+    return this.paintingService.deleteMany(idArray)
   }
 
   @Post('upload')
@@ -86,6 +86,6 @@ export class PaintingsController {
       originalName: file.originalname,
       filename: file.filename,
       path: file.path,
-    };
+    }
   }
 }

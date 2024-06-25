@@ -1,46 +1,46 @@
-import { Table, Column, Model } from 'sequelize-typescript';
+import { Table, Column, Model } from 'sequelize-typescript'
 
 @Table
 export class Painting extends Model {
   @Column
-  paintingUrl: string;
+  paintingUrl: string
 
   @Column
-  author: string;
+  author: string
 
   @Column
-  name: string;
+  name: string
 
   @Column
-  artType: string;
+  artType: string
 
   @Column
-  price: number;
+  price: number
 
   @Column
-  theme: string;
+  theme: string
 
   @Column
-  style: string;
+  style: string
 
   @Column
-  base: string;
+  base: string
 
   @Column
-  materials: string;
+  materials: string
 
   @Column
-  height: number;
+  height: number
 
   @Column
-  width: number;
+  width: number
 
   @Column
-  yearOfCreation: number;
+  yearOfCreation: number
 
   @Column
-  format: string;
+  format: string
 
   @Column
-  color: string;
+  color: string
 }

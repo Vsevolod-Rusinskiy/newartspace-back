@@ -1,11 +1,11 @@
-import { registerAs } from '@nestjs/config';
-import { Dialect } from 'sequelize';
-import { EnumConfig } from './enumConfig/enumConfig';
+import { registerAs } from '@nestjs/config'
+import { Dialect } from 'sequelize'
+import { EnumConfig } from './enumConfig/enumConfig'
 
 export const pgConfig = registerAs(EnumConfig.DATABASE, () => {
   console.log(
     `Connecting to database at ${process.env.POSTGRES_HOST}:${process.env.POSTGRES_PORT}`,
-  );
+  )
   return {
     dialect: <Dialect>process.env.SQL_DIALECT || 'postgres',
     logging: process.env.SQL_LOGGING === 'true',
@@ -16,5 +16,5 @@ export const pgConfig = registerAs(EnumConfig.DATABASE, () => {
     database: process.env.POSTGRES_NAME,
     autoLoadEntities: true,
     synchronize: true,
-  };
-});
+  }
+})
