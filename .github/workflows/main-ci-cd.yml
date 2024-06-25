@@ -44,7 +44,6 @@ jobs:
           script: |
             cd /var/www/newartspace/backend
             docker-compose down
-#           git restore .
             git pull
             docker-compose build --no-cache
             docker-compose up -d
