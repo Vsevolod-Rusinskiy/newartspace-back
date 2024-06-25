@@ -35,17 +35,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Deploy with Docker Compose
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
-        run: |
-          echo "$SSH_PRIVATE_KEY" > private_key.pem
-          chmod 600 private_key.pem
-          ssh -o StrictHostKeyChecking=no -i private_key.pem $SSH_USERNAME@$SSH_HOST << 'EOF'
-            cd /var/www/newartspace/backend
-            docker-compose down
-            docker-compose up -d --build
-          EOF
-          rm private_key.pem
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@master
+        with:
+            host: ${{ secrets.SSH_HOST }}
+            username: ${{ secrets.SSH_USERNAME }}
+            key: ${{ secrets.SSH_PRIVATE_KEY }}
+            script: |
+              cd /var/www/newartspace/backend
+              docker-compose down
+#              git restore .
+              git pull
+              docker-compose build --no-cache
+              docker-compose up -d
