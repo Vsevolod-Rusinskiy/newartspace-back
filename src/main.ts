@@ -3,7 +3,7 @@ import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module'
 dotenv.config()
 
-// pipeline check
+// pipeline check;
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',')
 
