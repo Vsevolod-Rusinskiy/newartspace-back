@@ -38,13 +38,13 @@ jobs:
       - name: Deploy to Server
         uses: appleboy/ssh-action@master
         with:
-            host: ${{ secrets.SSH_HOST }}
-            username: ${{ secrets.SSH_USERNAME }}
-            key: ${{ secrets.SSH_PRIVATE_KEY }}
-            script: |
-              cd /var/www/newartspace/backend
-              docker-compose down
-#              git restore .
-              git pull
-              docker-compose build --no-cache
-              docker-compose up -d
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /var/www/newartspace/backend
+            docker-compose down
+#           git restore .
+            git pull
+            docker-compose build --no-cache
+            docker-compose up -d
