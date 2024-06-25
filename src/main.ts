@@ -5,7 +5,6 @@ dotenv.config()
 
 // pipeline check!!!----
 
-
 const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',')
 
 async function bootstrap() {
