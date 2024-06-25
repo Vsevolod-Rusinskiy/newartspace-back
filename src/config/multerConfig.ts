@@ -7,7 +7,6 @@ export const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     const fileExtName = extname(file.originalname)
     const uniqueSuffix = uuidv4()
-    console.log(uniqueSuffix, 999999)
     cb(null, `${uniqueSuffix}${fileExtName}`)
   },
 })
