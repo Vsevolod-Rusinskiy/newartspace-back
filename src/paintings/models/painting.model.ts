@@ -9,7 +9,7 @@ export class Painting extends Model {
   author: string
 
   @Column
-  name: string
+  title: string
 
   @Column
   artType: string

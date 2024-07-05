@@ -12,6 +12,6 @@ services:
     volumes:
       - /var/www/newartspace/backend/uploads/paintings:/app/uploads/paintings
     env_file:
-      - -.env
+      - .env
     command: ["yarn", "start:prod"]
 
