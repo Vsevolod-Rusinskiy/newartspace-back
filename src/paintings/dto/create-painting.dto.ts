@@ -18,7 +18,7 @@ export class CreatePaintingDto {
 
   @IsNotEmpty()
   @IsString()
-  readonly name: string
+  readonly title: string
 
   @IsNotEmpty()
   @IsString()

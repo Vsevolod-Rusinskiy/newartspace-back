@@ -65,7 +65,7 @@ export class PaintingsService {
 
     painting.author = createPainting.author
     painting.paintingUrl = createPainting.paintingUrl
-    painting.name = createPainting.name
+    painting.title = createPainting.title
     painting.artType = createPainting.artType
     painting.price = createPainting.price
     painting.theme = createPainting.theme
