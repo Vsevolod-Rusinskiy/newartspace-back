@@ -1,0 +1,9 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Running Prettier and ESLint from package.json scripts
+yarn prettier-format
+yarn lint
+
+# Automatically add changes to the staging area
+git add .
