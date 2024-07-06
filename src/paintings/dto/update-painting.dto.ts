@@ -23,7 +23,7 @@ export class UpdatePaintingDto {
 
   @IsOptional()
   @IsString()
-  readonly name?: string
+  readonly title?: string
 
   @IsOptional()
   @IsString()
