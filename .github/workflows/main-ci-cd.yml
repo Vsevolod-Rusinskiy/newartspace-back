@@ -40,10 +40,22 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /var/www/newartspace/backend
+
+            echo -e "\e[34mStopping current containers...\e[0m"
             docker-compose down
+
+            echo -e "\e[34mRestoring repository to the latest committed state...\e[0m"
             git restore .
+
+            echo -e "\e[34mPulling latest changes from the repository...\e[0m"
             git pull origin master
-            docker-compose exec backend yarn sequelize db:migrate
+
+            echo -e "\e[34mRunning database migrations...\e[0m"
+            docker-compose exec backend yarn sequelize db:migrate --config src/config/config.js
+
+            echo -e "\e[34mBuilding Docker images...\e[0m"
             docker-compose build
+
+            echo -e "\e[34mStarting new containers...\e[0m"
             docker-compose up -d
 
