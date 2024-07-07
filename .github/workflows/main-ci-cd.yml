@@ -43,6 +43,5 @@ jobs:
             docker-compose down
             git restore .
             git pull origin master
-            yarn sequelize db:migrate --config src/config/config.js
-           
+            docker-compose exec backend yarn sequelize db:migrate --config src/config/config.js           
 
