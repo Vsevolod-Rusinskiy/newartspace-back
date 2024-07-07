@@ -43,7 +43,7 @@ jobs:
             docker-compose down
             git restore .
             git pull origin master
+            docker-compose exec backend yarn sequelize db:migrate
             docker-compose build
             docker-compose up -d
-            docker-compose exec backend yarn sequelize db:migrate
 
