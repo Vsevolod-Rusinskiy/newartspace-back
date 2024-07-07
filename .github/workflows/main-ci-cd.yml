@@ -45,4 +45,5 @@ jobs:
             git pull origin master
             docker-compose build
             docker-compose up -d
-
+            cd /var/www/newartspace/backend/src/config
+            docker-compose exec backend yarn sequelize db:migrate --config src/config/config.js
