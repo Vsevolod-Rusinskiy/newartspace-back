@@ -3,8 +3,6 @@ import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module'
 dotenv.config()
 
-// test flag for migration
-
 // const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',')
 
 async function bootstrap() {
