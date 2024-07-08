@@ -10,7 +10,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - /var/www/newartspace/backend/uploads/paintings:/app/uploads/paintings
+      - /var/www/newartspace/backend/uploads:/app/uploads
     env_file:
       - .env
     command: ["yarn", "start:prod"]
