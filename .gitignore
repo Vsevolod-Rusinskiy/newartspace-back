@@ -2,7 +2,9 @@
 /dist
 /node_modules
 /build
-
+/uploads/
+/docker-compose.dev.yml
+/Makefile
 
 
 # Logs
@@ -56,4 +58,3 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
-/uploads/
