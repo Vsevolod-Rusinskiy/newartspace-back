@@ -1,49 +1,50 @@
-import * as path from 'path'
-import * as fs from 'fs/promises'
 import { InjectModel } from '@nestjs/sequelize'
 import { FindOptions } from 'sequelize'
 import {
   Injectable,
   InternalServerErrorException,
-  NotFoundException,
+  Logger,
+  NotFoundException
 } from '@nestjs/common'
 import { CreatePaintingDto } from './dto/create-painting.dto'
 import { UpdatePaintingDto } from './dto/update-painting.dto'
 import { Painting } from './models/painting.model'
+import { StorageService } from '../common/services/storage.service'
+
+function getFileNameFromUrl(url: string): string {
+  return url.substring(url.lastIndexOf('/') + 1)
+}
 
 @Injectable()
 export class PaintingsService {
-  private readonly uploadPath = path.join(__dirname, '../../uploads/paintings')
+  private readonly logger = new Logger(PaintingsService.name)
 
   constructor(
     @InjectModel(Painting)
     private paintingModel: typeof Painting,
+    private readonly storageService: StorageService
   ) {}
 
-  private getPaintingFileName(url: string): string {
-    return path.basename(url)
-  }
-
-  private async deleteFile(filePath: string): Promise<void> {
+  async create(createPaintingDto: CreatePaintingDto): Promise<Painting> {
     try {
-      await fs.unlink(filePath)
+      const painting = new Painting({
+        ...createPaintingDto
+      })
+      await painting.save()
+      return painting
     } catch (error) {
-      if (error.code === 'ENOENT') {
-        throw new NotFoundException(`File not found at path: ${filePath}`)
-      } else {
-        throw new InternalServerErrorException(
-          `Error deleting file: ${error.message}`,
-        )
-      }
+      throw new InternalServerErrorException(
+        `Error creating painting: ${error.message}`
+      )
     }
   }
 
   async findAll(
     sort: string = 'id',
-    order: 'ASC' | 'DESC' = 'ASC',
+    order: 'ASC' | 'DESC' = 'ASC'
   ): Promise<Painting[]> {
     const options: FindOptions = {
-      order: [[sort, order]],
+      order: [[sort, order]]
     }
 
     return this.paintingModel.findAll(options)
@@ -51,7 +52,7 @@ export class PaintingsService {
 
   async findOne(id: string): Promise<Painting> {
     const options: FindOptions = {
-      where: { id },
+      where: { id }
     }
     const painting = await this.paintingModel.findOne(options)
     if (!painting) {
@@ -60,64 +61,43 @@ export class PaintingsService {
     return painting
   }
 
-  async create(createPainting: CreatePaintingDto): Promise<Painting> {
-    const painting = new Painting()
-
-    painting.author = createPainting.author
-    painting.paintingUrl = createPainting.paintingUrl
-    painting.title = createPainting.title
-    painting.artType = createPainting.artType
-    painting.price = createPainting.price
-    painting.theme = createPainting.theme
-    painting.style = createPainting.style
-    painting.base = createPainting.base
-    painting.materials = createPainting.materials
-    painting.height = createPainting.height
-    painting.width = createPainting.width
-    painting.yearOfCreation = createPainting.yearOfCreation
-    painting.format = createPainting.format
-    painting.color = createPainting.color
-
-    return painting.save()
-  }
-
   async update(
     id: number,
-    painting: UpdatePaintingDto,
+    painting: UpdatePaintingDto
   ): Promise<[number, Painting[]]> {
-    if (painting.prevPaintingUrl) {
-      const paintingFileName = this.getPaintingFileName(
-        painting.prevPaintingUrl,
-      )
-      const filePath = path.join(this.uploadPath, paintingFileName)
-      await this.deleteFile(filePath)
-    }
+    const prevPaintingUrl = painting.prevPaintingUrl
+    const fileName = getFileNameFromUrl(prevPaintingUrl)
+
+    await this.storageService.deleteFile(fileName)
 
     return this.paintingModel.update(painting, {
       where: { id },
-      returning: true,
+      returning: true
     })
   }
 
   async delete(id: string): Promise<void> {
     const painting = await this.findOne(id)
-    const paintingFileName = this.getPaintingFileName(painting.paintingUrl)
-    const filePath = path.join(this.uploadPath, paintingFileName)
-    await this.deleteFile(filePath)
+
+    const paintingUrl = painting.paintingUrl
+    const fileName = getFileNameFromUrl(paintingUrl)
+
+    await this.storageService.deleteFile(fileName)
     await painting.destroy()
   }
 
   async deleteMany(ids: string[]): Promise<{ deletedPaintingCount: number }> {
-    let deletedPaintingCount = 0
+    const deletedPaintingCount = 0
+    this.logger.debug(ids)
     for (const id of ids) {
       const painting = await this.findOne(id)
-      const paintingFileName = this.getPaintingFileName(painting.paintingUrl)
-      const filePath = path.join(this.uploadPath, paintingFileName)
-      await this.deleteFile(filePath)
-      await painting.destroy()
-      deletedPaintingCount++
-    }
 
+      const paintingUrl = painting.dataValues.paintingUrl
+      const fileName = getFileNameFromUrl(paintingUrl)
+
+      await this.storageService.deleteFile(fileName)
+      await painting.destroy()
+    }
     return { deletedPaintingCount }
   }
 }
