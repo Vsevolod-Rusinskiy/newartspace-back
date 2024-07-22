@@ -5,7 +5,7 @@ import {
   Min,
   Max,
   IsInt,
-  IsNotEmpty,
+  IsNotEmpty
 } from 'class-validator'
 
 export class UpdatePaintingDto {

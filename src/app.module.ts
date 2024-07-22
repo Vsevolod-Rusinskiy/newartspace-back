@@ -4,22 +4,20 @@ import { PaintingsModule } from './paintings/paintings.module'
 import { SequelizeModule } from '@nestjs/sequelize'
 import { SequelizeConfigService } from './config/sequelizeConfig.service'
 import { databaseConfig } from './config/configuration'
-import { UploadImagesModule } from './upload-images/upload-images.module'
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true,
+      isGlobal: true
     }),
     SequelizeModule.forRootAsync({
       imports: [ConfigModule],
-      useClass: SequelizeConfigService,
+      useClass: SequelizeConfigService
     }),
     ConfigModule.forRoot({
-      load: [databaseConfig],
+      load: [databaseConfig]
     }),
-    PaintingsModule,
-    UploadImagesModule,
-  ],
+    PaintingsModule
+  ]
 })
 export class AppModule {}
