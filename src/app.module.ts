@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common'
+import { APP_FILTER } from '@nestjs/core'
+import { HttpErrorFilter } from './common/filtres/http-error.filter'
 import { ConfigModule } from '@nestjs/config'
 import { PaintingsModule } from './paintings/paintings.module'
 import { SequelizeModule } from '@nestjs/sequelize'
@@ -18,6 +20,12 @@ import { databaseConfig } from './config/configuration'
       load: [databaseConfig]
     }),
     PaintingsModule
+  ],
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: HttpErrorFilter
+    }
   ]
 })
 export class AppModule {}
