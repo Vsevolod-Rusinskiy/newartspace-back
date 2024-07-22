@@ -8,7 +8,6 @@ import {
   Header,
   HttpCode,
   HttpStatus,
-  Logger,
   Param,
   Patch,
   Post,
@@ -24,7 +23,6 @@ import { StorageService } from '../common/services/storage.service'
 
 @Controller('paintings')
 export class PaintingsController {
-  private readonly logger = new Logger(PaintingsController.name)
   constructor(
     private readonly paintingService: PaintingsService,
     private readonly storageService: StorageService
