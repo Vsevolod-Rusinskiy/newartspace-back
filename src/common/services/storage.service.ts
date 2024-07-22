@@ -27,14 +27,16 @@ export class StorageService {
 
   async uploadFile(
     fileBuffer: Buffer,
-    originalFileName: string
+    originalFileName: string,
+    category: string
   ): Promise<string> {
     const fileExtension = originalFileName.split('.').pop()
     const uniqueFileName = `${uuidv4()}.${fileExtension}`
+    const key = `${category}/${uniqueFileName}`
 
     const params = {
       Bucket: this.bucketName,
-      Key: uniqueFileName,
+      Key: key,
       Body: fileBuffer,
       ACL: 'public-read',
       ContentType: 'application/octet-stream'
@@ -55,18 +57,26 @@ export class StorageService {
       )
     }
   }
-  async deleteFile(fileName: string): Promise<void> {
+  async deleteFile(fileName: string, category: string): Promise<void> {
+    const key = `${category}/${fileName}`
+
     const params = {
       Bucket: this.bucketName,
-      Key: fileName
+      Key: key
     }
 
     try {
-      const data = await this.s3.deleteObject(params).promise()
-      this.logger.log(`File ${fileName} deleted successfully: ${data}`)
+      await this.s3.deleteObject(params).promise()
+      this.logger.log(
+        `File ${fileName} in category ${category} deleted successfully.`
+      )
     } catch (error) {
-      this.logger.error(`Error deleting file ${fileName}: ${error.message}`)
-      throw new Error(`Error deleting file ${fileName}: ${error.message}`)
+      this.logger.error(
+        `Error deleting file ${fileName} in category ${category}: ${error.message}`
+      )
+      throw new Error(
+        `Error deleting file ${fileName} in category ${category}: ${error.message}`
+      )
     }
   }
 }
