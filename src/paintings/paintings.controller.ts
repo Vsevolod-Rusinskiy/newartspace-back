@@ -43,7 +43,8 @@ export class PaintingsController {
     const fileName = file.originalname
     const yandexPaintingUrl = await this.storageService.uploadFile(
       file.buffer,
-      fileName
+      fileName,
+      'paintings'
     )
     return {
       paintingUrl: yandexPaintingUrl

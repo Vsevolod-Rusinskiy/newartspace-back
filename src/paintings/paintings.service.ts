@@ -68,7 +68,7 @@ export class PaintingsService {
     const prevPaintingUrl = painting.prevPaintingUrl
     const fileName = getFileNameFromUrl(prevPaintingUrl)
 
-    await this.storageService.deleteFile(fileName)
+    await this.storageService.deleteFile(fileName, 'paintings')
 
     return this.paintingModel.update(painting, {
       where: { id },
@@ -82,20 +82,19 @@ export class PaintingsService {
     const paintingUrl = painting.paintingUrl
     const fileName = getFileNameFromUrl(paintingUrl)
 
-    await this.storageService.deleteFile(fileName)
+    await this.storageService.deleteFile(fileName, 'paintings')
     await painting.destroy()
   }
 
   async deleteMany(ids: string[]): Promise<{ deletedPaintingCount: number }> {
     const deletedPaintingCount = 0
-    this.logger.debug(ids)
     for (const id of ids) {
       const painting = await this.findOne(id)
 
       const paintingUrl = painting.dataValues.paintingUrl
       const fileName = getFileNameFromUrl(paintingUrl)
 
-      await this.storageService.deleteFile(fileName)
+      await this.storageService.deleteFile(fileName, 'paintings')
       await painting.destroy()
     }
     return { deletedPaintingCount }
