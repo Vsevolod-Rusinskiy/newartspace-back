@@ -5,7 +5,7 @@ import { EnumConfig } from './enumConfig/enumConfig'
 export const pgConfig = registerAs(EnumConfig.DATABASE, () => {
   const dialect = (process.env.SQL_DIALECT as Dialect) || 'postgres'
   console.log(
-    `Connecting to database at ${process.env.POSTGRES_HOST}:${process.env.POSTGRES_PORT}`,
+    `Connecting to database at ${process.env.POSTGRES_HOST}:${process.env.POSTGRES_PORT}`
   )
   console.log(`Using dialect: ${dialect}`)
 
@@ -18,6 +18,6 @@ export const pgConfig = registerAs(EnumConfig.DATABASE, () => {
     password: process.env.POSTGRES_PASSWORD,
     database: process.env.POSTGRES_NAME,
     autoLoadEntities: true,
-    synchronize: true,
+    synchronize: true
   }
 })

@@ -4,7 +4,7 @@ import {
   IsInt,
   Min,
   Max,
-  IsNotEmpty,
+  IsNotEmpty
 } from 'class-validator'
 
 export class CreatePaintingDto {
