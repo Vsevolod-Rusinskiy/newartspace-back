@@ -6,6 +6,7 @@ import { PaintingsModule } from './paintings/paintings.module'
 import { SequelizeModule } from '@nestjs/sequelize'
 import { SequelizeConfigService } from './config/sequelizeConfig.service'
 import { databaseConfig } from './config/configuration'
+import { StorageModule } from './common/services/storage.module'
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { databaseConfig } from './config/configuration'
     ConfigModule.forRoot({
       load: [databaseConfig]
     }),
-    PaintingsModule
+    PaintingsModule,
+    StorageModule
   ],
   providers: [
     {
