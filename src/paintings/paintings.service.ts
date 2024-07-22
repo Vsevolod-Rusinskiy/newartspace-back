@@ -61,6 +61,30 @@ export class PaintingsService {
     return painting
   }
 
+  async getSortedPaintings(
+    sort: string,
+    order: 'ASC' | 'DESC' = 'ASC'
+  ): Promise<Painting[]> {
+    let sortField = 'id'
+    if (sort) {
+      try {
+        const parsedSort = JSON.parse(sort)
+        if (Array.isArray(parsedSort) && parsedSort.length === 2) {
+          sortField = parsedSort[0]
+          order = parsedSort[1]
+        }
+      } catch (error) {
+        this.logger.error('Failed to parse sort parameter:', error)
+      }
+    }
+
+    const options: FindOptions = {
+      order: [[sortField, order]]
+    }
+
+    return this.paintingModel.findAll(options)
+  }
+
   async update(
     id: number,
     painting: UpdatePaintingDto
