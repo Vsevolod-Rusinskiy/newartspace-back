@@ -4,65 +4,65 @@ import {
   IsInt,
   Min,
   Max,
-  IsNotEmpty
+  IsOptional
 } from 'class-validator'
 
 export class CreatePaintingDto {
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  readonly paintingUrl: string
+  readonly paintingUrl?: string
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  readonly author: string
+  readonly author?: string
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  readonly title: string
+  readonly title?: string
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  readonly artType: string
+  readonly artType?: string
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsNumber()
-  readonly price: number
+  readonly price?: number
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  readonly theme: string
+  readonly theme?: string
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  readonly style: string
+  readonly style?: string
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  readonly base: string
+  readonly base?: string
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  readonly materials: string
+  readonly materials?: string
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsNumber()
-  readonly height: number
+  readonly height?: number
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsNumber()
-  readonly width: number
+  readonly width?: number
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsInt()
   @Min(1000)
   @Max(9999)
-  readonly yearOfCreation: number
+  readonly yearOfCreation?: number
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  readonly format: string
+  readonly format?: string
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  readonly color: string
+  readonly color?: string
 }
