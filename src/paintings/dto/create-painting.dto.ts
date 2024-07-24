@@ -6,6 +6,7 @@ import {
   Max,
   IsOptional
 } from 'class-validator'
+import { Picture } from '../../types/picture.interface'
 
 export class CreatePaintingDto {
   @IsOptional()
@@ -65,4 +66,7 @@ export class CreatePaintingDto {
   @IsOptional()
   @IsString()
   readonly color?: string
+
+  @IsOptional()
+  readonly pictures?: Picture
 }

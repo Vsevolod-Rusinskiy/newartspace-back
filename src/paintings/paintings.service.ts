@@ -74,7 +74,6 @@ export class PaintingsService {
     return painting
   }
 
-  // todo do not save img to yc [ promise all? ]
   async update(
     id: number,
     painting: UpdatePaintingDto

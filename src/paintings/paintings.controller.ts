@@ -67,7 +67,6 @@ export class PaintingsController {
   @Get(':id')
   async getOnePainting(@Param('id') id: string) {
     const painting = await this.paintingService.findOne(id)
-    console.log('Find one painting:', painting)
     return painting
   }
 
@@ -77,7 +76,6 @@ export class PaintingsController {
     @Param('id') id: string
   ) {
     const painting = await this.paintingService.update(+id, updatePainting)
-    console.log('Updated painting:', painting)
     return painting
   }
 
