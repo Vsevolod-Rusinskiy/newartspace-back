@@ -84,5 +84,5 @@ export class UpdatePaintingDto {
   readonly updatedAt?: string
 
   @IsOptional()
-  readonly pictures?: Picture
+  readonly pictures?: Picture | null
 }

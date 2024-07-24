@@ -84,10 +84,14 @@ export class PaintingsService {
     if (!existingPainting) {
       throw new NotFoundException(`Painting with id ${id} not found`)
     }
-    const prevPaintingUrl = painting.prevPaintingUrl
-    const fileName = getFileNameFromUrl(prevPaintingUrl)
 
-    await this.storageService.deleteFile(fileName, 'paintings')
+    // Проверяем, изменился ли URL картинки
+    if (existingPainting.paintingUrl !== painting.paintingUrl) {
+      // Удаляем старый файл, если URL изменился
+      const prevPaintingUrl = existingPainting.paintingUrl
+      const fileName = getFileNameFromUrl(prevPaintingUrl)
+      await this.storageService.deleteFile(fileName, 'paintings')
+    }
 
     return this.paintingModel.update(painting, {
       where: { id },
