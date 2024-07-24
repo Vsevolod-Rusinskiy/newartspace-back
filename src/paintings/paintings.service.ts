@@ -118,9 +118,10 @@ export class PaintingsService {
     }
   }
 
-  async deleteMany(ids: string[]): Promise<{ deletedPaintingCount: number }> {
+  async deleteMany(ids: string): Promise<{ deletedPaintingCount: number }> {
+    const idArray = JSON.parse(ids).map((id) => id.toString())
     let deletedPaintingCount = 0
-    for (const id of ids) {
+    for (const id of idArray) {
       try {
         const painting = await this.findOne(id)
 

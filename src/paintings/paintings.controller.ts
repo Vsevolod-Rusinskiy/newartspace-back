@@ -87,8 +87,7 @@ export class PaintingsController {
 
   @Delete('deleteMany/:ids')
   async deleteManyPaintings(@Param('ids') ids: string) {
-    const idArray = JSON.parse(ids).map((id) => id.toString())
-    const deletedCount = await this.paintingService.deleteMany(idArray)
+    const deletedCount = await this.paintingService.deleteMany(ids)
     return { message: 'Paintings deleted successfully', deletedCount }
   }
 }
