@@ -36,9 +36,7 @@ export class PaintingsController {
     return this.paintingService.create(createPainting)
   }
 
-  // todo - check storage
-  // todo - make thin
-  @Post('upload')
+  @Post('upload-image')
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
@@ -77,6 +75,15 @@ export class PaintingsController {
   ) {
     const painting = await this.paintingService.update(+id, updatePainting)
     return painting
+  }
+
+  @Delete('delete-image')
+  async deleteFile(@Body('fileName') fileName: string) {
+    if (!fileName) {
+      throw new BadRequestException('File name is required')
+    }
+    await this.storageService.deleteFile(fileName, 'paintings')
+    return { message: 'File deleted successfully' }
   }
 
   @Delete(':id')
