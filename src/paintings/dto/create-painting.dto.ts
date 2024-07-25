@@ -4,7 +4,8 @@ import {
   IsInt,
   Min,
   Max,
-  IsOptional
+  IsOptional,
+  IsDateString
 } from 'class-validator'
 import { Picture } from '../../types/picture.interface'
 
@@ -66,6 +67,14 @@ export class CreatePaintingDto {
   @IsOptional()
   @IsString()
   readonly color?: string
+
+  @IsOptional()
+  @IsDateString()
+  readonly createdAt?: string
+
+  @IsOptional()
+  @IsDateString()
+  readonly updatedAt?: string
 
   @IsOptional()
   readonly pictures?: Picture
