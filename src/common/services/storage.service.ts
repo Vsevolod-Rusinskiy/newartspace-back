@@ -61,6 +61,7 @@ export class StorageService {
       )
     }
   }
+
   async deleteFile(fileName: string, category: string): Promise<void> {
     const key = `${category}/${fileName}`
 
