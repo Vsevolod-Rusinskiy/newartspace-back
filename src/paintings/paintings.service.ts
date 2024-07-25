@@ -39,12 +39,25 @@ export class PaintingsService {
     }
   }
 
-  async findAll(
-    sort: string = 'id',
+  async getAllSortedPaintings(
+    sort: string,
     order: 'ASC' | 'DESC' = 'ASC'
   ): Promise<Painting[]> {
+    let sortField = 'id'
+    if (sort) {
+      try {
+        const parsedSort = JSON.parse(sort)
+        if (Array.isArray(parsedSort) && parsedSort.length === 2) {
+          sortField = parsedSort[0]
+          order = parsedSort[1]
+        }
+      } catch (error) {
+        this.logger.error('Failed to parse sort parameter:', error)
+      }
+    }
+
     const options: FindOptions = {
-      order: [[sort, order]]
+      order: [[sortField, order]]
     }
 
     return this.paintingModel.findAll(options)
@@ -65,10 +78,19 @@ export class PaintingsService {
     id: number,
     painting: UpdatePaintingDto
   ): Promise<[number, Painting[]]> {
-    const prevPaintingUrl = painting.prevPaintingUrl
-    const fileName = getFileNameFromUrl(prevPaintingUrl)
+    const existingPainting = await this.findOne(id.toString())
 
-    await this.storageService.deleteFile(fileName, 'paintings')
+    if (!existingPainting) {
+      throw new NotFoundException(`Painting with id ${id} not found`)
+    }
+
+    // Проверяем, изменился ли URL картинки
+    if (existingPainting.paintingUrl !== painting.paintingUrl) {
+      // Удаляем старый файл, если URL изменился
+      const prevPaintingUrl = existingPainting.paintingUrl
+      const fileName = getFileNameFromUrl(prevPaintingUrl)
+      await this.storageService.deleteFile(fileName, 'paintings')
+    }
 
     return this.paintingModel.update(painting, {
       where: { id },
@@ -79,23 +101,41 @@ export class PaintingsService {
   async delete(id: string): Promise<void> {
     const painting = await this.findOne(id)
 
+    if (!painting) {
+      throw new NotFoundException(`Painting with id ${id} not found`)
+    }
+
     const paintingUrl = painting.paintingUrl
     const fileName = getFileNameFromUrl(paintingUrl)
 
-    await this.storageService.deleteFile(fileName, 'paintings')
-    await painting.destroy()
-  }
-
-  async deleteMany(ids: string[]): Promise<{ deletedPaintingCount: number }> {
-    const deletedPaintingCount = 0
-    for (const id of ids) {
-      const painting = await this.findOne(id)
-
-      const paintingUrl = painting.dataValues.paintingUrl
-      const fileName = getFileNameFromUrl(paintingUrl)
-
+    try {
       await this.storageService.deleteFile(fileName, 'paintings')
       await painting.destroy()
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Error deleting painting: ${error.message}`
+      )
+    }
+  }
+
+  async deleteMany(ids: string): Promise<{ deletedPaintingCount: number }> {
+    const idArray = JSON.parse(ids).map((id) => id.toString())
+    let deletedPaintingCount = 0
+    for (const id of idArray) {
+      try {
+        const painting = await this.findOne(id)
+
+        const paintingUrl = painting.dataValues.paintingUrl
+        const fileName = getFileNameFromUrl(paintingUrl)
+
+        await this.storageService.deleteFile(fileName, 'paintings')
+        await painting.destroy()
+        deletedPaintingCount++
+      } catch (error) {
+        throw new InternalServerErrorException(
+          `Error deleting paintings: ${error.message}`
+        )
+      }
     }
     return { deletedPaintingCount }
   }

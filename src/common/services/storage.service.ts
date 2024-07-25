@@ -1,4 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common'
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger
+} from '@nestjs/common'
 import * as AWS from 'aws-sdk'
 import * as dotenv from 'dotenv'
 import { v4 as uuidv4 } from 'uuid'
@@ -52,7 +56,7 @@ export class StorageService {
       this.logger.error(
         `Error uploading file ${uniqueFileName}: ${error.message}`
       )
-      throw new Error(
+      throw new InternalServerErrorException(
         `Error uploading file ${uniqueFileName}: ${error.message}`
       )
     }
@@ -74,7 +78,7 @@ export class StorageService {
       this.logger.error(
         `Error deleting file ${fileName} in category ${category}: ${error.message}`
       )
-      throw new Error(
+      throw new InternalServerErrorException(
         `Error deleting file ${fileName} in category ${category}: ${error.message}`
       )
     }
