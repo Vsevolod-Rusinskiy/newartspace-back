@@ -1,6 +1,7 @@
 import { FileInterceptor } from '@nestjs/platform-express'
 
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -8,7 +9,6 @@ import {
   Header,
   HttpCode,
   HttpStatus,
-  Logger,
   Param,
   Patch,
   Post,
@@ -24,7 +24,6 @@ import { StorageService } from '../common/services/storage.service'
 
 @Controller('paintings')
 export class PaintingsController {
-  private readonly logger = new Logger(PaintingsController.name)
   constructor(
     private readonly paintingService: PaintingsService,
     private readonly storageService: StorageService
@@ -37,9 +36,14 @@ export class PaintingsController {
     return this.paintingService.create(createPainting)
   }
 
+  // todo - check storage
+  // todo - make thin
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('File is required')
+    }
     const fileName = file.originalname
     const yandexPaintingUrl = await this.storageService.uploadFile(
       file.buffer,
@@ -52,48 +56,38 @@ export class PaintingsController {
   }
 
   @Get()
-  async getAllPaintings(
+  async getAllSortedPaintings(
     @Query('sort') sort: string,
     @Query('order') order: 'ASC' | 'DESC' = 'ASC'
   ) {
-    let sortField = 'id'
-    if (sort) {
-      try {
-        const parsedSort = JSON.parse(sort)
-        if (Array.isArray(parsedSort) && parsedSort.length === 2) {
-          sortField = parsedSort[0]
-          order = parsedSort[1]
-        }
-      } catch (error) {
-        console.error('Failed to parse sort parameter:', error)
-      }
-    }
-
-    const data = await this.paintingService.findAll(sortField, order)
+    const data = await this.paintingService.getAllSortedPaintings(sort, order)
     return { data, total: data.length }
   }
 
   @Get(':id')
-  getOnePainting(@Param('id') id: string) {
-    return this.paintingService.findOne(id)
+  async getOnePainting(@Param('id') id: string) {
+    const painting = await this.paintingService.findOne(id)
+    return painting
   }
 
   @Patch(':id')
-  updatePainting(
+  async updatePainting(
     @Body() updatePainting: UpdatePaintingDto,
     @Param('id') id: string
   ) {
-    return this.paintingService.update(+id, updatePainting)
+    const painting = await this.paintingService.update(+id, updatePainting)
+    return painting
   }
 
   @Delete(':id')
-  deletePainting(@Param('id') id: string) {
-    return this.paintingService.delete(id)
+  async deletePainting(@Param('id') id: string) {
+    await this.paintingService.delete(id)
+    return { message: 'Painting deleted successfully' }
   }
 
   @Delete('deleteMany/:ids')
-  deleteManyPaintings(@Param('ids') ids: string) {
-    const idArray = JSON.parse(ids).map((id) => id.toString())
-    return this.paintingService.deleteMany(idArray)
+  async deleteManyPaintings(@Param('ids') ids: string) {
+    const deletedCount = await this.paintingService.deleteMany(ids)
+    return { message: 'Paintings deleted successfully', deletedCount }
   }
 }

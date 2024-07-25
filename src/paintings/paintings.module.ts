@@ -3,11 +3,11 @@ import { PaintingsService } from './paintings.service'
 import { PaintingsController } from './paintings.controller'
 import { SequelizeModule } from '@nestjs/sequelize'
 import { Painting } from './models/painting.model'
-import { StorageService } from '../common/services/storage.service'
+import { StorageModule } from '../common/services/storage.module'
 
 @Module({
-  imports: [SequelizeModule.forFeature([Painting])],
-  providers: [PaintingsService, StorageService],
+  imports: [SequelizeModule.forFeature([Painting]), StorageModule],
+  providers: [PaintingsService],
   controllers: [PaintingsController]
 })
 export class PaintingsModule {}

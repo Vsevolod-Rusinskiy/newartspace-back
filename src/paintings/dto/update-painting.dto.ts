@@ -5,15 +5,19 @@ import {
   Min,
   Max,
   IsInt,
-  IsNotEmpty
+  IsDateString
 } from 'class-validator'
+import { Picture } from '../../types/picture.interface'
 
 export class UpdatePaintingDto {
-  @IsNotEmpty()
+  @IsOptional()
+  readonly id?: string
+
+  @IsOptional()
   @IsString()
   readonly paintingUrl?: string
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   readonly author?: string
 
@@ -57,6 +61,7 @@ export class UpdatePaintingDto {
   @IsNumber()
   readonly width?: number
 
+  @IsOptional()
   @IsInt()
   @Min(1000)
   @Max(9999)
@@ -69,4 +74,15 @@ export class UpdatePaintingDto {
   @IsOptional()
   @IsString()
   readonly color?: string
+
+  @IsOptional()
+  @IsDateString()
+  readonly createdAt?: string
+
+  @IsOptional()
+  @IsDateString()
+  readonly updatedAt?: string
+
+  @IsOptional()
+  readonly pictures?: Picture | null
 }
