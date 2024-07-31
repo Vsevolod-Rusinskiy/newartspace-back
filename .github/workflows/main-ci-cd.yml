@@ -40,5 +40,5 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /var/www/newartspace/scripts
-            ./scripts/deploy.sh
+            ./deploy.sh
             
