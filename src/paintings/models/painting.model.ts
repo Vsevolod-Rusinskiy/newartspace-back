@@ -24,9 +24,6 @@ export class Painting extends Model {
   style: string
 
   @Column
-  base: string
-
-  @Column
   materials: string
 
   @Column

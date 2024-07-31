@@ -47,10 +47,6 @@ export class UpdatePaintingDto {
 
   @IsOptional()
   @IsString()
-  readonly base?: string
-
-  @IsOptional()
-  @IsString()
   readonly materials?: string
 
   @IsOptional()

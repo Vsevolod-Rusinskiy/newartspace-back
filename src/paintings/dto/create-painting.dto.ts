@@ -40,10 +40,6 @@ export class CreatePaintingDto {
 
   @IsOptional()
   @IsString()
-  readonly base?: string
-
-  @IsOptional()
-  @IsString()
   readonly materials?: string
 
   @IsOptional()
