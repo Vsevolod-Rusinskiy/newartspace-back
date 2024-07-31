@@ -45,5 +45,4 @@ jobs:
             git pull origin master
             docker-compose build
             docker-compose up -d
-            cd /var/www/newartspace/backend/src/config
             
