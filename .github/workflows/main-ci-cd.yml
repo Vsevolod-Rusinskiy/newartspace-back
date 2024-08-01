@@ -17,6 +17,8 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '20.9.0'
+          cache: 'yarn'
+
 
       - name: Install dependencies
         run: yarn install
@@ -31,6 +33,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          node-version: '20.9.0'
+          cache: 'yarn'
 
       - name: Deploy to Server
         uses: appleboy/ssh-action@master
