@@ -13,7 +13,7 @@ RUN yarn install --frozen-lockfile
 # Копируем остальные файлы проекта
 COPY . .
 
-# Компилируем TypeScript код
+# Компилируем код
 RUN yarn build
 
 # Указываем команду для запуска приложения
