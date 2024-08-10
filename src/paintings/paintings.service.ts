@@ -40,9 +40,15 @@ export class PaintingsService {
   }
 
   async getAllSortedPaintings(
-    sort: string,
-    order: 'ASC' | 'DESC' = 'ASC'
-  ): Promise<Painting[]> {
+    sort?: string,
+    order?: 'ASC' | 'DESC',
+    page?: number,
+    limit?: number
+  ): Promise<{ data: Painting[]; total: number }> {
+    order = 'ASC'
+    page = page !== undefined ? page : 1
+    limit = limit !== undefined ? limit : 10
+
     let sortField = 'id'
     if (sort) {
       try {
@@ -57,10 +63,14 @@ export class PaintingsService {
     }
 
     const options: FindOptions = {
-      order: [[sortField, order]]
+      order: [[sortField, order]],
+      limit: limit,
+      offset: (page - 1) * limit
     }
 
-    return this.paintingModel.findAll(options)
+    const { rows: data, count: total } =
+      await this.paintingModel.findAndCountAll(options)
+    return { data, total }
   }
 
   async findOne(id: string): Promise<Painting> {

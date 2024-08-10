@@ -56,10 +56,17 @@ export class PaintingsController {
   @Get()
   async getAllSortedPaintings(
     @Query('sort') sort: string,
-    @Query('order') order: 'ASC' | 'DESC' = 'ASC'
+    @Query('order') order: 'ASC' | 'DESC' = 'ASC',
+    @Query('page') page,
+    @Query('limit') limit
   ) {
-    const data = await this.paintingService.getAllSortedPaintings(sort, order)
-    return { data, total: data.length }
+    const { data, total } = await this.paintingService.getAllSortedPaintings(
+      sort,
+      order,
+      page,
+      limit
+    )
+    return { data, total, page, pageCount: Math.ceil(total / limit) }
   }
 
   @Get(':id')
