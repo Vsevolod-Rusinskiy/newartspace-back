@@ -42,6 +42,14 @@ export class PaintingsController {
     if (!file) {
       throw new BadRequestException('File is required')
     }
+
+    const maxSizeInBytes = 1048576
+    if (file.size > maxSizeInBytes) {
+      throw new BadRequestException(
+        'File size exceeds the maximum limit of 1 MB'
+      )
+    }
+
     const fileName = file.originalname
     const yandexPaintingUrl = await this.storageService.uploadFile(
       file.buffer,
