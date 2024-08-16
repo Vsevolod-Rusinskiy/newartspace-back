@@ -40,4 +40,7 @@ export class Painting extends Model {
 
   @Column
   color: string
+
+  @Column
+  description: string
 }

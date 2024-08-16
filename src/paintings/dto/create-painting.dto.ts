@@ -65,6 +65,10 @@ export class CreatePaintingDto {
   readonly color?: string
 
   @IsOptional()
+  @IsString()
+  readonly description?: string
+
+  @IsOptional()
   @IsDateString()
   readonly createdAt?: string
 
