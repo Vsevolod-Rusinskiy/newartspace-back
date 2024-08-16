@@ -72,6 +72,10 @@ export class UpdatePaintingDto {
   readonly color?: string
 
   @IsOptional()
+  @IsString()
+  readonly description?: string
+
+  @IsOptional()
   @IsDateString()
   readonly createdAt?: string
 
