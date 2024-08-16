@@ -48,6 +48,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 360m
           script: |
             cd /var/www/newartspace/scripts
             ./deploy.sh
