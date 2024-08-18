@@ -14,8 +14,8 @@ spec:
     spec:
       containers:
         - name: backend
-          image: newspace-back:latest
-          imagePullPolicy: IfNotPresent
+          image: ghcr.io/vsevolod-rusinskiy/newartspace-back:latest  # Указываем образ из GitHub Packages
+          imagePullPolicy: Always  # Гарантируем загрузку последней версии образа
           ports:
             - containerPort: 3000
           env:
@@ -54,3 +54,5 @@ spec:
                 secretKeyRef:
                   name: backend-secret
                   key: POSTGRES_NAME
+      imagePullSecrets:
+        - name: ghcr-io-secret  # Добавляем секрет для доступа к приватному образу
