@@ -50,7 +50,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:latest
+          tags: ghcr.io/vsevolod-rusinskiy/newartspace-back:latest
 
   deploy:
     needs: build-and-push-image
