@@ -9,6 +9,7 @@ import { SequelizeConfigService } from './config/sequelizeConfig.service'
 import { databaseConfig } from './config/configuration'
 import { StorageModule } from './common/services/storage.module'
 import { ValidationPipe } from '@nestjs/common'
+import { ArtistsModule } from './artists/artists.module'
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ValidationPipe } from '@nestjs/common'
     ConfigModule.forRoot({
       load: [databaseConfig]
     }),
+    ArtistsModule,
     PaintingsModule,
     StorageModule
   ],

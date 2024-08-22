@@ -7,7 +7,7 @@ import {
   IsInt,
   IsDateString
 } from 'class-validator'
-import { Picture } from '../../types/picture.interface'
+import { Image } from '../../types/image.interface'
 
 export class UpdatePaintingDto {
   @IsOptional()
@@ -84,5 +84,5 @@ export class UpdatePaintingDto {
   readonly updatedAt?: string
 
   @IsOptional()
-  readonly pictures?: Picture | null
+  readonly pictures?: Image | null
 }
