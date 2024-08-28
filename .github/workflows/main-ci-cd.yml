@@ -60,6 +60,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Show changed files
+        run: |
+          git fetch origin
+          git diff --name-only ${{ github.event.before }} ${{ github.sha }}  
+
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
