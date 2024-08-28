@@ -60,10 +60,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Show changed files
-        run: |
-          git fetch origin
-          git diff --name-only ${{ github.event.before }} ${{ github.sha }}  
+#      - name: Show changed files
+#        run: |
+#          git fetch origin
+#          git diff --name-only ${{ github.event.before }} ${{ github.sha }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
@@ -90,5 +90,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           command_timeout: 360m
           script: |
-            kubectl rollout restart deployment backend
-            kubectl get pods -n default
+            cd /var/www/newartspace/scripts
+            ./deploy.sh
+#            kubectl rollout restart deployment backend
+#            kubectl get pods -n default
+
