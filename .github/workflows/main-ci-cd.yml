@@ -93,5 +93,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           command_timeout: 360m
           script: |
-            kubectl rollout restart deployment backend
-            kubectl get pods -n default
+            cd /var/www/newartspace/scripts
+            ./deploy.sh
+#            kubectl rollout restart deployment backend
+#            kubectl get pods -n default
+

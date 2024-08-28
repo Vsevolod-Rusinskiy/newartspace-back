@@ -13,7 +13,6 @@ RUN yarn install --frozen-lockfile
 # Копируем остальные файлы проекта
 COPY . .
 
-RUN yarn sequelize-cli db:migrate --config src/config/config.js
 
 # Компилируем код
 RUN yarn build
