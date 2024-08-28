@@ -10,10 +10,7 @@ import { CreatePaintingDto } from './dto/create-painting.dto'
 import { UpdatePaintingDto } from './dto/update-painting.dto'
 import { Painting } from './models/painting.model'
 import { StorageService } from '../common/services/storage.service'
-
-function getFileNameFromUrl(url: string): string {
-  return url.substring(url.lastIndexOf('/') + 1)
-}
+import { getFileNameFromUrl } from '../utils'
 
 @Injectable()
 export class PaintingsService {

@@ -1,0 +1,1 @@
+export { getFileNameFromUrl } from './getFileNameFromUrl'
