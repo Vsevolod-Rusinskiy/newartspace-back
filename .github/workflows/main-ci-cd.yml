@@ -63,6 +63,11 @@ jobs:
           node-version: '20.9.0'
           cache: 'yarn'
 
+      - name: Show changed files
+        run: |
+          git fetch origin
+          git diff --name-only ${{ github.event.before }} ${{ github.sha }}  
+
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
