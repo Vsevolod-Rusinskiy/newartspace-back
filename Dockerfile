@@ -13,6 +13,15 @@ RUN yarn install --frozen-lockfile
 # Копируем остальные файлы проекта
 COPY . .
 
+# Выводим текущий путь
+#RUN pwd
+
+# Выводим список файлов, чтобы убедиться, что .env файл скопирован
+#RUN ls -la
+
+# Применяем миграции базы данных
+#yarn sequelize-cli db:migrate --config src/config/config.js
+
 # Компилируем код
 RUN yarn build
 
