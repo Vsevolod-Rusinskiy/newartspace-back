@@ -10,6 +10,7 @@ import { databaseConfig } from './config/configuration'
 import { StorageModule } from './common/services/storage.module'
 import { ValidationPipe } from '@nestjs/common'
 import { ArtistsModule } from './artists/artists.module'
+import { AppController } from './app.controller'
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { ArtistsModule } from './artists/artists.module'
       provide: APP_PIPE,
       useClass: ValidationPipe
     }
-  ]
+  ],
+  controllers: [AppController]
 })
 export class AppModule {}

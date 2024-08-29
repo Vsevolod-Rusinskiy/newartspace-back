@@ -13,7 +13,6 @@ RUN yarn install --frozen-lockfile
 # Копируем остальные файлы проекта
 COPY . .
 
-
 # Компилируем код
 RUN yarn build
 
