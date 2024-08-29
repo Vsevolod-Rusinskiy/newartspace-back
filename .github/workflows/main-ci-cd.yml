@@ -28,32 +28,32 @@ jobs:
       - name: Run Lint check
         run: yarn lint
 
-  build-and-push-image:
-    needs: prettier-lint-check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      # Логинимся в GitHub Container Registry, используя созданный токен
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GH_TOKEN }}
-
-      # Сборка и загрузка Docker образа в GitHub Packages
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: ghcr.io/vsevolod-rusinskiy/newartspace-back:latest
+#  build-and-push-image:
+#    needs: prettier-lint-check
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v2
+#
+#      # Логинимся в GitHub Container Registry, используя созданный токен
+#      - name: Log in to GitHub Container Registry
+#        uses: docker/login-action@v2
+#        with:
+#          registry: ghcr.io
+#          username: ${{ github.actor }}
+#          password: ${{ secrets.GH_TOKEN }}
+#
+#      # Сборка и загрузка Docker образа в GitHub Packages
+#      - name: Build and push Docker image
+#        uses: docker/build-push-action@v3
+#        with:
+#          context: .
+#          file: ./Dockerfile
+#          push: true
+#          tags: ghcr.io/vsevolod-rusinskiy/newartspace-back:latest
 
   deploy:
-    needs: build-and-push-image
+    needs: prettier-lint-check
     runs-on: ubuntu-latest
 
     steps:
@@ -62,11 +62,6 @@ jobs:
         with:
           node-version: '20.9.0'
           cache: 'yarn'
-
-#      - name: Show changed files
-#        run: |
-#          git fetch origin
-#          git diff --name-only ${{ github.event.before }} ${{ github.sha }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
@@ -74,18 +69,7 @@ jobs:
           node-version: '20.9.0'
           cache: 'yarn'
 
-#      - name: Deploy to Server
-#        uses: appleboy/ssh-action@master
-#        with:
-#          host: ${{ secrets.SSH_HOST }}
-#          username: ${{ secrets.SSH_USERNAME }}
-#          key: ${{ secrets.SSH_PRIVATE_KEY }}
-#          command_timeout: 360m
-#          script: |
-#            cd /var/www/newartspace/scripts
-#            ./deploy.sh
-
-      - name: Deploy to Kubernetes via SSH
+      - name: Deploy to Server
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -95,6 +79,7 @@ jobs:
           script: |
             cd /var/www/newartspace/scripts
             ./deploy.sh
+
 #            kubectl rollout restart deployment backend
 #            kubectl get pods -n default
 
