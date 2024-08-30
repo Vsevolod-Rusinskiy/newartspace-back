@@ -73,6 +73,10 @@ export class CreatePaintingDto {
   readonly createdAt?: string
 
   @IsOptional()
+  @IsInt()
+  readonly priority?: number
+
+  @IsOptional()
   @IsDateString()
   readonly updatedAt?: string
 

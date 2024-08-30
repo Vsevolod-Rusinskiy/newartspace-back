@@ -43,4 +43,7 @@ export class Painting extends Model {
 
   @Column
   description: string
+
+  @Column
+  priority: number
 }

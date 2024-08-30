@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsDateString } from 'class-validator'
+import { IsString, IsOptional, IsDateString, IsInt } from 'class-validator'
 
 export class UpdateArtistDto {
   @IsOptional()
@@ -12,6 +12,10 @@ export class UpdateArtistDto {
   @IsOptional()
   @IsString()
   readonly artistUrl?: string
+
+  @IsOptional()
+  @IsInt()
+  readonly priority?: number
 
   @IsOptional()
   @IsDateString()
