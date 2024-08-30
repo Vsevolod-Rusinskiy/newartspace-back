@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsDateString } from 'class-validator'
+import { IsString, IsOptional, IsDateString, IsInt } from 'class-validator'
 import { Image } from '../../types/image.interface'
 
 export class CreateArtistDto {
@@ -16,6 +16,10 @@ export class CreateArtistDto {
   @IsOptional()
   @IsString()
   readonly artistUrl?: string
+
+  @IsOptional()
+  @IsInt()
+  readonly priority?: number
 
   @IsOptional()
   @IsDateString()

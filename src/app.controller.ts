@@ -4,6 +4,6 @@ import { Controller, Get } from '@nestjs/common'
 export class AppController {
   @Get('version')
   getVersion() {
-    return { version: '1.0.1', message: 'Backend is up and running' }
+    return { version: '1.0.2', message: 'Backend is up and running' }
   }
 }
