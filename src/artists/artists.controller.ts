@@ -51,13 +51,13 @@ export class ArtistsController {
     }
 
     const fileName = file.originalname
-    const yandexArtistUrl = await this.storageService.uploadFile(
+    const yandexImgUrl = await this.storageService.uploadFile(
       file.buffer,
       fileName,
       'artists'
     )
     return {
-      artistUrl: yandexArtistUrl
+      imgUrl: yandexImgUrl
     }
   }
 

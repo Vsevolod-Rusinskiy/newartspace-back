@@ -1,6 +1,11 @@
 import { IsString, IsOptional, IsDateString, IsInt } from 'class-validator'
+import { Image } from '../../types/image.interface'
+import { Type } from 'class-transformer'
 
 export class UpdateArtistDto {
+  @IsOptional()
+  readonly id?: string
+
   @IsOptional()
   @IsString()
   readonly artistName?: string
@@ -11,10 +16,11 @@ export class UpdateArtistDto {
 
   @IsOptional()
   @IsString()
-  readonly artistUrl?: string
+  readonly imgUrl?: string
 
   @IsOptional()
   @IsInt()
+  @Type(() => Number)
   readonly priority?: number
 
   @IsOptional()
@@ -24,4 +30,7 @@ export class UpdateArtistDto {
   @IsOptional()
   @IsDateString()
   readonly updatedAt?: string
+
+  @IsOptional()
+  readonly pictures?: Image | null
 }

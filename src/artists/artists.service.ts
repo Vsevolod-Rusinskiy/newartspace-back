@@ -92,10 +92,10 @@ export class ArtistsService {
     }
 
     // Проверяем, изменился ли URL картинки
-    if (existingArtist.artistUrl !== artist.artistUrl) {
+    if (existingArtist.imgUrl !== artist.imgUrl) {
       // Удаляем старый файл, если URL изменился
-      const prevArtistUrl = existingArtist.artistUrl
-      const fileName = getFileNameFromUrl(prevArtistUrl)
+      const prevImgUrl = existingArtist.imgUrl
+      const fileName = getFileNameFromUrl(prevImgUrl)
       await this.storageService.deleteFile(fileName, 'artists')
     }
 
@@ -112,8 +112,8 @@ export class ArtistsService {
       throw new NotFoundException(`Artist with id ${id} not found`)
     }
 
-    const artistUrl = artist.artistUrl
-    const fileName = getFileNameFromUrl(artistUrl)
+    const imgUrl = artist.imgUrl
+    const fileName = getFileNameFromUrl(imgUrl)
 
     try {
       await this.storageService.deleteFile(fileName, 'artists')
@@ -132,8 +132,8 @@ export class ArtistsService {
       try {
         const artist = await this.findOne(id)
 
-        const artistUrl = artist.dataValues.artistUrl
-        const fileName = getFileNameFromUrl(artistUrl)
+        const imgUrl = artist.dataValues.imgUrl
+        const fileName = getFileNameFromUrl(imgUrl)
 
         await this.storageService.deleteFile(fileName, 'artists')
         await artist.destroy()
