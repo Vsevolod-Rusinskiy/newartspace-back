@@ -86,7 +86,6 @@ export class PaintingsService {
     painting: UpdatePaintingDto
   ): Promise<[number, Painting[]]> {
     const existingPainting = await this.findOne(id.toString())
-    console.log('Existing Painting:', existingPainting)
     if (!existingPainting) {
       throw new NotFoundException(`Painting with id ${id} not found`)
     }
@@ -99,7 +98,6 @@ export class PaintingsService {
       await this.storageService.deleteFile(fileName, 'paintings')
     }
 
-    console.log('Updating with:', painting)
     return this.paintingModel.update(painting, {
       where: { id },
       returning: true

@@ -88,9 +88,7 @@ export class PaintingsController {
     @Body() updatePainting: UpdatePaintingDto,
     @Param('id') id: string
   ) {
-    console.log('Received DTO:', updatePainting) // Логируем входящие данные
     const painting = await this.paintingService.update(+id, updatePainting)
-    console.log('Updated Painting:', painting)
     return painting
   }
 
