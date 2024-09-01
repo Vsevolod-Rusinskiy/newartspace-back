@@ -1,5 +1,6 @@
 import { IsString, IsOptional, IsDateString, IsInt } from 'class-validator'
 import { Image } from '../../types/image.interface'
+import { Type } from 'class-transformer'
 
 export class CreateArtistDto {
   @IsOptional()
@@ -19,6 +20,7 @@ export class CreateArtistDto {
 
   @IsOptional()
   @IsInt()
+  @Type(() => Number)
   readonly priority?: number
 
   @IsOptional()
@@ -28,4 +30,7 @@ export class CreateArtistDto {
   @IsOptional()
   @IsDateString()
   readonly updatedAt?: string
+
+  @IsOptional()
+  readonly pictures?: Image
 }

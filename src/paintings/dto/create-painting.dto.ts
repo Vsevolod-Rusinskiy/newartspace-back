@@ -8,6 +8,7 @@ import {
   IsDateString
 } from 'class-validator'
 import { Image } from '../../types/image.interface'
+import { Type } from 'class-transformer'
 
 export class CreatePaintingDto {
   @IsOptional()
@@ -74,6 +75,7 @@ export class CreatePaintingDto {
 
   @IsOptional()
   @IsInt()
+  @Type(() => Number)
   readonly priority?: number
 
   @IsOptional()
