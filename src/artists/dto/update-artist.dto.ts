@@ -11,7 +11,7 @@ export class UpdateArtistDto {
 
   @IsOptional()
   @IsString()
-  readonly artistUrl?: string
+  readonly imgUrl?: string
 
   @IsOptional()
   @IsInt()

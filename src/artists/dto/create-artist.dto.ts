@@ -15,11 +15,11 @@ export class CreateArtistDto {
 
   @IsOptional()
   @IsString()
-  readonly artistUrl?: string
+  readonly imgUrl?: string
 
   @IsOptional()
   @IsInt()
-  readonly priority?: number
+  readonly imgUrl?: number
 
   @IsOptional()
   @IsDateString()

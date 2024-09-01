@@ -15,7 +15,7 @@ export class UpdatePaintingDto {
 
   @IsOptional()
   @IsString()
-  readonly paintingUrl?: string
+  readonly imgUrl?: string
 
   @IsOptional()
   @IsString()
@@ -23,7 +23,7 @@ export class UpdatePaintingDto {
 
   @IsOptional()
   @IsString()
-  readonly prevPaintingUrl?: string
+  readonly imgUrl?: string
 
   @IsOptional()
   @IsString()

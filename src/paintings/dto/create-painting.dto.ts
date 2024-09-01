@@ -12,7 +12,7 @@ import { Image } from '../../types/image.interface'
 export class CreatePaintingDto {
   @IsOptional()
   @IsString()
-  readonly paintingUrl?: string
+  readonly imgUrl?: string
 
   @IsOptional()
   @IsString()
