@@ -9,7 +9,7 @@ export class Artist extends Model {
   artistDescription: string
 
   @Column
-  artistUrl: string
+  imgUrl: string
 
   @Column
   priority: number

@@ -86,16 +86,15 @@ export class PaintingsService {
     painting: UpdatePaintingDto
   ): Promise<[number, Painting[]]> {
     const existingPainting = await this.findOne(id.toString())
-
     if (!existingPainting) {
       throw new NotFoundException(`Painting with id ${id} not found`)
     }
 
     // Проверяем, изменился ли URL картинки
-    if (existingPainting.paintingUrl !== painting.paintingUrl) {
+    if (existingPainting.imgUrl !== painting.imgUrl) {
       // Удаляем старый файл, если URL изменился
-      const prevPaintingUrl = existingPainting.paintingUrl
-      const fileName = getFileNameFromUrl(prevPaintingUrl)
+      const prevImgUrl = existingPainting.imgUrl
+      const fileName = getFileNameFromUrl(prevImgUrl)
       await this.storageService.deleteFile(fileName, 'paintings')
     }
 
@@ -112,8 +111,8 @@ export class PaintingsService {
       throw new NotFoundException(`Painting with id ${id} not found`)
     }
 
-    const paintingUrl = painting.paintingUrl
-    const fileName = getFileNameFromUrl(paintingUrl)
+    const imgUrl = painting.imgUrl
+    const fileName = getFileNameFromUrl(imgUrl)
 
     try {
       await this.storageService.deleteFile(fileName, 'paintings')
@@ -132,8 +131,8 @@ export class PaintingsService {
       try {
         const painting = await this.findOne(id)
 
-        const paintingUrl = painting.dataValues.paintingUrl
-        const fileName = getFileNameFromUrl(paintingUrl)
+        const imgUrl = painting.dataValues.imgUrl
+        const fileName = getFileNameFromUrl(imgUrl)
 
         await this.storageService.deleteFile(fileName, 'paintings')
         await painting.destroy()

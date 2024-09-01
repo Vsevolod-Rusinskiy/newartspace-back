@@ -8,6 +8,7 @@ import {
   IsDateString
 } from 'class-validator'
 import { Image } from '../../types/image.interface'
+import { Type } from 'class-transformer'
 
 export class UpdatePaintingDto {
   @IsOptional()
@@ -15,7 +16,7 @@ export class UpdatePaintingDto {
 
   @IsOptional()
   @IsString()
-  readonly paintingUrl?: string
+  readonly imgUrl?: string
 
   @IsOptional()
   @IsString()
@@ -23,7 +24,7 @@ export class UpdatePaintingDto {
 
   @IsOptional()
   @IsString()
-  readonly prevPaintingUrl?: string
+  readonly prevImgUrl?: string
 
   @IsOptional()
   @IsString()
@@ -81,6 +82,7 @@ export class UpdatePaintingDto {
 
   @IsOptional()
   @IsInt()
+  @Type(() => Number)
   readonly priority?: number
 
   @IsOptional()
