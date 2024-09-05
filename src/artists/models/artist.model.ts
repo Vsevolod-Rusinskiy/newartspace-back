@@ -1,4 +1,5 @@
-import { Table, Column, Model } from 'sequelize-typescript'
+import { Table, Column, Model, HasMany } from 'sequelize-typescript'
+import { Painting } from '../../paintings/models/painting.model'
 
 @Table
 export class Artist extends Model {
@@ -13,4 +14,7 @@ export class Artist extends Model {
 
   @Column
   priority: number
+
+  @HasMany(() => Painting)
+  paintings: Painting[]
 }

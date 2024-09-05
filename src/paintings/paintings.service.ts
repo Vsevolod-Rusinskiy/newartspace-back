@@ -23,9 +23,12 @@ export class PaintingsService {
   ) {}
 
   async create(createPaintingDto: CreatePaintingDto): Promise<Painting> {
+    // todo
+    this.logger.debug(createPaintingDto)
     try {
       const painting = new Painting({
-        ...createPaintingDto
+        ...createPaintingDto,
+        artistId: createPaintingDto.artistId
       })
       await painting.save()
       return painting
@@ -98,10 +101,17 @@ export class PaintingsService {
       await this.storageService.deleteFile(fileName, 'paintings')
     }
 
-    return this.paintingModel.update(painting, {
-      where: { id },
-      returning: true
-    })
+    // todo
+    return this.paintingModel.update(
+      {
+        ...painting,
+        artistId: painting.artistId
+      },
+      {
+        where: { id },
+        returning: true
+      }
+    )
   }
 
   async delete(id: string): Promise<void> {

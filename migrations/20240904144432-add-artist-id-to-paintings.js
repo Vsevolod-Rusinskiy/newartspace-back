@@ -5,18 +5,16 @@ module.exports = {
     // Добавляем колонку artistId в таблицу Paintings
     await queryInterface.addColumn('Paintings', 'artistId', {
       type: Sequelize.INTEGER,
-      allowNull: true,  // Разрешаем временно null для плавного перехода
+      allowNull: true,
       references: {
-        model: 'Artists',  // Имя таблицы художников
-        key: 'id',         // Поле в таблице Artists, на которое ссылаемся
+        model: 'Artists',
+        key: 'id',
       },
-      onUpdate: 'CASCADE',  // Если id художника изменится, обновим его в картинах
-      onDelete: 'SET NULL',  // Если художник удалён, поле artistId станет null
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
     });
   },
-
-  down: async (queryInterface, Sequelize) => {
-    // Удаляем колонку artistId, если откатываем миграцию
+  down: async (queryInterface) => {
     await queryInterface.removeColumn('Paintings', 'artistId');
   }
 };
