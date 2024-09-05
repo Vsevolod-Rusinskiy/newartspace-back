@@ -81,10 +81,7 @@ export class ArtistsService {
     return artist
   }
 
-  async update(
-    id: number,
-    artist: UpdateArtistDto
-  ): Promise<[number, Artist[]]> {
+  async update(id: number, artist: UpdateArtistDto): Promise<Artist> {
     const existingArtist = await this.findOne(id.toString())
 
     if (!existingArtist) {
@@ -99,10 +96,12 @@ export class ArtistsService {
       await this.storageService.deleteFile(fileName, 'artists')
     }
 
-    return this.artistModel.update(artist, {
+    const data = await this.artistModel.update(artist, {
       where: { id },
       returning: true
     })
+
+    return data[1][0]
   }
 
   async delete(id: string): Promise<void> {
