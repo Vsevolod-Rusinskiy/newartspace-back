@@ -1,12 +1,16 @@
-import { Table, Column, Model } from 'sequelize-typescript'
+import {
+  Table,
+  Column,
+  Model,
+  BelongsTo,
+  ForeignKey
+} from 'sequelize-typescript'
+import { Artist } from '../../artists/models/artist.model'
 
 @Table
 export class Painting extends Model {
   @Column
   imgUrl: string
-
-  @Column
-  author: string
 
   @Column
   title: string
@@ -46,4 +50,11 @@ export class Painting extends Model {
 
   @Column
   priority: number
+
+  @ForeignKey(() => Artist)
+  @Column
+  artistId: number
+
+  @BelongsTo(() => Artist)
+  artist: Artist
 }
