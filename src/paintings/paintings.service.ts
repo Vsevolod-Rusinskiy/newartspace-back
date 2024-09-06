@@ -11,6 +11,7 @@ import { UpdatePaintingDto } from './dto/update-painting.dto'
 import { Painting } from './models/painting.model'
 import { StorageService } from '../common/services/storage.service'
 import { getFileNameFromUrl } from '../utils'
+import { Artist } from '../artists/models/artist.model'
 
 @Injectable()
 export class PaintingsService {
@@ -23,9 +24,12 @@ export class PaintingsService {
   ) {}
 
   async create(createPaintingDto: CreatePaintingDto): Promise<Painting> {
+    // todo
+    this.logger.debug(createPaintingDto)
     try {
       const painting = new Painting({
-        ...createPaintingDto
+        ...createPaintingDto,
+        artistId: createPaintingDto.artistId
       })
       await painting.save()
       return painting
@@ -62,7 +66,8 @@ export class PaintingsService {
     const options: FindOptions = {
       order: [[sortField, order]],
       limit: limit,
-      offset: (page - 1) * limit
+      offset: (page - 1) * limit,
+      include: [{ model: Artist, attributes: ['artistName'] }]
     }
 
     const { rows: data, count: total } =
@@ -72,7 +77,8 @@ export class PaintingsService {
 
   async findOne(id: string): Promise<Painting> {
     const options: FindOptions = {
-      where: { id }
+      where: { id },
+      include: [{ model: Artist, attributes: ['artistName'] }]
     }
     const painting = await this.paintingModel.findOne(options)
     if (!painting) {
@@ -81,10 +87,7 @@ export class PaintingsService {
     return painting
   }
 
-  async update(
-    id: number,
-    painting: UpdatePaintingDto
-  ): Promise<[number, Painting[]]> {
+  async update(id: number, painting: UpdatePaintingDto): Promise<Painting> {
     const existingPainting = await this.findOne(id.toString())
     if (!existingPainting) {
       throw new NotFoundException(`Painting with id ${id} not found`)
@@ -98,10 +101,28 @@ export class PaintingsService {
       await this.storageService.deleteFile(fileName, 'paintings')
     }
 
-    return this.paintingModel.update(painting, {
-      where: { id },
-      returning: true
+    // Обновляем картину без include
+    await this.paintingModel.update(
+      {
+        ...painting,
+        artistId: painting.artistId
+      },
+      {
+        where: { id: id }
+      }
+    )
+
+    // Теперь делаем запрос для получения обновленных данных с автором
+    const updatedPainting = await this.paintingModel.findOne({
+      where: { id: id },
+      include: [{ model: Artist, attributes: ['artistName'] }]
     })
+
+    if (!updatedPainting) {
+      throw new NotFoundException(`Updated painting with id ${id} not found`)
+    }
+
+    return updatedPainting
   }
 
   async delete(id: string): Promise<void> {

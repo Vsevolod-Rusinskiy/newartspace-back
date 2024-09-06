@@ -19,8 +19,8 @@ export class UpdatePaintingDto {
   readonly imgUrl?: string
 
   @IsOptional()
-  @IsString()
-  readonly author?: string
+  @IsNumber()
+  readonly artistId?: number
 
   @IsOptional()
   @IsString()
