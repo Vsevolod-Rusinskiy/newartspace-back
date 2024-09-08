@@ -54,5 +54,20 @@ spec:
                 secretKeyRef:
                   name: backend-secret
                   key: POSTGRES_NAME
+            - name: ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: ACCESS_KEY_ID
+            - name: SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: SECRET_ACCESS_KEY
+            - name: BUCKET_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: BUCKET_NAME
       imagePullSecrets:
         - name: ghcr-io-secret  # Добавляем секрет для доступа к приватному образу
