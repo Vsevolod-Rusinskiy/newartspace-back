@@ -44,6 +44,10 @@ export class CreatePaintingDto {
   readonly materials?: string
 
   @IsOptional()
+  @IsString()
+  readonly techniques?: string
+
+  @IsOptional()
   @IsNumber()
   readonly height?: number
 
