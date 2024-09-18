@@ -46,6 +46,9 @@ export class Painting extends Model {
   color: string
 
   @Column
+  techniques: string
+
+  @Column
   description: string
 
   @Column
