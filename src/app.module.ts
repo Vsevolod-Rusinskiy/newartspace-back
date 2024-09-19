@@ -11,6 +11,7 @@ import { StorageModule } from './common/services/storage.module'
 import { ValidationPipe } from '@nestjs/common'
 import { ArtistsModule } from './artists/artists.module'
 import { AppController } from './app.controller'
+import { AttributesModule } from './attributes/attributes.module'
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AppController } from './app.controller'
     ConfigModule.forRoot({
       load: [databaseConfig]
     }),
+    AttributesModule,
     ArtistsModule,
     PaintingsModule,
     StorageModule
