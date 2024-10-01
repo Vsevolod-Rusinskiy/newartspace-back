@@ -62,6 +62,10 @@ export class AttributesService {
 
     delete groupedAttributes.techniquesList
 
+    groupedAttributes.materialsList.sort((a, b) =>
+      a.value.localeCompare(b.value)
+    )
+
     return { data: groupedAttributes }
   }
 
