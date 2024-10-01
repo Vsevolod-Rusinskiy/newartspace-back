@@ -12,4 +12,6 @@ export interface AttributeGroups {
   techniquesList: AttributeItem[]
   stylesList: AttributeItem[]
   themesList: AttributeItem[]
+  priceList: AttributeItem[]
+  sizeList: AttributeItem[]
 }

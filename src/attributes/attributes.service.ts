@@ -34,7 +34,9 @@ export class AttributesService {
       materialsList: [],
       techniquesList: [],
       stylesList: [],
-      themesList: []
+      themesList: [],
+      priceList: [],
+      sizeList: []
     }
 
     /**
@@ -52,6 +54,13 @@ export class AttributesService {
         priority: attr.priority
       })
     })
+
+    groupedAttributes.materialsList = [
+      ...groupedAttributes.materialsList,
+      ...groupedAttributes.techniquesList
+    ]
+
+    delete groupedAttributes.techniquesList
 
     return { data: groupedAttributes }
   }
