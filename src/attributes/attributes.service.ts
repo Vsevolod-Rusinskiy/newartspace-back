@@ -67,7 +67,6 @@ export class AttributesService {
       a.value.localeCompare(b.value)
     )
 
-    console.log(groupedAttributes)
     return { data: groupedAttributes }
   }
 
