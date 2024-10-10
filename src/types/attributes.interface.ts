@@ -6,13 +6,13 @@ interface AttributeItem {
 }
 
 export interface AttributeGroups {
-  artTypesList: AttributeItem[]
-  colorsList: AttributeItem[]
-  formatsList: AttributeItem[]
-  materialsList: AttributeItem[]
-  techniquesList: AttributeItem[]
-  stylesList: AttributeItem[]
-  themesList: AttributeItem[]
-  priceList: AttributeItem[]
-  sizeList: AttributeItem[]
+  artTypesList?: AttributeItem[]
+  colorsList?: AttributeItem[]
+  formatsList?: AttributeItem[]
+  materialsList?: AttributeItem[]
+  techniquesList?: AttributeItem[]
+  stylesList?: AttributeItem[]
+  themesList?: AttributeItem[]
+  priceList?: AttributeItem[]
+  sizeList?: AttributeItem[]
 }

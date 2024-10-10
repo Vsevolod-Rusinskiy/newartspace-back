@@ -20,7 +20,7 @@ export class AttributesService {
 
   async getAllSortedAttributes(sort?: string, order?: 'ASC' | 'DESC') {
     const attributes = await this.attributesModel.findAll({
-      attributes: ['id', 'value', 'type', 'priority', 'isChecked'], // Добавлено isChecked
+      attributes: ['id', 'value', 'type', 'priority', 'isChecked'],
       order: [
         ['priority', 'DESC'],
         [Sequelize.literal(`value COLLATE "POSIX"`), order]
@@ -55,17 +55,6 @@ export class AttributesService {
         isChecked: attr.isChecked
       })
     })
-
-    groupedAttributes.materialsList = [
-      ...groupedAttributes.materialsList,
-      ...groupedAttributes.techniquesList
-    ]
-
-    delete groupedAttributes.techniquesList
-
-    groupedAttributes.materialsList.sort((a, b) =>
-      a.value.localeCompare(b.value)
-    )
 
     return { data: groupedAttributes }
   }

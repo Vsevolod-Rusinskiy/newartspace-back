@@ -44,7 +44,8 @@ export class PaintingsService {
     sort?: string,
     order?: 'ASC' | 'DESC',
     page?: number,
-    limit?: number
+    limit?: number,
+    filters?: string
   ): Promise<{ data: Painting[]; total: number }> {
     order = 'ASC'
     page = page !== undefined ? page : 1
@@ -69,6 +70,7 @@ export class PaintingsService {
       offset: (page - 1) * limit,
       include: [{ model: Artist, attributes: ['artistName'] }]
     }
+    console.log(filters, 'filters')
 
     const { rows: data, count: total } =
       await this.paintingModel.findAndCountAll(options)
