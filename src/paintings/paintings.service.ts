@@ -12,55 +12,9 @@ import { Painting } from './models/painting.model'
 import { StorageService } from '../common/services/storage.service'
 import { getFileNameFromUrl } from '../utils'
 import { Artist } from '../artists/models/artist.model'
-import { Attributes } from 'src/attributes/models/attributes.model'
-
-function parsePriceRange(priceRange: string): { min: number; max: number } {
-  const ranges = {
-    'до 10 000 руб.': { min: 0, max: 10000 },
-    '10 000 - 50 000 руб.': { min: 10000, max: 50000 },
-    '50 000 - 100 000 руб.': { min: 50000, max: 100000 },
-    '100 000 - 150 000 руб.': { min: 100000, max: 150000 },
-    '150 000 - 250 000 руб.': { min: 150000, max: 250000 },
-    '250 000 - 300 000 руб.': { min: 250000, max: 300000 },
-    'свыше 300 000 руб.': { min: 300000, max: Number.MAX_SAFE_INTEGER }
-  }
-  return ranges[priceRange] || { min: 0, max: Number.MAX_SAFE_INTEGER }
-}
-
-function parseSizeList(sizeList: string[]): {
-  heightMin: number
-  heightMax: number
-  widthMin: number
-  widthMax: number
-}[] {
-  const sizeRanges = {
-    'Малый (до 30 × 30 см)': {
-      heightMin: 0,
-      heightMax: 30,
-      widthMin: 0,
-      widthMax: 30
-    },
-    'Средний (до 80 × 80 см)': {
-      heightMin: 0,
-      heightMax: 80,
-      widthMin: 0,
-      widthMax: 80
-    },
-    'Крупный (свыше 80 × 80 см)': {
-      heightMin: 80,
-      heightMax: Number.MAX_SAFE_INTEGER,
-      widthMin: 80,
-      widthMax: Number.MAX_SAFE_INTEGER
-    },
-    'Свыше 150 см': {
-      heightMin: 150,
-      heightMax: Number.MAX_SAFE_INTEGER,
-      widthMin: 150,
-      widthMax: Number.MAX_SAFE_INTEGER
-    }
-  }
-  return sizeList.map((size) => sizeRanges[size]).filter(Boolean)
-}
+// import { Attributes } from 'src/attributes/models/attributes.model'
+import { parsePriceRange } from '../utils/parsePriceRange'
+import { parseSizeList } from '../utils/parseSizeList'
 
 @Injectable()
 export class PaintingsService {
@@ -69,8 +23,8 @@ export class PaintingsService {
   constructor(
     @InjectModel(Painting)
     private paintingModel: typeof Painting,
-    @InjectModel(Attributes)
-    private attributesModel: typeof Attributes,
+    // @InjectModel(Attributes)
+    // private attributesModel: typeof Attributes,
     private readonly storageService: StorageService
   ) {}
 
