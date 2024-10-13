@@ -1,5 +1,5 @@
 import { InjectModel } from '@nestjs/sequelize'
-import { FindOptions } from 'sequelize'
+import { FindOptions, Op } from 'sequelize'
 import {
   Injectable,
   InternalServerErrorException,
@@ -12,6 +12,8 @@ import { Painting } from './models/painting.model'
 import { StorageService } from '../common/services/storage.service'
 import { getFileNameFromUrl } from '../utils'
 import { Artist } from '../artists/models/artist.model'
+import { parsePriceRange } from '../utils/parsePriceRange'
+import { parseSizeList } from '../utils/parseSizeList'
 
 @Injectable()
 export class PaintingsService {
@@ -44,7 +46,8 @@ export class PaintingsService {
     sort?: string,
     order?: 'ASC' | 'DESC',
     page?: number,
-    limit?: number
+    limit?: number,
+    filters?: string
   ): Promise<{ data: Painting[]; total: number }> {
     order = 'ASC'
     page = page !== undefined ? page : 1
@@ -63,15 +66,60 @@ export class PaintingsService {
       }
     }
 
+    /* filters starts */
+    const parsedFilters = filters ? JSON.parse(filters) : {}
+    this.logger.debug(parsedFilters, 'parsedFilters')
+    const {
+      artTypesList = [],
+      colorsList = [],
+      formatsList = [],
+      materialsList = [],
+      techniquesList = [],
+      stylesList = [],
+      themesList = [],
+      priceList = '',
+      sizeList = []
+    } = parsedFilters
+
+    const { min, max } = parsePriceRange(priceList)
+    const sizeConditions = parseSizeList(sizeList)
+
+    const whereConditions: any = {}
+
+    if (artTypesList.length) whereConditions.artType = artTypesList
+    if (colorsList.length) whereConditions.color = colorsList
+    if (formatsList.length) whereConditions.format = formatsList
+    if (materialsList.length) whereConditions.materials = materialsList
+    if (techniquesList.length) whereConditions.techniques = techniquesList
+    if (stylesList.length) whereConditions.style = stylesList
+    if (themesList.length) whereConditions.theme = themesList
+    if (priceList) {
+      whereConditions.price = {
+        [Op.gte]: min,
+        [Op.lte]: max
+      }
+    }
+    if (sizeList.length) {
+      whereConditions[Op.or] = sizeConditions.map(
+        ({ heightMin, heightMax, widthMin, widthMax }) => ({
+          height: { [Op.gte]: heightMin, [Op.lte]: heightMax },
+          width: { [Op.gte]: widthMin, [Op.lte]: widthMax }
+        })
+      )
+    }
+    /* filters ends */
+
     const options: FindOptions = {
       order: [[sortField, order]],
       limit: limit,
       offset: (page - 1) * limit,
+      where: whereConditions,
       include: [{ model: Artist, attributes: ['artistName'] }]
     }
 
     const { rows: data, count: total } =
       await this.paintingModel.findAndCountAll(options)
+    this.logger.debug(data, 'data')
     return { data, total }
   }
 
@@ -165,5 +213,28 @@ export class PaintingsService {
       }
     }
     return { deletedPaintingCount }
+  }
+
+  async getFilteredPaintings(
+    artTypesList: number[],
+    stylesList: number[]
+  ): Promise<Painting[]> {
+    const options: FindOptions = {
+      where: {
+        artTypeId: artTypesList.length ? artTypesList : undefined,
+        styleId: stylesList.length ? stylesList : undefined
+      },
+      include: [{ model: Artist, attributes: ['artistName'] }]
+    }
+
+    try {
+      const paintings = await this.paintingModel.findAll(options)
+      return paintings
+    } catch (error) {
+      this.logger.error('Error fetching filtered paintings:', error)
+      throw new InternalServerErrorException(
+        `Error fetching filtered paintings: ${error.message}`
+      )
+    }
   }
 }

@@ -10,4 +10,10 @@ export class Attributes extends Model {
 
   @Column
   priority: number
+
+  @Column({
+    allowNull: false,
+    defaultValue: false
+  })
+  isChecked: boolean
 }
