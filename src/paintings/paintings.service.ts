@@ -12,7 +12,6 @@ import { Painting } from './models/painting.model'
 import { StorageService } from '../common/services/storage.service'
 import { getFileNameFromUrl } from '../utils'
 import { Artist } from '../artists/models/artist.model'
-// import { Attributes } from 'src/attributes/models/attributes.model'
 import { parsePriceRange } from '../utils/parsePriceRange'
 import { parseSizeList } from '../utils/parseSizeList'
 
@@ -23,8 +22,6 @@ export class PaintingsService {
   constructor(
     @InjectModel(Painting)
     private paintingModel: typeof Painting,
-    // @InjectModel(Attributes)
-    // private attributesModel: typeof Attributes,
     private readonly storageService: StorageService
   ) {}
 
@@ -69,6 +66,7 @@ export class PaintingsService {
       }
     }
 
+    /* filters starts */
     const parsedFilters = filters ? JSON.parse(filters) : {}
     this.logger.debug(parsedFilters, 'parsedFilters')
     const {
@@ -109,6 +107,7 @@ export class PaintingsService {
         })
       )
     }
+    /* filters ends */
 
     const options: FindOptions = {
       order: [[sortField, order]],
