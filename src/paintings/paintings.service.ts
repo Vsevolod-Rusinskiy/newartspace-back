@@ -50,15 +50,9 @@ export class PaintingsService {
     limit?: number,
     filters?: string
   ): Promise<{ data: Painting[]; total: number }> {
-    order = 'ASC'
+    order = order || 'ASC'
     page = page !== undefined ? page : 1
     limit = limit !== undefined ? limit : 10
-
-    // sort = sort || ["title","ASC"] // Если sort не передан, используем 'title'
-
-    // Логируем параметры сортировки
-    console.log('Сортировка по полю:', sort)
-    console.log('Направление сортировки:', order)
 
     let sortField = 'id'
     if (sort) {
@@ -120,8 +114,8 @@ export class PaintingsService {
       order: [
         [
           sortField === 'artist.artistName' // Проверяем, если сортировка по имени автора
-            ? Sequelize.col('artist.artistName') // Используем правильный синтаксис
-            : Sequelize.literal(`"${sortField}" COLLATE "POSIX"`),
+            ? Sequelize.literal(`"artist"."artistName" COLLATE "POSIX"`) // Используем COLLATE для имени автора
+            : Sequelize.literal(`"Painting"."${sortField}" COLLATE "POSIX"`), // Используем COLLATE для других полей
           order
         ]
       ],
@@ -133,7 +127,6 @@ export class PaintingsService {
 
     const { rows: data, count: total } =
       await this.paintingModel.findAndCountAll(options)
-    // this.logger.debug(data, 'data')
     return { data, total }
   }
 
