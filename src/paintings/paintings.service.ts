@@ -14,6 +14,7 @@ import { getFileNameFromUrl } from '../utils'
 import { Artist } from '../artists/models/artist.model'
 import { parsePriceRange } from '../utils/parsePriceRange'
 import { parseSizeList } from '../utils/parseSizeList'
+import { Sequelize } from 'sequelize-typescript'
 
 @Injectable()
 export class PaintingsService {
@@ -49,11 +50,11 @@ export class PaintingsService {
     limit?: number,
     filters?: string
   ): Promise<{ data: Painting[]; total: number }> {
-    order = 'ASC'
+    order = order || 'ASC'
     page = page !== undefined ? page : 1
     limit = limit !== undefined ? limit : 10
 
-    let sortField = 'id'
+    let sortField = 'priority'
     if (sort) {
       try {
         const parsedSort = JSON.parse(sort)
@@ -68,7 +69,7 @@ export class PaintingsService {
 
     /* filters starts */
     const parsedFilters = filters ? JSON.parse(filters) : {}
-    this.logger.debug(parsedFilters, 'parsedFilters')
+    // this.logger.debug(parsedFilters, 'parsedFilters')
     const {
       artTypesList = [],
       colorsList = [],
@@ -109,8 +110,29 @@ export class PaintingsService {
     }
     /* filters ends */
 
+    // Логика для определения порядка сортировки для react-admin
+    // Определяем порядок сортировки в зависимости от типа поля:
+    // 1. Для имени автора используем COLLATE для регистронезависимой сортировки.
+    // 2. Для числовых полей используем стандартную сортировку без COLLATE.
+    // 3. Для остальных строковых полей применяем COLLATE для регистронезависимой сортировки.
+    let orderBy
+    if (sortField === 'artist.artistName') {
+      orderBy = Sequelize.literal(`"artist"."artistName" COLLATE "POSIX"`)
+    } else if (
+      ['id', 'priority', 'price', 'height', 'width', 'yearOfCreation'].includes(
+        sortField
+      )
+    ) {
+      orderBy = Sequelize.col(`Painting.${sortField}`)
+    } else {
+      orderBy = Sequelize.literal(`"Painting"."${sortField}" COLLATE "POSIX"`)
+    }
+
     const options: FindOptions = {
-      order: [[sortField, order]],
+      order: [
+        [Sequelize.col('priority'), 'DESC'],
+        [orderBy, order]
+      ],
       limit: limit,
       offset: (page - 1) * limit,
       where: whereConditions,
@@ -119,7 +141,6 @@ export class PaintingsService {
 
     const { rows: data, count: total } =
       await this.paintingModel.findAndCountAll(options)
-    this.logger.debug(data, 'data')
     return { data, total }
   }
 
@@ -143,7 +164,7 @@ export class PaintingsService {
 
     // Проверяем, изменился ли URL картинки
     if (existingPainting.imgUrl !== painting.imgUrl) {
-      // Удаляем старый файл, если URL изменился
+      // Удаляем старый файл, ели URL изменился
       const prevImgUrl = existingPainting.imgUrl
       const fileName = getFileNameFromUrl(prevImgUrl)
       await this.storageService.deleteFile(fileName, 'paintings')
