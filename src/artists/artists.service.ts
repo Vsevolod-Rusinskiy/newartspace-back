@@ -42,7 +42,7 @@ export class ArtistsService {
     page?: number,
     limit?: number
   ): Promise<{ data: Artist[]; total: number }> {
-    order = 'ASC'
+    order = order || 'ASC'
     page = page !== undefined ? page : 1
     limit = limit !== undefined ? limit : 10
 
@@ -62,19 +62,19 @@ export class ArtistsService {
     // Логика для определения порядка сортировки
     // Определяем порядок сортировки в зависимости от типа поля:
     // 1. Для имени художника используем COLLATE для регистронезависимой сортировки.
-    // 2. Для числового поля priority используем стандартную сортировку без COLLATE.
+    // 2. Для числового поля priority и id используем стандартную сортировку без COLLATE.
     // 3. Для остальных строковых полей применяем COLLATE для регистронезависимой сортировки.
     let orderBy
     if (sortField === 'artistName') {
       orderBy = Sequelize.literal(`"artistName" COLLATE "POSIX"`)
-    } else if (sortField === 'priority') {
+    } else if (['id', 'priority'].includes(sortField)) {
       orderBy = Sequelize.col('priority')
     } else {
       orderBy = Sequelize.literal(`"${sortField}" COLLATE "POSIX"`)
     }
 
     const options: FindOptions = {
-      order: [[orderBy, order]],
+      order: [[orderBy, order]], // Используем переменную orderBy
       limit: limit,
       offset: (page - 1) * limit
     }

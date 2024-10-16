@@ -54,7 +54,7 @@ export class PaintingsService {
     page = page !== undefined ? page : 1
     limit = limit !== undefined ? limit : 10
 
-    let sortField = 'id'
+    let sortField = 'priority'
     if (sort) {
       try {
         const parsedSort = JSON.parse(sort)
@@ -129,7 +129,10 @@ export class PaintingsService {
     }
 
     const options: FindOptions = {
-      order: [[orderBy, order]],
+      order: [
+        [Sequelize.col('priority'), 'DESC'],
+        [orderBy, order]
+      ],
       limit: limit,
       offset: (page - 1) * limit,
       where: whereConditions,
