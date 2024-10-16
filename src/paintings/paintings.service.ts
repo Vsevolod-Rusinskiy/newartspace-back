@@ -110,19 +110,30 @@ export class PaintingsService {
     }
     /* filters ends */
 
+    // Логика для определения порядка сортировки для react-admin
+    // Определяем порядок сортировки в зависимости от типа поля:
+    // 1. Для имени автора используем COLLATE для регистронезависимой сортировки.
+    // 2. Для числовых полей используем стандартную сортировку без COLLATE.
+    // 3. Для остальных строковых полей применяем COLLATE для регистронезависимой сортировки.
+    let orderBy
+    if (sortField === 'artist.artistName') {
+      orderBy = Sequelize.literal(`"artist"."artistName" COLLATE "POSIX"`)
+    } else if (
+      ['id', 'priority', 'price', 'height', 'width', 'yearOfCreation'].includes(
+        sortField
+      )
+    ) {
+      orderBy = Sequelize.col(`Painting.${sortField}`)
+    } else {
+      orderBy = Sequelize.literal(`"Painting"."${sortField}" COLLATE "POSIX"`)
+    }
+
     const options: FindOptions = {
-      order: [
-        [
-          sortField === 'artist.artistName' // Проверяем, если сортировка по имени автора
-            ? Sequelize.literal(`"artist"."artistName" COLLATE "POSIX"`) // Используем COLLATE для имени автора
-            : Sequelize.literal(`"Painting"."${sortField}" COLLATE "POSIX"`), // Используем COLLATE для других полей
-          order
-        ]
-      ],
+      order: [[orderBy, order]],
       limit: limit,
       offset: (page - 1) * limit,
       where: whereConditions,
-      include: [{ model: Artist, attributes: ['artistName'] }] // Убедитесь, что Artist включен
+      include: [{ model: Artist, attributes: ['artistName'] }]
     }
 
     const { rows: data, count: total } =
