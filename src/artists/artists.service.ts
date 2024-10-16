@@ -1,5 +1,5 @@
 import { InjectModel } from '@nestjs/sequelize'
-import { FindOptions } from 'sequelize'
+import { FindOptions, Sequelize } from 'sequelize'
 import {
   Injectable,
   InternalServerErrorException,
@@ -59,8 +59,22 @@ export class ArtistsService {
       }
     }
 
+    // Логика для определения порядка сортировки
+    // Определяем порядок сортировки в зависимости от типа поля:
+    // 1. Для имени художника используем COLLATE для регистронезависимой сортировки.
+    // 2. Для числового поля priority используем стандартную сортировку без COLLATE.
+    // 3. Для остальных строковых полей применяем COLLATE для регистронезависимой сортировки.
+    let orderBy
+    if (sortField === 'artistName') {
+      orderBy = Sequelize.literal(`"artistName" COLLATE "POSIX"`)
+    } else if (sortField === 'priority') {
+      orderBy = Sequelize.col('priority')
+    } else {
+      orderBy = Sequelize.literal(`"${sortField}" COLLATE "POSIX"`)
+    }
+
     const options: FindOptions = {
-      order: [[sortField, order]],
+      order: [[orderBy, order]],
       limit: limit,
       offset: (page - 1) * limit
     }
