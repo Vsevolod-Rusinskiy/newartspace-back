@@ -89,7 +89,7 @@ export class ArtistsService {
       offset: (page - 1) * limit,
       include: [
         {
-          model: Painting,
+          model: this.paintingModel,
           as: 'paintings'
         }
       ]
