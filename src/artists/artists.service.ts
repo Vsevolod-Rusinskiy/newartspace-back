@@ -74,7 +74,10 @@ export class ArtistsService {
     }
 
     const options: FindOptions = {
-      order: [[orderBy, order]], // Используем переменную orderBy
+      order: [
+        [Sequelize.col('priority'), 'DESC'],
+        [orderBy, order]
+      ],
       limit: limit,
       offset: (page - 1) * limit
     }
