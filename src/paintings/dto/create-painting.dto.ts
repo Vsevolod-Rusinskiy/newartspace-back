@@ -2,8 +2,6 @@ import {
   IsString,
   IsNumber,
   IsInt,
-  Min,
-  Max,
   IsOptional,
   IsDateString
 } from 'class-validator'
@@ -57,8 +55,6 @@ export class CreatePaintingDto {
 
   @IsOptional()
   @IsInt()
-  @Min(1000)
-  @Max(9999)
   readonly yearOfCreation?: number
 
   @IsOptional()
