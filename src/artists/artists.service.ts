@@ -1,5 +1,5 @@
 import { InjectModel } from '@nestjs/sequelize'
-import { FindOptions, Sequelize } from 'sequelize'
+import { FindOptions, Sequelize, Op } from 'sequelize'
 import {
   Injectable,
   InternalServerErrorException,
@@ -43,7 +43,8 @@ export class ArtistsService {
     sort?: string,
     order?: 'ASC' | 'DESC',
     page?: number,
-    limit?: number
+    limit?: number,
+    letter?: string
   ): Promise<{ data: Artist[]; total: number }> {
     order = order || 'ASC'
     page = page !== undefined ? page : 1
@@ -81,6 +82,7 @@ export class ArtistsService {
     }
 
     const options: FindOptions = {
+      where: {},
       order: [
         [Sequelize.col('priority'), 'DESC'],
         [orderBy, order]
@@ -93,6 +95,16 @@ export class ArtistsService {
           as: 'paintings'
         }
       ]
+    }
+
+    // Добавляем условие для фильтрации по первой букве имени художника
+    if (letter) {
+      options.where = {
+        ...options.where,
+        artistName: {
+          [Op.like]: `${letter}%`
+        }
+      }
     }
 
     const { rows: data, count: total } =
