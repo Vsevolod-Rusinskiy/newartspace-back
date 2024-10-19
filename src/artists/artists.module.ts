@@ -4,9 +4,10 @@ import { ArtistsController } from './artists.controller'
 import { SequelizeModule } from '@nestjs/sequelize'
 import { Artist } from './models/artist.model'
 import { StorageModule } from '../common/services/storage.module'
+import { Painting } from '../paintings/models/painting.model'
 
 @Module({
-  imports: [SequelizeModule.forFeature([Artist]), StorageModule],
+  imports: [SequelizeModule.forFeature([Artist, Painting]), StorageModule],
   controllers: [ArtistsController],
   providers: [ArtistsService]
 })
