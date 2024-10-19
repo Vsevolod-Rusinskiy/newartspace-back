@@ -1,5 +1,5 @@
 import { InjectModel } from '@nestjs/sequelize'
-import { FindOptions, Sequelize } from 'sequelize'
+import { FindOptions, Sequelize, Op } from 'sequelize'
 import {
   Injectable,
   InternalServerErrorException,
@@ -11,6 +11,7 @@ import { UpdateArtistDto } from './dto/update-artist.dto'
 import { Artist } from './models/artist.model'
 import { StorageService } from '../common/services/storage.service'
 import { getFileNameFromUrl } from '../utils'
+import { Painting } from '../paintings/models/painting.model'
 
 @Injectable()
 export class ArtistsService {
@@ -19,6 +20,8 @@ export class ArtistsService {
   constructor(
     @InjectModel(Artist)
     private artistModel: typeof Artist,
+    @InjectModel(Painting)
+    private paintingModel: typeof Painting,
     private readonly storageService: StorageService
   ) {}
 
@@ -40,11 +43,16 @@ export class ArtistsService {
     sort?: string,
     order?: 'ASC' | 'DESC',
     page?: number,
-    limit?: number
+    limit?: number,
+    letter?: string
   ): Promise<{ data: Artist[]; total: number }> {
     order = order || 'ASC'
     page = page !== undefined ? page : 1
     limit = limit !== undefined ? limit : 10
+
+    this.logger.debug(
+      `Sort: ${sort}, Order: ${order}, Page: ${page}, Limit: ${limit}`
+    )
 
     let sortField = 'id'
     if (sort) {
@@ -74,16 +82,34 @@ export class ArtistsService {
     }
 
     const options: FindOptions = {
+      where: {},
       order: [
         [Sequelize.col('priority'), 'DESC'],
         [orderBy, order]
       ],
       limit: limit,
-      offset: (page - 1) * limit
+      offset: (page - 1) * limit,
+      include: [
+        {
+          model: this.paintingModel,
+          as: 'paintings'
+        }
+      ]
+    }
+
+    // Добавляем условие для фильтрации по первой букве имени художника
+    if (letter) {
+      options.where = {
+        ...options.where,
+        artistName: {
+          [Op.like]: `${letter}%`
+        }
+      }
     }
 
     const { rows: data, count: total } =
       await this.artistModel.findAndCountAll(options)
+    this.logger.debug(`Data: ${JSON.stringify(data)}`)
     return { data, total }
   }
 

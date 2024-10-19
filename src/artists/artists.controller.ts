@@ -66,13 +66,15 @@ export class ArtistsController {
     @Query('sort') sort: string,
     @Query('order') order: 'ASC' | 'DESC' = 'ASC',
     @Query('page') page,
-    @Query('limit') limit
+    @Query('limit') limit,
+    @Query('letter') letter
   ) {
     const { data, total } = await this.artistsService.getAllSortedArtists(
       sort,
       order,
       page,
-      limit
+      limit,
+      letter
     )
     return { data, total, page, pageCount: Math.ceil(total / limit) }
   }
