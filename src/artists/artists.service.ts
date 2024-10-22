@@ -107,15 +107,25 @@ export class ArtistsService {
       }
     }
 
-    const { rows: data, count: total } =
-      await this.artistModel.findAndCountAll(options)
-    this.logger.debug(`Data: ${JSON.stringify(data)}`)
+    const { rows: data, count: total } = await this.artistModel.findAndCountAll(
+      {
+        ...options,
+        distinct: true
+      }
+    )
+
     return { data, total }
   }
 
   async findOne(id: string): Promise<Artist> {
     const options: FindOptions = {
-      where: { id }
+      where: { id },
+      include: [
+        {
+          model: this.paintingModel,
+          as: 'paintings'
+        }
+      ]
     }
     const artist = await this.artistModel.findOne(options)
     if (!artist) {
@@ -130,7 +140,6 @@ export class ArtistsService {
     if (!existingArtist) {
       throw new NotFoundException(`Artist with id ${id} not found`)
     }
-
     // Проверяем, изменился ли URL картинки
     if (existingArtist.imgUrl !== artist.imgUrl) {
       // Удаляем старый файл, если URL изменился
