@@ -107,9 +107,13 @@ export class ArtistsService {
       }
     }
 
-    const { rows: data, count: total } =
-      await this.artistModel.findAndCountAll(options)
-    this.logger.debug(`Data: ${JSON.stringify(data)}`)
+    const { rows: data, count: total } = await this.artistModel.findAndCountAll(
+      {
+        ...options,
+        distinct: true
+      }
+    )
+
     return { data, total }
   }
 
