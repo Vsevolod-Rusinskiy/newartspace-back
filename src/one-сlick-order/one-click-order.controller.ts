@@ -1,4 +1,3 @@
-// src/one-click-order/one-click-order.controller.ts
 import { Body, Controller, Post, Logger } from '@nestjs/common'
 import { OneClickOrderService } from './one-click-order.service'
 import { OneClickOrderDto } from './dto/one-click-order.dto'
@@ -11,8 +10,7 @@ export class OneClickOrderController {
 
   @Post()
   async createOrder(@Body() oneClickOrderDto: OneClickOrderDto) {
-    this.logger.log('Получен новый заказ: ' + JSON.stringify(oneClickOrderDto))
-    await this.oneClickOrderService.sendOrder(oneClickOrderDto)
-    return { message: 'Заказ успешно отправлен' }
+    const response = await this.oneClickOrderService.sendOrder(oneClickOrderDto)
+    return { response }
   }
 }

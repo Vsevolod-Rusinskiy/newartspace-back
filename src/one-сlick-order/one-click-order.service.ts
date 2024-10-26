@@ -1,5 +1,5 @@
 // src/one-click-order/one-click-order.service.ts
-import { Injectable, Logger } from '@nestjs/common'
+import { HttpStatus, HttpException, Injectable, Logger } from '@nestjs/common'
 import axios from 'axios'
 import { OneClickOrderDto } from './dto/one-click-order.dto'
 
@@ -25,6 +25,7 @@ export class OneClickOrderService {
       this.logger.error(
         'Ошибка при отправке сообщения в Telegram: ' + error.message
       )
+      throw new Error(error.message)
     }
   }
 
@@ -34,10 +35,13 @@ export class OneClickOrderService {
     const message = `Имя: ${orderData.name}, Телефон: ${orderData.phone}, Email: ${orderData.email}`
 
     try {
-      await this.sendTelegramMessage(`Новый заказ: ${message}`)
+      const result = await this.sendTelegramMessage(`Новый заказ: ${message}`)
+      return result
     } catch (error) {
-      this.logger.error('Ошибка при отправке сообщения: ' + error.message)
-      throw error
+      throw new HttpException(
+        'Ошибка при создании заказа',
+        HttpStatus.BAD_REQUEST
+      )
     }
   }
 }
