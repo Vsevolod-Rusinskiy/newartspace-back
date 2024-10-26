@@ -12,6 +12,7 @@ import { ValidationPipe } from '@nestjs/common'
 import { ArtistsModule } from './artists/artists.module'
 import { AppController } from './app.controller'
 import { AttributesModule } from './attributes/attributes.module'
+import { OneClickOrderModule } from './one-сlick-order/one-click-order.module'
 
 @Module({
   imports: [
@@ -28,7 +29,8 @@ import { AttributesModule } from './attributes/attributes.module'
     AttributesModule,
     ArtistsModule,
     PaintingsModule,
-    StorageModule
+    StorageModule,
+    OneClickOrderModule
   ],
   providers: [
     {
