@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty } from 'class-validator'
+import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator'
 
 export class OneClickOrderDto {
   @IsNotEmpty()
@@ -9,4 +9,8 @@ export class OneClickOrderDto {
 
   @IsEmail()
   email: string
+
+  @IsOptional()
+  @IsString()
+  captcha?: string
 }
