@@ -79,5 +79,12 @@ spec:
                 secretKeyRef:
                   name: backend-secrets
                   key: CHAT_ID
+          resources:
+            requests:
+              memory: '50Mi'
+              cpu: '100m'
+            limits:
+              memory: '200Mi'
+              cpu: '500m'
       imagePullSecrets:
-        - name: ghcr-io-secret # Добавляем секрет для доступа к приватному образу
+        - name: ghcr-io-secret
