@@ -27,8 +27,6 @@ export class PaintingsService {
   ) {}
 
   async create(createPaintingDto: CreatePaintingDto): Promise<Painting> {
-    // todo
-    this.logger.debug(createPaintingDto, 22222)
     try {
       const painting = new Painting({
         ...createPaintingDto,
