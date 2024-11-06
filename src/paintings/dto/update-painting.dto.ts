@@ -30,6 +30,10 @@ export class UpdatePaintingDto {
 
   @IsOptional()
   @IsString()
+  readonly artStyle?: string
+
+  @IsOptional()
+  @IsString()
   readonly artType?: string
 
   @IsOptional()

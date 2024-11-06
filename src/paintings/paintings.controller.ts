@@ -33,6 +33,7 @@ export class PaintingsController {
   @HttpCode(HttpStatus.CREATED)
   @Header('Content-Type', 'application/json')
   createPainting(@Body() createPainting: CreatePaintingDto) {
+    console.log(createPainting, 'createPainting', 11111)
     return this.paintingService.create(createPainting)
   }
 
