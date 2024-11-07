@@ -47,7 +47,8 @@ export class PaintingsService {
     order?: 'ASC' | 'DESC',
     page?: number,
     limit?: number,
-    filters?: string
+    filters?: string,
+    artStyle?: string
   ): Promise<{ data: Painting[]; total: number }> {
     order = order || 'ASC'
     page = page !== undefined ? page : 1
@@ -108,6 +109,8 @@ export class PaintingsService {
       )
     }
     /* filters ends */
+
+    if (artStyle) whereConditions.artStyle = artStyle
 
     // Логика для определения порядка сортировки для react-admin
     // Определяем порядок сортировки в зависимости от типа поля:

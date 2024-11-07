@@ -67,14 +67,16 @@ export class PaintingsController {
     @Query('order') order: 'ASC' | 'DESC' = 'ASC',
     @Query('page') page,
     @Query('limit') limit,
-    @Query('filters') filters
+    @Query('filters') filters,
+    @Query('artStyle') artStyle
   ) {
     const { data, total } = await this.paintingService.getAllSortedPaintings(
       sort,
       order,
       page,
       limit,
-      filters
+      filters,
+      artStyle
     )
     return { data, total, page, pageCount: Math.ceil(total / limit) }
   }
