@@ -1,6 +1,8 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
+export PATH="$PATH:/Users/vsevolod/.nvm/versions/node/v20.9.0/bin"
+
 # Running Prettier and ESLint from package.json scripts
 yarn prettier-format
 yarn lint

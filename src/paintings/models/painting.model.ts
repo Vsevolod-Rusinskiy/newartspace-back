@@ -54,6 +54,9 @@ export class Painting extends Model {
   @Column
   priority: number
 
+  @Column
+  artStyle: string
+
   @ForeignKey(() => Artist)
   @Column
   artistId: number
