@@ -23,6 +23,10 @@ export class CreatePaintingDto {
 
   @IsOptional()
   @IsString()
+  readonly artStyle?: string
+
+  @IsOptional()
+  @IsString()
   readonly artType?: string
 
   @IsOptional()
