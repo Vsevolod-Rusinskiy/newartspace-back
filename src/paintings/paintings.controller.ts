@@ -17,8 +17,8 @@ import {
   UseInterceptors
 } from '@nestjs/common'
 
-import { CreatePaintingDto } from './dto/create-painting.dto'
-import { UpdatePaintingDto } from './dto/update-painting.dto'
+// import { CreatePaintingDto } from './dto/create-painting.dto'
+// import { UpdatePaintingDto } from './dto/update-painting.dto'
 import { PaintingsService } from './paintings.service'
 import { StorageService } from '../common/services/storage.service'
 
@@ -32,7 +32,11 @@ export class PaintingsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Header('Content-Type', 'application/json')
-  createPainting(@Body() createPainting: CreatePaintingDto) {
+  // createPainting(@Body() createPainting: CreatePaintingDto) {
+  createPainting(@Body() createPainting) {
+    console.log(createPainting, 'createPainting')
+    console.log('Received JSON data:', JSON.stringify(createPainting, null, 2))
+
     return this.paintingService.create(createPainting)
   }
 
@@ -89,7 +93,8 @@ export class PaintingsController {
 
   @Patch(':id')
   async updatePainting(
-    @Body() updatePainting: UpdatePaintingDto,
+    // @Body() updatePainting: UpdatePaintingDto,
+    @Body() updatePainting,
     @Param('id') id: string
   ) {
     const painting = await this.paintingService.update(+id, updatePainting)

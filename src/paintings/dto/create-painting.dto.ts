@@ -35,8 +35,9 @@ export class CreatePaintingDto {
   readonly price?: number
 
   @IsOptional()
-  @IsString()
-  readonly theme?: string
+  @IsArray()
+  @IsNumber({}, { each: true })
+  readonly themes?: number[]
 
   @IsOptional()
   @IsString()
@@ -48,8 +49,9 @@ export class CreatePaintingDto {
   readonly materials?: number[]
 
   @IsOptional()
-  @IsString()
-  readonly techniques?: string
+  @IsArray()
+  @IsString({ each: true })
+  readonly techniques?: number[]
 
   @IsOptional()
   @IsNumber()

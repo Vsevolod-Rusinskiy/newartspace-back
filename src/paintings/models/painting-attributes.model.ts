@@ -11,4 +11,9 @@ export class PaintingAttributes extends Model {
   @ForeignKey(() => Attributes)
   @Column
   attributeId: number
+
+  @Column({
+    allowNull: true
+  })
+  type: string
 }

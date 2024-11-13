@@ -25,9 +25,6 @@ export class Painting extends Model {
   price: number
 
   @Column
-  theme: string
-
-  @Column
   style: string
 
   @Column
@@ -44,9 +41,6 @@ export class Painting extends Model {
 
   @Column
   color: string
-
-  @Column
-  techniques: string
 
   @Column
   description: string

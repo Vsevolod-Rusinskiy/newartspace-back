@@ -15,6 +15,7 @@ import { Artist } from '../artists/models/artist.model'
 import { parsePriceRange } from '../utils/parsePriceRange'
 import { parseSizeList } from '../utils/parseSizeList'
 import { Sequelize } from 'sequelize-typescript'
+import { PaintingAttributes } from './models/painting-attributes.model'
 
 @Injectable()
 export class PaintingsService {
@@ -23,6 +24,8 @@ export class PaintingsService {
   constructor(
     @InjectModel(Painting)
     private paintingModel: typeof Painting,
+    @InjectModel(PaintingAttributes)
+    private paintingAttributesModel: typeof PaintingAttributes,
     private readonly storageService: StorageService
   ) {}
 
@@ -44,9 +47,63 @@ export class PaintingsService {
       )
       await painting.save()
 
+      // // Сохраняем связи с материалами
+      // if (createPaintingDto.materials) {
+      //   const materials = createPaintingDto.materials.map((materialId) => ({
+      //     attributeId: materialId || null,
+      //     type: 'materialsList'
+      //   }))
+      //   await painting.$set('attributes', materials)
+      // }
+
+      // // Сохраняем связи с техниками
+      // if (createPaintingDto.techniques) {
+      //   const techniques = createPaintingDto.techniques.map((techniqueId) => ({
+      //     attributeId: techniqueId || null,
+      //     type: 'techniquesList'
+      //   }))
+      //   await painting.$set('attributes', techniques)
+      // }
+
+      // // Сохраняем связи с темами
+      // if (createPaintingDto.themes) {
+      //   const themes = createPaintingDto.themes.map((themeId) => ({
+      //     attributeId: themeId || null,
+      //     type: 'themesList'
+      //   }))
+      //   await painting.$set('attributes', themes)
+      // }
       // Сохраняем связи с материалами
       if (createPaintingDto.materials) {
-        await painting.$set('attributes', createPaintingDto.materials)
+        for (const materialId of createPaintingDto.materials) {
+          await this.paintingAttributesModel.create({
+            paintingId: painting.id,
+            attributeId: materialId,
+            type: 'materialsList'
+          })
+        }
+      }
+
+      // Сохраняем связи с техниками
+      if (createPaintingDto.techniques) {
+        for (const techniqueId of createPaintingDto.techniques) {
+          await this.paintingAttributesModel.create({
+            paintingId: painting.id,
+            attributeId: techniqueId,
+            type: 'techniquesList'
+          })
+        }
+      }
+
+      // Сохраняем связи с темами
+      if (createPaintingDto.themes) {
+        for (const themeId of createPaintingDto.themes) {
+          await this.paintingAttributesModel.create({
+            paintingId: painting.id,
+            attributeId: themeId,
+            type: 'themesList'
+          })
+        }
       }
 
       return painting
@@ -202,9 +259,72 @@ export class PaintingsService {
       }
     )
 
+    // // Обновляем связи с материалами
+    // if (painting.materials) {
+    //   const materials = painting.materials.map((materialId) => ({
+    //     attributeId: materialId || null,
+    //     type: 'materialsList'
+    //   }))
+    //   await existingPainting.$set('attributes', materials)
+    // }
+
+    // // Обновляем связи с техниками
+    // if (painting.techniques) {
+    //   const techniques = painting.techniques.map((techniqueId) => ({
+    //     attributeId: techniqueId || null,
+    //     type: 'techniquesList'
+    //   }))
+    //   await existingPainting.$set('attributes', techniques)
+    // }
+
+    // // Обновляем связи с темами
+    // if (painting.themes) {
+    //   const themes = painting.themes.map((themeId) => ({
+    //     attributeId: themeId || null,
+    //     type: 'themesList'
+    //   }))
+    //   await existingPainting.$set('attributes', themes)
+    // }
     // Обновляем связи с материалами
     if (painting.materials) {
-      await existingPainting.$set('attributes', painting.materials)
+      await PaintingAttributes.destroy({
+        where: { paintingId: id, type: 'materialsList' }
+      })
+      for (const materialId of painting.materials) {
+        await PaintingAttributes.create({
+          paintingId: id,
+          attributeId: materialId,
+          type: 'materialsList'
+        })
+      }
+    }
+
+    // Обновляем связи с техниками
+    if (painting.techniques) {
+      await this.paintingAttributesModel.destroy({
+        where: { paintingId: id, type: 'techniquesList' }
+      })
+      for (const techniqueId of painting.techniques) {
+        await PaintingAttributes.create({
+          paintingId: id,
+          attributeId: techniqueId,
+          type: 'techniquesList'
+        })
+      }
+    }
+
+    // Обновляем связи с темами
+    if (painting.themes) {
+      await PaintingAttributes.destroy({
+        where: { paintingId: id, type: 'themesList' }
+      })
+      for (const themeId of painting.themes) {
+        await this.paintingAttributesModel.create({
+          paintingId: id,
+          attributeId: themeId,
+          type: 'themesList'
+        })
+      }
     }
 
     // Теперь делаем запрос для получения обновленных данных с автором
