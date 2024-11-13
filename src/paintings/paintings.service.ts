@@ -12,6 +12,7 @@ import { Painting } from './models/painting.model'
 import { StorageService } from '../common/services/storage.service'
 import { getFileNameFromUrl } from '../utils'
 import { Artist } from '../artists/models/artist.model'
+import { Attributes } from '../attributes/models/attributes.model'
 import { parsePriceRange } from '../utils/parsePriceRange'
 import { parseSizeList } from '../utils/parseSizeList'
 import { Sequelize } from 'sequelize-typescript'
@@ -105,6 +106,17 @@ export class PaintingsService {
           })
         }
       }
+
+      // Получаем полные данные о картине с атрибутами
+      const fullPainting = await this.paintingModel.findOne({
+        where: { id: painting.id },
+        include: [
+          { model: Artist, attributes: ['artistName'] },
+          { model: Attributes, through: { attributes: ['type'] } } // Включаем атрибуты
+        ]
+      })
+
+      return fullPainting
 
       return painting
     } catch (error) {
