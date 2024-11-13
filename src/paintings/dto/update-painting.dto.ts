@@ -3,7 +3,8 @@ import {
   IsNumber,
   IsOptional,
   IsInt,
-  IsDateString
+  IsDateString,
+  IsArray
 } from 'class-validator'
 import { Image } from '../../types/image.interface'
 import { Type } from 'class-transformer'
@@ -49,8 +50,9 @@ export class UpdatePaintingDto {
   readonly style?: string
 
   @IsOptional()
-  @IsString()
-  readonly materials?: string
+  @IsArray()
+  @IsNumber({}, { each: true })
+  readonly materials?: number[]
 
   @IsOptional()
   @IsString()

@@ -3,9 +3,12 @@ import {
   Column,
   Model,
   BelongsTo,
-  ForeignKey
+  ForeignKey,
+  BelongsToMany
 } from 'sequelize-typescript'
 import { Artist } from '../../artists/models/artist.model'
+import { PaintingAttributes } from './painting-attributes.model'
+import { Attributes } from '../../attributes/models/attributes.model'
 
 @Table
 export class Painting extends Model {
@@ -26,9 +29,6 @@ export class Painting extends Model {
 
   @Column
   style: string
-
-  @Column
-  materials: string
 
   @Column
   height: number
@@ -63,4 +63,7 @@ export class Painting extends Model {
 
   @BelongsTo(() => Artist)
   artist: Artist
+
+  @BelongsToMany(() => Attributes, () => PaintingAttributes)
+  attributes: Attributes[]
 }

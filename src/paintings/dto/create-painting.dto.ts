@@ -1,8 +1,9 @@
 import {
   IsString,
   IsNumber,
-  IsInt,
   IsOptional,
+  IsArray,
+  IsInt,
   IsDateString
 } from 'class-validator'
 import { Image } from '../../types/image.interface'
@@ -42,8 +43,9 @@ export class CreatePaintingDto {
   readonly style?: string
 
   @IsOptional()
-  @IsString()
-  readonly materials?: string
+  @IsArray()
+  @IsNumber({}, { each: true })
+  readonly materials?: number[]
 
   @IsOptional()
   @IsString()

@@ -28,14 +28,33 @@ export class PaintingsService {
 
   async create(createPaintingDto: CreatePaintingDto): Promise<Painting> {
     try {
+      // Логируем данные, полученные с фронта
+      this.logger.debug(
+        'Received data from frontend:',
+        JSON.stringify(createPaintingDto, null, 2)
+      )
+
       const painting = new Painting({
         ...createPaintingDto,
         artistId: createPaintingDto.artistId
       })
-      this.logger.debug(painting, 'painting')
+      this.logger.debug(
+        'Painting data before save:',
+        JSON.stringify(painting, null, 2)
+      )
       await painting.save()
+
+      // Сохраняем связи с материалами
+      if (createPaintingDto.materials) {
+        await painting.$set('attributes', createPaintingDto.materials)
+      }
+
       return painting
     } catch (error) {
+      this.logger.error(
+        `Error creating painting: ${error.message}`,
+        error.stack
+      )
       throw new InternalServerErrorException(
         `Error creating painting: ${error.message}`
       )
@@ -182,6 +201,11 @@ export class PaintingsService {
         where: { id: id }
       }
     )
+
+    // Обновляем связи с материалами
+    if (painting.materials) {
+      await existingPainting.$set('attributes', painting.materials)
+    }
 
     // Теперь делаем запрос для получения обновленных данных с автором
     const updatedPainting = await this.paintingModel.findOne({
