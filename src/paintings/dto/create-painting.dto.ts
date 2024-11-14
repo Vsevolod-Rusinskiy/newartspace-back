@@ -37,6 +37,7 @@ export class CreatePaintingDto {
   @IsOptional()
   @IsString()
   readonly style?: string
+
   @IsOptional()
   @IsArray()
   @IsNumber({}, { each: true })
@@ -49,7 +50,7 @@ export class CreatePaintingDto {
 
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
+  @IsNumber({}, { each: true })
   readonly techniques?: number[]
 
   @IsOptional()
