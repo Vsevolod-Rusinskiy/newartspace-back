@@ -42,13 +42,13 @@ export class UpdatePaintingDto {
   readonly price?: number
 
   @IsOptional()
+  @IsString()
+  readonly style?: string
+
+  @IsOptional()
   @IsArray()
   @IsNumber({}, { each: true })
   readonly themes?: number[]
-
-  @IsOptional()
-  @IsString()
-  readonly style?: string
 
   @IsOptional()
   @IsArray()

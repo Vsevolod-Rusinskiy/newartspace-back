@@ -342,7 +342,10 @@ export class PaintingsService {
     // Теперь делаем запрос для получения обновленных данных с автором
     const updatedPainting = await this.paintingModel.findOne({
       where: { id: id },
-      include: [{ model: Artist, attributes: ['artistName'] }]
+      include: [
+        { model: Artist, attributes: ['artistName'] },
+        { model: Attributes, through: { attributes: ['type'] } }
+      ]
     })
 
     if (!updatedPainting) {
