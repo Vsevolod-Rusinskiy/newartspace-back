@@ -40,7 +40,8 @@ export class PaintingsService {
 
       const painting = new Painting({
         ...createPaintingDto,
-        artistId: createPaintingDto.artistId
+        artistId: createPaintingDto.artistId,
+        priority: 0
       })
       this.logger.debug(
         'Painting data before save:',
