@@ -48,32 +48,6 @@ export class PaintingsService {
       )
       await painting.save()
 
-      // // Сохраняем связи с материалами
-      // if (createPaintingDto.materials) {
-      //   const materials = createPaintingDto.materials.map((materialId) => ({
-      //     attributeId: materialId || null,
-      //     type: 'materialsList'
-      //   }))
-      //   await painting.$set('attributes', materials)
-      // }
-
-      // // Сохраняем связи с техниками
-      // if (createPaintingDto.techniques) {
-      //   const techniques = createPaintingDto.techniques.map((techniqueId) => ({
-      //     attributeId: techniqueId || null,
-      //     type: 'techniquesList'
-      //   }))
-      //   await painting.$set('attributes', techniques)
-      // }
-
-      // // Сохраняем связи с темами
-      // if (createPaintingDto.themes) {
-      //   const themes = createPaintingDto.themes.map((themeId) => ({
-      //     attributeId: themeId || null,
-      //     type: 'themesList'
-      //   }))
-      //   await painting.$set('attributes', themes)
-      // }
       // Сохраняем связи с материалами
       if (createPaintingDto.materials) {
         for (const materialId of createPaintingDto.materials) {
@@ -112,7 +86,7 @@ export class PaintingsService {
         where: { id: painting.id },
         include: [
           { model: Artist, attributes: ['artistName'] },
-          { model: Attributes, through: { attributes: ['type'] } } // Включаем атрибуты
+          { model: Attributes, through: { attributes: ['type'] } }
         ]
       })
 
@@ -157,7 +131,6 @@ export class PaintingsService {
 
     /* filters starts */
     const parsedFilters = filters ? JSON.parse(filters) : {}
-    // this.logger.debug(parsedFilters, 'parsedFilters')
     const {
       artTypesList = [],
       colorsList = [],
@@ -271,32 +244,6 @@ export class PaintingsService {
       }
     )
 
-    // // Обновляем связи с материалами
-    // if (painting.materials) {
-    //   const materials = painting.materials.map((materialId) => ({
-    //     attributeId: materialId || null,
-    //     type: 'materialsList'
-    //   }))
-    //   await existingPainting.$set('attributes', materials)
-    // }
-
-    // // Обновляем связи с техниками
-    // if (painting.techniques) {
-    //   const techniques = painting.techniques.map((techniqueId) => ({
-    //     attributeId: techniqueId || null,
-    //     type: 'techniquesList'
-    //   }))
-    //   await existingPainting.$set('attributes', techniques)
-    // }
-
-    // // Обновляем связи с темами
-    // if (painting.themes) {
-    //   const themes = painting.themes.map((themeId) => ({
-    //     attributeId: themeId || null,
-    //     type: 'themesList'
-    //   }))
-    //   await existingPainting.$set('attributes', themes)
-    // }
     // Обновляем связи с материалами
     if (painting.materials) {
       await PaintingAttributes.destroy({

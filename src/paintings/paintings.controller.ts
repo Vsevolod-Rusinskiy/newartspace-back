@@ -117,6 +117,4 @@ export class PaintingsController {
     const deletedCount = await this.paintingService.deleteMany(ids)
     return { message: 'Paintings deleted successfully', deletedCount }
   }
-
-  // GET
 }
