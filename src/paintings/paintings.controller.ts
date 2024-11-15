@@ -90,7 +90,6 @@ export class PaintingsController {
   @Patch(':id')
   async updatePainting(
     @Body() updatePainting: UpdatePaintingDto,
-    // @Body() updatePainting,
     @Param('id') id: string
   ) {
     const painting = await this.paintingService.update(+id, updatePainting)

@@ -211,7 +211,10 @@ export class PaintingsService {
   async findOne(id: string): Promise<Painting> {
     const options: FindOptions = {
       where: { id },
-      include: [{ model: Artist, attributes: ['artistName'] }]
+      include: [
+        { model: Artist, attributes: ['artistName'] },
+        { model: Attributes, through: { attributes: ['type'] } }
+      ]
     }
     const painting = await this.paintingModel.findOne(options)
     if (!painting) {
@@ -305,7 +308,7 @@ export class PaintingsService {
 
   async delete(id: string): Promise<void> {
     const painting = await this.findOne(id)
-
+    this.logger.debug(JSON.stringify(painting, null, 2), 'painting', 11111)
     if (!painting) {
       throw new NotFoundException(`Painting with id ${id} not found`)
     }
