@@ -8,10 +8,12 @@ import {
 } from 'class-validator'
 import { Image } from '../../types/image.interface'
 import { Type } from 'class-transformer'
-
 export class UpdatePaintingDto {
   @IsOptional()
   readonly id?: string
+
+  @IsOptional()
+  readonly attributes?: any[]
 
   @IsOptional()
   @IsString()

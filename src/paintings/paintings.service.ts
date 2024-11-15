@@ -307,19 +307,31 @@ export class PaintingsService {
   }
 
   async delete(id: string): Promise<void> {
+    this.logger.debug(`Attempting to delete painting with id: ${id}`)
+
     const painting = await this.findOne(id)
-    this.logger.debug(JSON.stringify(painting, null, 2), 'painting', 11111)
+    this.logger.debug(`Found painting: ${JSON.stringify(painting, null, 2)}`)
+
     if (!painting) {
+      this.logger.error(`Painting with id ${id} not found`)
       throw new NotFoundException(`Painting with id ${id} not found`)
     }
 
     const imgUrl = painting.imgUrl
     const fileName = getFileNameFromUrl(imgUrl)
+    this.logger.debug(`Deleting file: ${fileName}`)
 
     try {
+      // Удаляем связанные записи из PaintingAttributes
+      await PaintingAttributes.destroy({
+        where: { paintingId: id }
+      })
+
       await this.storageService.deleteFile(fileName, 'paintings')
       await painting.destroy()
+      this.logger.debug(`Painting with id ${id} deleted successfully`)
     } catch (error) {
+      this.logger.error(`Error deleting painting: ${error.message}`)
       throw new InternalServerErrorException(
         `Error deleting painting: ${error.message}`
       )
@@ -329,17 +341,33 @@ export class PaintingsService {
   async deleteMany(ids: string): Promise<{ deletedPaintingCount: number }> {
     const idArray = JSON.parse(ids).map((id) => id.toString())
     let deletedPaintingCount = 0
+
     for (const id of idArray) {
       try {
         const painting = await this.findOne(id)
+        this.logger.debug(`Deleting painting with id: ${id}`)
+
+        if (!painting) {
+          this.logger.error(`Painting with id ${id} not found`)
+          continue // Пропускаем, если картина не найдена
+        }
 
         const imgUrl = painting.dataValues.imgUrl
         const fileName = getFileNameFromUrl(imgUrl)
 
+        // Удаляем связанные записи из PaintingAttributes
+        await PaintingAttributes.destroy({
+          where: { paintingId: id }
+        })
+
         await this.storageService.deleteFile(fileName, 'paintings')
         await painting.destroy()
         deletedPaintingCount++
+        this.logger.debug(`Painting with id ${id} deleted successfully`)
       } catch (error) {
+        this.logger.error(
+          `Error deleting painting with id ${id}: ${error.message}`
+        )
         throw new InternalServerErrorException(
           `Error deleting paintings: ${error.message}`
         )
