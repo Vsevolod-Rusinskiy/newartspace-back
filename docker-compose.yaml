@@ -8,11 +8,8 @@ services:
       dockerfile: Dockerfile
     container_name: back
     ports:
-      - "3000:3000"
-    volumes:
-      - /var/www/newartspace/backend/uploads:/app/uploads
+      - '3000:3000'
     env_file:
       - .env
-    command: ["yarn", "start:prod"]
+    command: ['yarn', 'start:prod']
     restart: unless-stopped
-

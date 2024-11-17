@@ -1,4 +1,4 @@
-interface AttributeItem {
+export interface AttributeItem {
   id: number
   value: string
   priority: number

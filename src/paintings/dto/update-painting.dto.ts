@@ -3,14 +3,17 @@ import {
   IsNumber,
   IsOptional,
   IsInt,
-  IsDateString
+  IsDateString,
+  IsArray
 } from 'class-validator'
 import { Image } from '../../types/image.interface'
 import { Type } from 'class-transformer'
-
 export class UpdatePaintingDto {
   @IsOptional()
   readonly id?: string
+
+  @IsOptional()
+  readonly attributes?: any[]
 
   @IsOptional()
   @IsString()
@@ -42,19 +45,22 @@ export class UpdatePaintingDto {
 
   @IsOptional()
   @IsString()
-  readonly theme?: string
-
-  @IsOptional()
-  @IsString()
   readonly style?: string
 
   @IsOptional()
-  @IsString()
-  readonly materials?: string
+  @IsArray()
+  @IsNumber({}, { each: true })
+  readonly themes?: number[]
 
   @IsOptional()
-  @IsString()
-  readonly techniques?: string
+  @IsArray()
+  @IsNumber({}, { each: true })
+  readonly materials?: number[]
+
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  readonly techniques?: number[]
 
   @IsOptional()
   @IsNumber()
