@@ -28,6 +28,15 @@ export class Painting extends Model {
   style: string
 
   @Column
+  theme: string
+
+  @Column
+  material: string
+
+  @Column
+  technique: string
+
+  @Column
   height: number
 
   @Column
