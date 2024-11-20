@@ -39,14 +39,26 @@ export class CreatePaintingDto {
   readonly style?: string
 
   @IsOptional()
+  @IsString()
+  readonly theme?: string
+
+  @IsOptional()
   @IsArray()
   @IsNumber({}, { each: true })
   readonly themes?: number[]
 
   @IsOptional()
+  @IsString()
+  readonly material?: string
+
+  @IsOptional()
   @IsArray()
   @IsNumber({}, { each: true })
   readonly materials?: number[]
+
+  @IsOptional()
+  @IsString()
+  readonly technique?: string
 
   @IsOptional()
   @IsArray()

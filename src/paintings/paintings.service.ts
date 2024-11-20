@@ -92,8 +92,6 @@ export class PaintingsService {
       })
 
       return fullPainting
-
-      return painting
     } catch (error) {
       this.logger.error(
         `Error creating painting: ${error.message}`,
@@ -200,7 +198,10 @@ export class PaintingsService {
       limit: limit,
       offset: (page - 1) * limit,
       where: whereConditions,
-      include: [{ model: Artist, attributes: ['artistName'] }]
+      include: [
+        { model: Artist, attributes: ['artistName'] },
+        { model: Attributes, through: { attributes: ['type'] } }
+      ]
     }
 
     const { rows: data, count: total } =
