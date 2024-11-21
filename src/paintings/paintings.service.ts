@@ -142,6 +142,8 @@ export class PaintingsService {
       sizeList = []
     } = parsedFilters
 
+    console.log(parsedFilters, 111)
+
     const { min, max } = parsePriceRange(priceList)
     const sizeConditions = parseSizeList(sizeList)
 
@@ -150,8 +152,8 @@ export class PaintingsService {
     if (artTypesList.length) whereConditions.artType = artTypesList
     if (colorsList.length) whereConditions.color = colorsList
     if (formatsList.length) whereConditions.format = formatsList
-    if (materialsList.length) whereConditions.materials = materialsList
-    if (techniquesList.length) whereConditions.techniques = techniquesList
+    if (materialsList.length) whereConditions.material = materialsList
+    if (techniquesList.length) whereConditions.technique = techniquesList
     if (stylesList.length) whereConditions.style = stylesList
     if (themesList.length) whereConditions.theme = themesList
     if (priceList) {
