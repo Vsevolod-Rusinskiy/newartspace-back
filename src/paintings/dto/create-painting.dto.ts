@@ -8,6 +8,7 @@ import {
 } from 'class-validator'
 import { Image } from '../../types/image.interface'
 import { Type } from 'class-transformer'
+import { Attributes } from 'src/attributes/models/attributes.model'
 
 export class CreatePaintingDto {
   @IsOptional()
@@ -104,4 +105,7 @@ export class CreatePaintingDto {
 
   @IsOptional()
   readonly pictures?: Image
+
+  @IsOptional()
+  readonly attributes?: Attributes[]
 }

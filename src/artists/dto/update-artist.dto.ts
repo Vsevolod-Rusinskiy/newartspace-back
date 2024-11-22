@@ -1,6 +1,7 @@
 import { IsString, IsOptional, IsDateString, IsInt } from 'class-validator'
 import { Image } from '../../types/image.interface'
 import { Type } from 'class-transformer'
+import { Painting } from 'src/paintings/models/painting.model'
 
 export class UpdateArtistDto {
   @IsOptional()
@@ -33,4 +34,7 @@ export class UpdateArtistDto {
 
   @IsOptional()
   readonly pictures?: Image | null
+
+  @IsOptional()
+  readonly paintings?: Painting[]
 }
