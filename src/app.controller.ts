@@ -6,8 +6,8 @@ export class AppController {
   getVersion() {
     return {
       version: '1.0.7',
-      message: 'Backend is up and running',
-      date_time: new Date().toLocaleString()
+      message: 'Backend is up and running'
+      // date_time: new Date().toLocaleString()
     }
   }
 }

@@ -115,6 +115,8 @@ export class PaintingsService {
     page = page !== undefined ? page : 1
     limit = limit !== undefined ? limit : 10
 
+    this.logger.debug('artStyle:', artStyle, 999)
+
     let sortField = 'priority'
     if (sort) {
       try {
@@ -141,8 +143,6 @@ export class PaintingsService {
       priceList = '',
       sizeList = []
     } = parsedFilters
-
-    console.log(parsedFilters, 111)
 
     const { min, max } = parsePriceRange(priceList)
     const sizeConditions = parseSizeList(sizeList)
@@ -206,8 +206,13 @@ export class PaintingsService {
       ]
     }
 
-    const { rows: data, count: total } =
-      await this.paintingModel.findAndCountAll(options)
+    const total = await this.paintingModel.count({
+      where: whereConditions,
+      distinct: true
+    })
+
+    const data = await this.paintingModel.findAll(options)
+
     return { data, total }
   }
 
