@@ -136,7 +136,6 @@ export class ArtistsService {
 
   async update(id: number, artist: UpdateArtistDto): Promise<Artist> {
     const existingArtist = await this.findOne(id.toString())
-
     if (!existingArtist) {
       throw new NotFoundException(`Artist with id ${id} not found`)
     }
