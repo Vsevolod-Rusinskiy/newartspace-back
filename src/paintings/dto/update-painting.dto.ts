@@ -44,8 +44,16 @@ export class UpdatePaintingDto {
   readonly price?: number
 
   @IsOptional()
+  @IsNumber()
+  readonly discount?: number
+
+  @IsOptional()
   @IsString()
   readonly style?: string
+
+  @IsOptional()
+  @IsString()
+  readonly priceType?: string
 
   @IsOptional()
   @IsString()
