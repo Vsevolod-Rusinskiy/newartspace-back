@@ -25,8 +25,13 @@ export class Painting extends Model {
   price: number
 
   @Column
+  discount: number
+
+  @Column
   style: string
 
+  @Column
+  priceType: string
   @Column
   theme: string
 
