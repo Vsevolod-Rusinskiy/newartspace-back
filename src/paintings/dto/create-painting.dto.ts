@@ -75,6 +75,15 @@ export class CreatePaintingDto {
   readonly techniques?: number[]
 
   @IsOptional()
+  @IsString()
+  readonly color?: string
+
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  readonly colors?: number[]
+
+  @IsOptional()
   @IsNumber()
   readonly height?: number
 
@@ -89,10 +98,6 @@ export class CreatePaintingDto {
   @IsOptional()
   @IsString()
   readonly format?: string
-
-  @IsOptional()
-  @IsString()
-  readonly color?: string
 
   @IsOptional()
   @IsString()

@@ -83,6 +83,15 @@ export class UpdatePaintingDto {
   readonly techniques?: number[]
 
   @IsOptional()
+  @IsString()
+  readonly color?: string
+
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  readonly colors?: number[]
+
+  @IsOptional()
   @IsNumber()
   readonly height?: number
 
@@ -97,10 +106,6 @@ export class UpdatePaintingDto {
   @IsOptional()
   @IsString()
   readonly format?: string
-
-  @IsOptional()
-  @IsString()
-  readonly color?: string
 
   @IsOptional()
   @IsString()

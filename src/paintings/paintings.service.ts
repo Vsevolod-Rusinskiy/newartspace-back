@@ -82,6 +82,16 @@ export class PaintingsService {
         }
       }
 
+      if (createPaintingDto.colors) {
+        for (const colorId of createPaintingDto.colors) {
+          await this.paintingAttributesModel.create({
+            paintingId: painting.id,
+            attributeId: colorId,
+            type: 'colorsList'
+          })
+        }
+      }
+
       // Получаем полные данные о картине с атрибутами
       const fullPainting = await this.paintingModel.findOne({
         where: { id: painting.id },
@@ -294,6 +304,19 @@ export class PaintingsService {
           paintingId: id,
           attributeId: themeId,
           type: 'themesList'
+        })
+      }
+    }
+
+    if (painting.colors) {
+      await PaintingAttributes.destroy({
+        where: { paintingId: id, type: 'colorsList' }
+      })
+      for (const colorId of painting.colors) {
+        await PaintingAttributes.create({
+          paintingId: id,
+          attributeId: colorId,
+          type: 'colorsList'
         })
       }
     }
