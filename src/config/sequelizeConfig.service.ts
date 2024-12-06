@@ -9,7 +9,7 @@ import { Painting } from '../paintings/models/painting.model'
 import { Artist } from '../artists/models/artist.model'
 import { Attributes } from '../attributes/models/attributes.model'
 import { PaintingAttributes } from '../paintings/models/painting-attributes.model'
-
+import { Event } from '../events/models/event.model'
 @Injectable()
 export class SequelizeConfigService implements SequelizeOptionsFactory {
   constructor(private readonly configService: ConfigService) {}
@@ -27,7 +27,7 @@ export class SequelizeConfigService implements SequelizeOptionsFactory {
       username,
       password,
       database,
-      models: [Painting, Artist, Attributes, PaintingAttributes],
+      models: [Painting, Artist, Attributes, PaintingAttributes, Event],
       autoLoadModels: true,
       synchronize: true
     }
