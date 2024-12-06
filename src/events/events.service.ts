@@ -70,7 +70,9 @@ export class EventsService {
     // 2. Для числового поля priority и id используем стандартную сортировку без COLLATE.
     // 3. Для остальных строковых полей применяем COLLATE для регистронезависимой сортировки.
     let orderBy
-    if (sortField === 'title') {
+    if (sortField === 'date') {
+      orderBy = Sequelize.col('date')
+    } else if (sortField === 'title') {
       orderBy = Sequelize.literal(`"title" COLLATE "POSIX"`)
     } else if (['id', 'priority'].includes(sortField)) {
       orderBy = Sequelize.col('priority')
