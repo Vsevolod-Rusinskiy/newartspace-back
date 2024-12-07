@@ -13,6 +13,7 @@ import { ArtistsModule } from './artists/artists.module'
 import { AppController } from './app.controller'
 import { AttributesModule } from './attributes/attributes.module'
 import { OneClickOrderModule } from './one-сlick-order/one-click-order.module'
+import { EventsModule } from './events/events.module'
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { OneClickOrderModule } from './one-сlick-order/one-click-order.module'
     AttributesModule,
     ArtistsModule,
     PaintingsModule,
+    EventsModule,
     StorageModule,
     OneClickOrderModule
   ],
