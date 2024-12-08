@@ -25,6 +25,8 @@ export class Painting extends Model {
   price: number
 
   @Column
+  isReproducible: boolean
+  @Column
   discount: number
 
   @Column
