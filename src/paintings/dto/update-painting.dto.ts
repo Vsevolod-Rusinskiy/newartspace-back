@@ -4,7 +4,8 @@ import {
   IsOptional,
   IsInt,
   IsDateString,
-  IsArray
+  IsArray,
+  IsBoolean
 } from 'class-validator'
 import { Image } from '../../types/image.interface'
 import { Type } from 'class-transformer'
@@ -42,6 +43,10 @@ export class UpdatePaintingDto {
   @IsOptional()
   @IsNumber()
   readonly price?: number
+
+  @IsOptional()
+  @IsBoolean()
+  readonly isReproducible?: boolean
 
   @IsOptional()
   @IsNumber()
