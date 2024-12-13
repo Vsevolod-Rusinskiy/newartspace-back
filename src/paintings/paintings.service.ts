@@ -127,7 +127,7 @@ export class PaintingsService {
 
     this.logger.debug('artStyle:', artStyle, 999)
 
-    let sortField = ''
+    let sortField = 'priority'
     if (sort) {
       try {
         const parsedSort = JSON.parse(sort)
@@ -204,7 +204,7 @@ export class PaintingsService {
 
     const options: FindOptions = {
       order: [
-        // [Sequelize.col('priority'), 'DESC'],
+        [Sequelize.col('priority'), 'DESC'],
         [orderBy, order]
       ],
       limit: limit,

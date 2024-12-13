@@ -54,7 +54,7 @@ export class ArtistsService {
       `Sort: ${sort}, Order: ${order}, Page: ${page}, Limit: ${limit}`
     )
 
-    let sortField = ''
+    let sortField = 'priority'
     if (sort) {
       try {
         const parsedSort = JSON.parse(sort)
@@ -83,7 +83,10 @@ export class ArtistsService {
 
     const options: FindOptions = {
       where: {},
-      order: [[orderBy, order]],
+      order: [
+        [Sequelize.col('priority'), 'DESC'],
+        [orderBy, order]
+      ],
       limit: limit,
       offset: (page - 1) * limit,
       include: [
