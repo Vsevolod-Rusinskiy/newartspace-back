@@ -51,7 +51,7 @@ export class EventsService {
       `Sort: ${sort}, Order: ${order}, Page: ${page}, Limit: ${limit}`
     )
 
-    let sortField = 'id'
+    let sortField = ''
     if (sort) {
       try {
         const parsedSort = JSON.parse(sort)
@@ -66,25 +66,25 @@ export class EventsService {
 
     // Логика для определения порядка сортировки
     // Определяем порядок сортировки в зависимости от типа поля:
-    // 1. Для имени художника используем COLLATE для регистронезависимой сортировки.
-    // 2. Для числового поля priority и id используем стандартную сортировку без COLLATE.
-    // 3. Для остальных строковых полей применяем COLLATE для регистронезависимой сортировки.
+
+    this.logger.debug(sortField)
+
     let orderBy
-    if (sortField === 'date') {
-      orderBy = Sequelize.col('date')
-    } else if (sortField === 'title') {
+    if (sortField === 'title') {
       orderBy = Sequelize.literal(`"title" COLLATE "POSIX"`)
+    } else if (sortField === 'date') {
+      orderBy = Sequelize.col('date')
     } else if (['id', 'priority'].includes(sortField)) {
-      orderBy = Sequelize.col('priority')
+      orderBy = Sequelize.col(`Event.${sortField}`)
     } else {
-      orderBy = Sequelize.literal(`"${sortField}" COLLATE "POSIX"`)
+      orderBy = Sequelize.literal(`"Event"."${sortField}" COLLATE "POSIX"`)
     }
 
     const options: FindOptions = {
       where: {},
       order: [
-        [Sequelize.col('priority'), 'DESC'],
         [orderBy, order]
+        // [Sequelize.col('priority'), 'DESC']
       ],
       limit: limit,
       offset: (page - 1) * limit
