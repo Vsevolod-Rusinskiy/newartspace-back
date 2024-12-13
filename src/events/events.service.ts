@@ -51,7 +51,7 @@ export class EventsService {
       `Sort: ${sort}, Order: ${order}, Page: ${page}, Limit: ${limit}`
     )
 
-    let sortField = ''
+    let sortField = 'priority'
     if (sort) {
       try {
         const parsedSort = JSON.parse(sort)
@@ -83,8 +83,8 @@ export class EventsService {
     const options: FindOptions = {
       where: {},
       order: [
+        [Sequelize.col('priority'), 'DESC'],
         [orderBy, order]
-        // [Sequelize.col('priority'), 'DESC']
       ],
       limit: limit,
       offset: (page - 1) * limit
