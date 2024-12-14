@@ -15,6 +15,7 @@ import { AttributesModule } from './attributes/attributes.module'
 import { OneClickOrderModule } from './one-сlick-order/one-click-order.module'
 import { EventsModule } from './events/events.module'
 import { UsersModule } from './users/users.module'
+import { AuthModule } from './auth/auth.module'
 
 @Module({
   imports: [
@@ -34,7 +35,8 @@ import { UsersModule } from './users/users.module'
     EventsModule,
     StorageModule,
     OneClickOrderModule,
-    UsersModule
+    UsersModule,
+    AuthModule
   ],
   providers: [
     {
