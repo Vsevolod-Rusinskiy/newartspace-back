@@ -1,27 +1,51 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { CreateUserDto } from './dto/create-user.dto'
-// import { UpdateUserDto } from './dto/update-user.dto'
+import { User } from './models/user.model'
+import { InjectModel } from '@nestjs/sequelize'
+import { LoginUserDto } from '../auth/dto/login-user.dto'
 
 @Injectable()
 export class UsersService {
-  create(createUserDto: CreateUserDto) {
-    console.log(createUserDto)
-    return 'This action adds a new user'
+  private readonly logger = new Logger(UsersService.name)
+
+  constructor(
+    @InjectModel(User)
+    private userModel: typeof User
+  ) {}
+
+  async login(loginUserDto: LoginUserDto): Promise<User | null> {
+    const user = await this.userModel.findOne({
+      where: {
+        userName: loginUserDto.userName
+      }
+    })
+
+    if (!user) {
+      return null
+    }
+
+    return user as User
   }
 
-  findAll() {
-    return `This action returns all users`
+  async registration(createUserDto: CreateUserDto): Promise<User | null> {
+    const existingUser = await this.userModel.findOne({
+      where: {
+        userName: createUserDto.userName
+      }
+    })
+
+    if (existingUser) {
+      return null
+    }
+
+    const createdUser = new User({
+      ...createUserDto
+    })
+    await createdUser.save()
+    return createdUser
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`
-  }
-
-  // update(id: number, updateUserDto: UpdateUserDto) {
-  //   return `This action updates a #${id} user`
-  // }
-
-  remove(id: number) {
-    return `This action removes a #${id} user`
+  async findOne(userName: string): Promise<User> {
+    return this.userModel.findOne({ where: { userName } })
   }
 }
