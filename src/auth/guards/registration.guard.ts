@@ -16,11 +16,11 @@ export class RegistrationGuard implements CanActivate {
     // @ts-expect-error: игнорируем ошибку, так как тип не может быть определен
   ): boolean | Promise<boolean> | Observable<boolean> {
     const request = context.switchToHttp().getRequest()
-    const username = request.body.userName
-    const user = await this.authService.validateUser(username)
+    const email = request.body.email
+    const user = await this.authService.validateUser(email)
 
     if (user) {
-      throw new UnauthorizedException(`Пользователь ${username} уже существует`)
+      throw new UnauthorizedException(`Пользователь ${email} уже существует`)
     }
 
     return true

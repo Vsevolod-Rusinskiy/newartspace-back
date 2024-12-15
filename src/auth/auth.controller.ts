@@ -33,7 +33,7 @@ export class AuthController {
     const refresh = await this.authService.generateRefreshToken(user.id)
 
     res.statusCode = HttpStatus.OK
-    return res.send({ ...access, ...refresh, username: user.userName })
+    return res.send({ ...access, ...refresh, email: user.email })
   }
 
   @UseGuards(RegistrationGuard)
@@ -62,7 +62,7 @@ export class AuthController {
       throw new UnauthorizedException(validToken.error)
     }
 
-    const user = await this.usersService.findOne(refreshTokenDto.userName)
+    const user = await this.usersService.findOne(refreshTokenDto.email)
     const access = await this.authService.generateAccessToken(user)
 
     if (validToken?.error) {

@@ -7,4 +7,7 @@ export class User extends Model {
 
   @Column
   userPassword: string
+
+  @Column
+  email: string
 }

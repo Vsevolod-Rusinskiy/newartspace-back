@@ -16,11 +16,12 @@ export class LoginGuard implements CanActivate {
     // @ts-expect-error: игнорируем ошибку, так как тип не может быть определен
   ): boolean | Promise<boolean> | Observable<boolean> {
     const request = context.switchToHttp().getRequest()
-    const { userName, userPassword } = request.body
-    const user = await this.authService.validateUser(userName)
+    const { email, userPassword } = request.body
+    const user = await this.authService.validateUser(email)
 
+    console.log(user)
     if (!user) {
-      throw new UnauthorizedException(`Пользователя ${userName} не существует`)
+      throw new UnauthorizedException(`Пользователя ${email} не существует`)
     }
 
     if (user.userPassword !== userPassword) {

@@ -13,8 +13,8 @@ export class AuthService {
     private readonly jwtService: JwtService
   ) {}
 
-  async validateUser(userName: string): Promise<User> {
-    const user = await this.usersService.findOne(userName)
+  async validateUser(email: string): Promise<User> {
+    const user = await this.usersService.findOne(email)
     if (!user) {
       return null
     }
@@ -65,7 +65,7 @@ export class AuthService {
   async getUserByTokenData(token: string): Promise<User> {
     const parsedTokenData = this.parseJwt(token)
     this.logger.log(parsedTokenData, 'parsedTokenData')
-    const user = await this.usersService.findOne(parsedTokenData.user.userName)
+    const user = await this.usersService.findOne(parsedTokenData.user.email)
     this.logger.log(user, 'user from token')
     return user
   }

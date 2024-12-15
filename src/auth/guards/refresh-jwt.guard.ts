@@ -17,17 +17,17 @@ export class RefreshJWTGuard implements CanActivate {
   ): boolean | Promise<boolean> | Observable<boolean> {
     const request = context.switchToHttp().getRequest()
 
-    const { refreshToken, userName } = request.body
+    const { refreshToken, email } = request.body
 
     if (!refreshToken) {
       throw new UnauthorizedException('Поле refreshToken обязательно')
     }
 
-    if (!userName) {
-      throw new UnauthorizedException('Поле userName обязательно')
+    if (!email) {
+      throw new UnauthorizedException('Поле email обязательно')
     }
 
-    const user = await this.usersService.findOne(userName)
+    const user = await this.usersService.findOne(email)
 
     if (!user) {
       throw new UnauthorizedException('Пользователя не существует')

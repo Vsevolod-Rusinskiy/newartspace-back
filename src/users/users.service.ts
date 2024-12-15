@@ -16,7 +16,7 @@ export class UsersService {
   async login(loginUserDto: LoginUserDto): Promise<User | null> {
     const user = await this.userModel.findOne({
       where: {
-        userName: loginUserDto.userName
+        email: loginUserDto.email
       }
     })
 
@@ -30,7 +30,7 @@ export class UsersService {
   async registration(createUserDto: CreateUserDto): Promise<User | null> {
     const existingUser = await this.userModel.findOne({
       where: {
-        userName: createUserDto.userName
+        email: createUserDto.email
       }
     })
 
@@ -45,7 +45,7 @@ export class UsersService {
     return createdUser
   }
 
-  async findOne(userName: string): Promise<User> {
-    return this.userModel.findOne({ where: { userName } })
+  async findOne(email: string): Promise<User> {
+    return this.userModel.findOne({ where: { email } })
   }
 }
