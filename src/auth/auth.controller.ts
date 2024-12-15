@@ -4,7 +4,8 @@ import {
   Body,
   Res,
   HttpStatus,
-  UseGuards
+  UseGuards,
+  UnauthorizedException
 } from '@nestjs/common'
 import { CreateUserDto } from 'src/users/dto/create-user.dto'
 import { UsersService } from 'src/users/users.service'
@@ -13,6 +14,8 @@ import { RegistrationGuard } from './guards/registration.guard'
 import { LoginUserDto } from './dto/login-user.dto'
 import { LoginGuard } from './guards/login.guard'
 import { AuthService } from './auth.service'
+import { RefreshJWTGuard } from './guards/refresh-jwt.guard'
+import { RefreshTokenDto } from './dto/refresh-token.dto'
 
 @Controller('auth')
 export class AuthController {
@@ -43,5 +46,43 @@ export class AuthController {
 
     res.statusCode = HttpStatus.OK
     return res.send({ message: 'User registered successfully' })
+  }
+
+  @UseGuards(RefreshJWTGuard)
+  @Post('refresh')
+  async refreshToken(
+    @Body() refreshTokenDto: RefreshTokenDto,
+    @Res() res: Response
+  ) {
+    const validToken = this.authService.verifyToken(
+      refreshTokenDto.refreshToken
+    )
+
+    if (validToken?.error) {
+      throw new UnauthorizedException(validToken.error)
+    }
+
+    const user = await this.usersService.findOne(refreshTokenDto.userName)
+    const access = await this.authService.generateAccessToken(user)
+
+    if (validToken?.error) {
+      if (validToken?.error === 'jwt expired') {
+        const refresh = await this.authService.generateRefreshToken(
+          user.id as string
+        )
+
+        res.statusCode = HttpStatus.OK
+        return res.send({ ...access, ...refresh })
+      } else {
+        res.statusCode = HttpStatus.BAD_REQUEST
+        return res.send({ error: validToken?.error })
+      }
+    } else {
+      res.statusCode = HttpStatus.OK
+      return res.send({
+        ...access,
+        refreshToken: refreshTokenDto.refreshToken
+      })
+    }
   }
 }
