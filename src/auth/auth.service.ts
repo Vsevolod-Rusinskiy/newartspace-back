@@ -1,16 +1,72 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { UsersService } from 'src/users/users.service'
 import { User } from 'src/users/models/user.model'
+import { JwtService } from '@nestjs/jwt'
+import { jwtConstants } from './constants'
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly usersService: UsersService) {}
+  private readonly logger = new Logger(AuthService.name)
+
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly jwtService: JwtService
+  ) {}
 
   async validateUser(userName: string): Promise<User> {
     const user = await this.usersService.findOne(userName)
     if (!user) {
       return null
     }
+    return user
+  }
+
+  async generateAccessToken(user: User) {
+    return {
+      access_token: this.jwtService.sign({ user })
+    }
+  }
+
+  async generateRefreshToken(userId: string) {
+    return {
+      refreshToken: this.jwtService.sign(
+        { userId },
+        {
+          secret: jwtConstants.secret,
+          expiresIn: '30d'
+        }
+      )
+    }
+  }
+
+  verifyToken(token: string) {
+    try {
+      return this.jwtService.verify(token)
+    } catch (error) {
+      return { error: error.message }
+    }
+  }
+
+  parseJwt(token: string) {
+    const base64Url = token.split('.')[1]
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(function (c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+        })
+        .join('')
+    )
+
+    return JSON.parse(jsonPayload)
+  }
+
+  async getUserByTokenData(token: string): Promise<User> {
+    const parsedTokenData = this.parseJwt(token)
+    this.logger.log(parsedTokenData, 'parsedTokenData')
+    const user = await this.usersService.findOne(parsedTokenData.user.userName)
+    this.logger.log(user, 'user from token')
     return user
   }
 }
