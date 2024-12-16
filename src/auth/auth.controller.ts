@@ -33,7 +33,7 @@ export class AuthController {
     const refresh = await this.authService.generateRefreshToken(user.id)
 
     res.statusCode = HttpStatus.OK
-    return res.send({ ...access, ...refresh, email: user.email })
+    return res.send({ ...access, ...refresh, userName: user.userName })
   }
 
   @UseGuards(RegistrationGuard)
@@ -42,10 +42,13 @@ export class AuthController {
     @Body() createUserDto: CreateUserDto,
     @Res() res: Response
   ) {
-    await this.usersService.registration(createUserDto)
+    const user = await this.usersService.registration(createUserDto)
 
     res.statusCode = HttpStatus.OK
-    return res.send({ message: 'User registered successfully' })
+    return res.send({
+      message: 'User registered successfully',
+      userName: user.userName
+    })
   }
 
   @UseGuards(RefreshJWTGuard)
