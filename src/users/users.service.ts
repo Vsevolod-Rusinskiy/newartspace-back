@@ -48,4 +48,8 @@ export class UsersService {
   async findOne(email: string): Promise<User> {
     return this.userModel.findOne({ where: { email } })
   }
+
+  async findOneById(id: string): Promise<User | null> {
+    return this.userModel.findOne({ where: { id } })
+  }
 }

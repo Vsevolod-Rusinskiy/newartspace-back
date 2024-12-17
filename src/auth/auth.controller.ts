@@ -65,7 +65,10 @@ export class AuthController {
       throw new UnauthorizedException(validToken.error)
     }
 
-    const user = await this.usersService.findOne(refreshTokenDto.email)
+    const userId = this.authService
+      .parseJwt(refreshTokenDto.refreshToken)
+      .userId.toString()
+    const user = await this.usersService.findOneById(userId)
     const access = await this.authService.generateAccessToken(user)
 
     if (validToken?.error) {

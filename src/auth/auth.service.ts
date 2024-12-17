@@ -62,7 +62,7 @@ export class AuthService {
     return JSON.parse(jsonPayload)
   }
 
-  async getUserByTokenData(token: string): Promise<User> {
+  async getUserEmailByTokenData(token: string): Promise<User> {
     const parsedTokenData = this.parseJwt(token)
     this.logger.log(parsedTokenData, 'parsedTokenData')
     const user = await this.usersService.findOne(parsedTokenData.user.email)
