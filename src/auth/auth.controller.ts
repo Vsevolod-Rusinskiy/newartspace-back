@@ -5,7 +5,8 @@ import {
   Res,
   HttpStatus,
   UseGuards,
-  UnauthorizedException
+  UnauthorizedException,
+  Logger
 } from '@nestjs/common'
 import { CreateUserDto } from 'src/users/dto/create-user.dto'
 import { UsersService } from 'src/users/users.service'
@@ -19,6 +20,8 @@ import { RefreshTokenDto } from './dto/refresh-token.dto'
 
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name)
+
   constructor(
     private readonly usersService: UsersService,
     private readonly authService: AuthService
@@ -68,6 +71,7 @@ export class AuthController {
     const userId = this.authService
       .parseJwt(refreshTokenDto.refreshToken)
       .userId.toString()
+
     const user = await this.usersService.findOneById(userId)
     const access = await this.authService.generateAccessToken(user)
 
@@ -78,7 +82,7 @@ export class AuthController {
         )
 
         res.statusCode = HttpStatus.OK
-        return res.send({ ...access, ...refresh })
+        return res.send({ ...access, ...refresh, userName: user.userName })
       } else {
         res.statusCode = HttpStatus.BAD_REQUEST
         return res.send({ error: validToken?.error })
@@ -87,7 +91,8 @@ export class AuthController {
       res.statusCode = HttpStatus.OK
       return res.send({
         ...access,
-        refreshToken: refreshTokenDto.refreshToken
+        refreshToken: refreshTokenDto.refreshToken,
+        userName: user.userName
       })
     }
   }

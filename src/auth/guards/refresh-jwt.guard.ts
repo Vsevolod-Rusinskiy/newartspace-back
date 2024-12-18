@@ -30,10 +30,10 @@ export class RefreshJWTGuard implements CanActivate {
     }
 
     const userId = this.authService.parseJwt(refreshToken).userId.toString()
-    console.log('Извлеченный userId:', userId)
+    // console.log('Извлеченный userId:', userId)
 
     const user = await this.usersService.findOneById(userId)
-    console.log('Найденный пользователь:', user)
+    // console.log('Найденный пользователь:', user)
 
     if (!user) {
       console.log('Ошибка: Пользователь не существует')
