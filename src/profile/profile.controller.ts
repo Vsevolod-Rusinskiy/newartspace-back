@@ -36,11 +36,10 @@ export class ProfileController {
   @Get()
   @HttpCode(HttpStatus.OK)
   async getAllPurchases(@Req() req: Request, @Res() res: Response) {
-    this.logger.log(req, 'token', 222)
-    console.log(req, 11111111)
-    const token = req.token
-    const user = await this.authService.getUserEmailByTokenData(token)
-    this.logger.debug(user, 'user from token', 111)
+    // this.logger.log(req, 'token', 222)
+    // console.log(req, 11111111)
+    // const token = req.token
+    // const user = await this.authService.getUserEmailByTokenData(token)
     const purchases = await this.profileService.findAll()
 
     return res.send(purchases)

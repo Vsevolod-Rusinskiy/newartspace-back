@@ -32,21 +32,11 @@ export class PaintingsService {
 
   async create(createPaintingDto: CreatePaintingDto): Promise<Painting> {
     try {
-      // Логируем данные, полученные с фронта
-      this.logger.debug(
-        'Received data from frontend:',
-        JSON.stringify(createPaintingDto, null, 2)
-      )
-
       const painting = new Painting({
         ...createPaintingDto,
         artistId: createPaintingDto.artistId,
         priority: 0
       })
-      this.logger.debug(
-        'Painting data before save:',
-        JSON.stringify(painting, null, 2)
-      )
       await painting.save()
 
       // Сохраняем связи с материалами
@@ -124,8 +114,6 @@ export class PaintingsService {
     order = order || 'ASC'
     page = page !== undefined ? page : 1
     limit = limit !== undefined ? limit : 10
-
-    this.logger.debug('artStyle:', artStyle, 999)
 
     let sortField = 'priority'
     if (sort) {
@@ -338,10 +326,7 @@ export class PaintingsService {
   }
 
   async delete(id: string): Promise<void> {
-    this.logger.debug(`Attempting to delete painting with id: ${id}`)
-
     const painting = await this.findOne(id)
-    this.logger.debug(`Found painting: ${JSON.stringify(painting, null, 2)}`)
 
     if (!painting) {
       this.logger.error(`Painting with id ${id} not found`)
@@ -350,7 +335,6 @@ export class PaintingsService {
 
     const imgUrl = painting.imgUrl
     const fileName = getFileNameFromUrl(imgUrl)
-    this.logger.debug(`Deleting file: ${fileName}`)
 
     try {
       // Удаляем связанные записи из PaintingAttributes
@@ -360,7 +344,6 @@ export class PaintingsService {
 
       await this.storageService.deleteFile(fileName, 'paintings')
       await painting.destroy()
-      this.logger.debug(`Painting with id ${id} deleted successfully`)
     } catch (error) {
       this.logger.error(`Error deleting painting: ${error.message}`)
       throw new InternalServerErrorException(
@@ -376,7 +359,6 @@ export class PaintingsService {
     for (const id of idArray) {
       try {
         const painting = await this.findOne(id)
-        this.logger.debug(`Deleting painting with id: ${id}`)
 
         if (!painting) {
           this.logger.error(`Painting with id ${id} not found`)
@@ -394,7 +376,6 @@ export class PaintingsService {
         await this.storageService.deleteFile(fileName, 'paintings')
         await painting.destroy()
         deletedPaintingCount++
-        this.logger.debug(`Painting with id ${id} deleted successfully`)
       } catch (error) {
         this.logger.error(
           `Error deleting painting with id ${id}: ${error.message}`
