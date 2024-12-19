@@ -50,10 +50,6 @@ export class ArtistsService {
     page = page !== undefined ? page : 1
     limit = limit !== undefined ? limit : 10
 
-    this.logger.debug(
-      `Sort: ${sort}, Order: ${order}, Page: ${page}, Limit: ${limit}`
-    )
-
     let sortField = 'priority'
     if (sort) {
       try {

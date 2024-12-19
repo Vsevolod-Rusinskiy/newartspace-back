@@ -14,6 +14,9 @@ import { AppController } from './app.controller'
 import { AttributesModule } from './attributes/attributes.module'
 import { OneClickOrderModule } from './one-сlick-order/one-click-order.module'
 import { EventsModule } from './events/events.module'
+import { UsersModule } from './users/users.module'
+import { AuthModule } from './auth/auth.module'
+import { ProfileModule } from './profile/profile.module'
 
 @Module({
   imports: [
@@ -32,7 +35,10 @@ import { EventsModule } from './events/events.module'
     PaintingsModule,
     EventsModule,
     StorageModule,
-    OneClickOrderModule
+    OneClickOrderModule,
+    UsersModule,
+    AuthModule,
+    ProfileModule
   ],
   providers: [
     {

@@ -47,10 +47,6 @@ export class EventsService {
     page = page !== undefined ? page : 1
     limit = limit !== undefined ? limit : 10
 
-    this.logger.debug(
-      `Sort: ${sort}, Order: ${order}, Page: ${page}, Limit: ${limit}`
-    )
-
     let sortField = 'priority'
     if (sort) {
       try {
@@ -66,8 +62,6 @@ export class EventsService {
 
     // Логика для определения порядка сортировки
     // Определяем порядок сортировки в зависимости от типа поля:
-
-    this.logger.debug(sortField)
 
     let orderBy
     if (sortField === 'title') {
