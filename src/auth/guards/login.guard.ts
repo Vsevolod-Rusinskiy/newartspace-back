@@ -4,6 +4,7 @@ import { Injectable } from '@nestjs/common'
 import { AuthService } from '../auth.service'
 import { ExecutionContext } from '@nestjs/common'
 import { Observable } from 'rxjs'
+import * as bcrypt from 'bcryptjs'
 
 @Injectable()
 export class LoginGuard implements CanActivate {
@@ -24,7 +25,11 @@ export class LoginGuard implements CanActivate {
       throw new UnauthorizedException(`Пользователя ${email} не существует`)
     }
 
-    if (user.userPassword !== userPassword) {
+    const isPasswordValid = await bcrypt.compare(
+      userPassword,
+      user.userPassword
+    )
+    if (!isPasswordValid) {
       throw new UnauthorizedException('Неверный пароль')
     }
 

@@ -3,6 +3,7 @@ import { CreateUserDto } from './dto/create-user.dto'
 import { User } from './models/user.model'
 import { InjectModel } from '@nestjs/sequelize'
 import { LoginUserDto } from '../auth/dto/login-user.dto'
+import * as bcrypt from 'bcryptjs'
 
 @Injectable()
 export class UsersService {
@@ -38,8 +39,11 @@ export class UsersService {
       return null
     }
 
+    const hashedPassword = await bcrypt.hash(createUserDto.userPassword, 10)
+
     const createdUser = new User({
-      ...createUserDto
+      ...createUserDto,
+      userPassword: hashedPassword
     })
     await createdUser.save()
     return createdUser
