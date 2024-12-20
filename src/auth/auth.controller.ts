@@ -6,7 +6,9 @@ import {
   HttpStatus,
   UseGuards,
   UnauthorizedException,
-  Logger
+  Logger,
+  Get,
+  Query
 } from '@nestjs/common'
 import { CreateUserDto } from 'src/users/dto/create-user.dto'
 import { UsersService } from 'src/users/users.service'
@@ -95,5 +97,14 @@ export class AuthController {
         userName: user.userName
       })
     }
+  }
+
+  @Get('verify-email')
+  async verifyEmail(@Query('token') token: string) {
+    const user = await this.usersService.verifyEmail(token)
+    if (!user) {
+      throw new UnauthorizedException('Invalid verification token')
+    }
+    return { message: 'Email verified successfully' }
   }
 }

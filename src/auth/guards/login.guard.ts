@@ -25,6 +25,10 @@ export class LoginGuard implements CanActivate {
       throw new UnauthorizedException(`Пользователя ${email} не существует`)
     }
 
+    if (!user.isEmailVerified) {
+      throw new UnauthorizedException('Пожалуйста, подтвердите ваш email')
+    }
+
     const isPasswordValid = await bcrypt.compare(
       userPassword,
       user.userPassword
