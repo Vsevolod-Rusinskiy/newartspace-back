@@ -4,6 +4,7 @@ import { User } from './models/user.model'
 import { InjectModel } from '@nestjs/sequelize'
 import { LoginUserDto } from '../auth/dto/login-user.dto'
 import * as bcrypt from 'bcryptjs'
+import { MailService } from '../mail/mail.service'
 
 @Injectable()
 export class UsersService {
@@ -11,7 +12,8 @@ export class UsersService {
 
   constructor(
     @InjectModel(User)
-    private userModel: typeof User
+    private userModel: typeof User,
+    private mailService: MailService
   ) {}
 
   async login(loginUserDto: LoginUserDto): Promise<User | null> {
@@ -46,6 +48,24 @@ export class UsersService {
       userPassword: hashedPassword
     })
     await createdUser.save()
+
+    // Отправляем приветственное письмо
+    try {
+      await this.mailService.sendMail(
+        'Добро пожаловать в Новое пространство!',
+        createUserDto.email,
+        `Здравствуйте, ${createUserDto.email}!
+        
+Спасибо за регистрацию. Мы рады приветствовать вас.
+
+С уважением,
+Команда Новое пространство`
+      )
+    } catch (error) {
+      this.logger.error(`Failed to send welcome email: ${error.message}`)
+      // Не прерываем регистрацию, если письмо не отправилось
+    }
+
     return createdUser
   }
 

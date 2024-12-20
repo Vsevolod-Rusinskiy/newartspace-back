@@ -8,38 +8,39 @@ export class MailService {
 
   constructor() {
     this.transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
       auth: {
         user: process.env.NODEMAILER_EMAIL,
-        pass: process.env.NODEMAILER_PW
+        pass: process.env.NODEMAILER_PASSWORD
+      }
+    })
+
+    this.transporter.verify((error, success) => {
+      console.log(success)
+      if (error) {
+        this.logger.error(`Mail configuration error: ${error.message}`)
+      } else {
+        this.logger.log('Mail server is ready to take our messages')
       }
     })
   }
 
-  async sendMail(subject: string, toEmail: string, otpText: string) {
+  async sendMail(subject: string, toEmail: string, text: string) {
     try {
       const mailOptions = {
-        from: process.env.NODEMAILER_EMAIL,
+        from: `"Art Gallery" <${process.env.NODEMAILER_EMAIL}>`,
         to: toEmail,
-        subject: subject,
-        text: otpText
+        subject,
+        text
       }
 
-      return await new Promise((resolve, reject) => {
-        this.transporter.sendMail(mailOptions, (err, response) => {
-          if (err) {
-            this.logger.error(
-              `Failed to send email to ${toEmail}: ${err.message}`
-            )
-            reject(err)
-          } else {
-            this.logger.log(`Email sent successfully to ${toEmail}`)
-            resolve(response)
-          }
-        })
-      })
+      const response = await this.transporter.sendMail(mailOptions)
+      this.logger.log(`Email sent successfully to ${toEmail}`)
+      return response
     } catch (error) {
-      this.logger.error(`Error in sendMail: ${error.message}`)
+      this.logger.error(`Failed to send email to ${toEmail}: ${error.message}`)
       throw error
     }
   }
