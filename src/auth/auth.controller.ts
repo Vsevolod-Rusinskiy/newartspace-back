@@ -117,12 +117,10 @@ export class AuthController {
     )
 
     if (!user) {
-      throw new UnauthorizedException(
-        `Пользователь с email ${forgotPasswordDto.email} не найден`
-      )
+      throw new UnauthorizedException(`User with this email not found`)
     }
 
-    return { message: 'Инструкции по сбросу пароля отправлены на ваш email' }
+    return { message: 'Password reset instructions sent to your email' }
   }
 
   @Post('reset-password')
@@ -133,11 +131,9 @@ export class AuthController {
     )
 
     if (!user) {
-      throw new UnauthorizedException(
-        'Неверный или устаревший токен сброса пароля'
-      )
+      throw new UnauthorizedException('Invalid or expired reset token')
     }
 
-    return { message: 'Пароль успешно изменен' }
+    return { message: 'Password successfully changed' }
   }
 }
