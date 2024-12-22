@@ -10,4 +10,10 @@ export class User extends Model {
 
   @Column
   email: string
+
+  @Column({ defaultValue: false })
+  isEmailVerified: boolean
+
+  @Column({ allowNull: true })
+  verificationToken: string
 }
