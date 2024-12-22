@@ -16,4 +16,10 @@ export class User extends Model {
 
   @Column({ allowNull: true })
   verificationToken: string
+
+  @Column({ allowNull: true })
+  resetPasswordToken: string
+
+  @Column({ allowNull: true })
+  resetPasswordExpires: Date
 }
