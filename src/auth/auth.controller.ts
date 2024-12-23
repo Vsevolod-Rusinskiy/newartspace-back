@@ -19,6 +19,8 @@ import { LoginGuard } from './guards/login.guard'
 import { AuthService } from './auth.service'
 import { RefreshJWTGuard } from './guards/refresh-jwt.guard'
 import { RefreshTokenDto } from './dto/refresh-token.dto'
+import { ForgotPasswordDto } from './dto/forgot-password.dto'
+import { ResetPasswordDto } from './dto/reset-password.dto'
 
 @Controller('auth')
 export class AuthController {
@@ -106,5 +108,32 @@ export class AuthController {
       throw new UnauthorizedException('Invalid verification token')
     }
     return { message: 'Email verified successfully' }
+  }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    const user = await this.usersService.createPasswordResetToken(
+      forgotPasswordDto.email
+    )
+
+    if (!user) {
+      throw new UnauthorizedException(`User with this email not found`)
+    }
+
+    return { message: 'Password reset instructions sent to your email' }
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    const user = await this.usersService.resetPassword(
+      resetPasswordDto.token,
+      resetPasswordDto.newPassword
+    )
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid or expired reset token')
+    }
+
+    return { message: 'Password successfully changed' }
   }
 }

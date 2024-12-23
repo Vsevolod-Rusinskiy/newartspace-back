@@ -6,6 +6,7 @@ import { LoginUserDto } from '../auth/dto/login-user.dto'
 import * as bcrypt from 'bcryptjs'
 import { MailService } from '../mail/mail.service'
 import { v4 as uuidv4 } from 'uuid'
+import { Op } from 'sequelize'
 
 @Injectable()
 export class UsersService {
@@ -98,5 +99,78 @@ ${verificationLink}
 
   async findOneById(id: string): Promise<User | null> {
     return this.userModel.findOne({ where: { id } })
+  }
+
+  async resetPassword(
+    token: string,
+    newPassword: string
+  ): Promise<User | null> {
+    const user = await this.userModel.findOne({
+      where: {
+        resetPasswordToken: token,
+        resetPasswordExpires: {
+          [Op.gt]: new Date()
+        }
+      }
+    })
+
+    if (!user) {
+      return null
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10)
+
+    user.userPassword = hashedPassword
+    user.resetPasswordToken = null
+    user.resetPasswordExpires = null
+    await user.save()
+
+    return user
+  }
+
+  async createPasswordResetToken(email: string): Promise<User | null> {
+    const user = await this.userModel.findOne({
+      where: { email }
+    })
+
+    if (!user) {
+      return null
+    }
+
+    // Генерируем токен и устанавливаем срок действия
+    const resetPasswordToken = uuidv4()
+    const resetPasswordExpires = new Date(Date.now() + 3600000) // +1 час
+
+    // Сохраняем токен и время истечения в базе
+    user.resetPasswordToken = resetPasswordToken
+    user.resetPasswordExpires = resetPasswordExpires
+    await user.save()
+
+    // Формируем ссылку для сброса пароля
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetPasswordToken}`
+
+    try {
+      // Отправляем email
+      await this.mailService.sendMail(
+        'Восстановление пароля',
+        email,
+        `Здравствуйте!
+        
+Для сброса пароля перейдите по ссылке:
+${resetLink}
+
+Ссылка действительна в течение 1 часа.
+
+Если вы не запрашивали сброс пароля, проигнорируйте это письмо.
+
+С уважением,
+Команда Новое пространство`
+      )
+    } catch (error) {
+      this.logger.error(`Failed to send reset password email: ${error.message}`)
+      throw error
+    }
+
+    return user
   }
 }
