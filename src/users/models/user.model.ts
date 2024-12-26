@@ -22,4 +22,7 @@ export class User extends Model {
 
   @Column({ allowNull: true })
   resetPasswordExpires: Date
+
+  @Column({ defaultValue: false })
+  isAdmin: boolean
 }

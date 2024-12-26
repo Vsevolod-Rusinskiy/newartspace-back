@@ -7,12 +7,13 @@ import {
 import { AuthService } from '../auth.service'
 
 @Injectable()
-export class JWTGuard implements CanActivate {
+export class AdminJwtGuard implements CanActivate {
   constructor(private authService: AuthService) {}
+
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest()
 
-    const token = request.headers.authorization.split(' ')[1]
+    const token = request.headers.authorization?.split(' ')[1]
 
     if (!token) {
       throw new UnauthorizedException('Ошибка авторизации')
@@ -22,6 +23,14 @@ export class JWTGuard implements CanActivate {
 
     if (validToken?.error) {
       throw new UnauthorizedException(validToken.error)
+    }
+
+    const user = await this.authService.getUserEmailByTokenData(token)
+
+    if (!user?.isAdmin) {
+      throw new UnauthorizedException(
+        'Доступ запрещен. Требуются права администратора'
+      )
     }
 
     return (request.token = token)

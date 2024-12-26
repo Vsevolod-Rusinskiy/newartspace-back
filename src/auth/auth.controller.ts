@@ -40,7 +40,12 @@ export class AuthController {
     const refresh = await this.authService.generateRefreshToken(user.id)
 
     res.statusCode = HttpStatus.OK
-    return res.send({ ...access, ...refresh, userName: user.userName })
+    return res.send({
+      ...access,
+      ...refresh,
+      userName: user.userName,
+      isAdmin: user.isAdmin
+    })
   }
 
   @UseGuards(RegistrationGuard)
@@ -86,7 +91,12 @@ export class AuthController {
         )
 
         res.statusCode = HttpStatus.OK
-        return res.send({ ...access, ...refresh, userName: user.userName })
+        return res.send({
+          ...access,
+          ...refresh,
+          userName: user.userName,
+          isAdmin: user.isAdmin
+        })
       } else {
         res.statusCode = HttpStatus.BAD_REQUEST
         return res.send({ error: validToken?.error })
@@ -96,7 +106,8 @@ export class AuthController {
       return res.send({
         ...access,
         refreshToken: refreshTokenDto.refreshToken,
-        userName: user.userName
+        userName: user.userName,
+        isAdmin: user.isAdmin
       })
     }
   }
