@@ -7,12 +7,14 @@ import { PaintingAttributes } from './models/painting-attributes.model'
 import { Attributes } from '../attributes/models/attributes.model'
 import { AttributesModule } from '../attributes/attributes.module'
 import { StorageModule } from 'src/common/services/storage.module'
+import { AuthModule } from 'src/auth/auth.module'
 
 @Module({
   imports: [
     SequelizeModule.forFeature([Painting, PaintingAttributes, Attributes]),
     AttributesModule,
-    StorageModule
+    StorageModule,
+    AuthModule
   ],
   providers: [PaintingsService],
   controllers: [PaintingsController]

@@ -14,6 +14,7 @@ import {
   Post,
   Query,
   UploadedFile,
+  UseGuards,
   UseInterceptors
 } from '@nestjs/common'
 
@@ -21,6 +22,7 @@ import { CreateEventDto } from './dto/create-event.dto'
 import { UpdateEventDto } from './dto/update-event.dto'
 import { EventsService } from './events.service'
 import { StorageService } from '../common/services/storage.service'
+import { AdminJwtGuard } from 'src/auth/guards/admin-jwt.guard'
 
 @Controller('events')
 export class EventsController {
@@ -29,6 +31,7 @@ export class EventsController {
     private readonly storageService: StorageService
   ) {}
 
+  @UseGuards(AdminJwtGuard)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Header('Content-Type', 'application/json')
@@ -60,6 +63,7 @@ export class EventsController {
     return event
   }
 
+  @UseGuards(AdminJwtGuard)
   @Patch(':id')
   async updateEvent(
     @Body() updateEvent: UpdateEventDto,
@@ -69,6 +73,7 @@ export class EventsController {
     return event
   }
 
+  @UseGuards(AdminJwtGuard)
   @Delete('delete-image')
   async deleteFile(@Body('fileName') fileName: string) {
     if (!fileName) {
@@ -78,18 +83,21 @@ export class EventsController {
     return { message: 'File deleted successfully' }
   }
 
+  @UseGuards(AdminJwtGuard)
   @Delete(':id')
   async deleteEvent(@Param('id') id: string) {
     await this.eventsService.delete(id)
     return { message: 'Event deleted successfully' }
   }
 
+  @UseGuards(AdminJwtGuard)
   @Delete('deleteMany/:ids')
   async deleteManyArtists(@Param('ids') ids: string) {
     const deletedCount = await this.eventsService.deleteMany(ids)
     return { message: 'Events deleted successfully', deletedCount }
   }
 
+  @UseGuards(AdminJwtGuard)
   @Post('upload-image')
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(@UploadedFile() file: Express.Multer.File) {

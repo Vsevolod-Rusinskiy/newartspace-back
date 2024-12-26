@@ -14,13 +14,15 @@ import {
   Post,
   Query,
   UploadedFile,
-  UseInterceptors
+  UseInterceptors,
+  UseGuards
 } from '@nestjs/common'
 
 import { CreatePaintingDto } from './dto/create-painting.dto'
 import { UpdatePaintingDto } from './dto/update-painting.dto'
 import { PaintingsService } from './paintings.service'
 import { StorageService } from '../common/services/storage.service'
+import { AdminJwtGuard } from 'src/auth/guards/admin-jwt.guard'
 
 @Controller('paintings')
 export class PaintingsController {
@@ -29,6 +31,7 @@ export class PaintingsController {
     private readonly storageService: StorageService
   ) {}
 
+  @UseGuards(AdminJwtGuard)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Header('Content-Type', 'application/json')
@@ -36,6 +39,7 @@ export class PaintingsController {
     return this.paintingService.create(createPainting)
   }
 
+  @UseGuards(AdminJwtGuard)
   @Post('upload-image')
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
@@ -87,6 +91,7 @@ export class PaintingsController {
     return painting
   }
 
+  @UseGuards(AdminJwtGuard)
   @Patch(':id')
   async updatePainting(
     @Body() updatePainting: UpdatePaintingDto,
@@ -96,6 +101,7 @@ export class PaintingsController {
     return painting
   }
 
+  @UseGuards(AdminJwtGuard)
   @Delete('delete-image')
   async deleteFile(@Body('fileName') fileName: string) {
     if (!fileName) {
@@ -105,12 +111,14 @@ export class PaintingsController {
     return { message: 'File deleted successfully' }
   }
 
+  @UseGuards(AdminJwtGuard)
   @Delete(':id')
   async deletePainting(@Param('id') id: string) {
     await this.paintingService.delete(id)
     return { message: 'Painting deleted successfully' }
   }
 
+  @UseGuards(AdminJwtGuard)
   @Delete('deleteMany/:ids')
   async deleteManyPaintings(@Param('ids') ids: string) {
     const deletedCount = await this.paintingService.deleteMany(ids)

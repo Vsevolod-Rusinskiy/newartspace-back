@@ -14,13 +14,15 @@ import {
   Post,
   Query,
   UploadedFile,
-  UseInterceptors
+  UseInterceptors,
+  UseGuards
 } from '@nestjs/common'
 
 import { CreateArtistDto } from './dto/create-artist.dto'
 import { UpdateArtistDto } from './dto/update-artist.dto'
 import { ArtistsService } from './artists.service'
 import { StorageService } from '../common/services/storage.service'
+import { AdminJwtGuard } from 'src/auth/guards/admin-jwt.guard'
 
 @Controller('artists')
 export class ArtistsController {
@@ -29,6 +31,7 @@ export class ArtistsController {
     private readonly storageService: StorageService
   ) {}
 
+  @UseGuards(AdminJwtGuard)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Header('Content-Type', 'application/json')
@@ -36,6 +39,7 @@ export class ArtistsController {
     return this.artistsService.create(createArtist)
   }
 
+  @UseGuards(AdminJwtGuard)
   @Post('upload-image')
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
@@ -85,6 +89,7 @@ export class ArtistsController {
     return artist
   }
 
+  @UseGuards(AdminJwtGuard)
   @Patch(':id')
   async updateArtist(
     @Body() updateArtist: UpdateArtistDto,
@@ -94,6 +99,7 @@ export class ArtistsController {
     return artist
   }
 
+  @UseGuards(AdminJwtGuard)
   @Delete('delete-image')
   async deleteFile(@Body('fileName') fileName: string) {
     if (!fileName) {
@@ -103,12 +109,14 @@ export class ArtistsController {
     return { message: 'File deleted successfully' }
   }
 
+  @UseGuards(AdminJwtGuard)
   @Delete(':id')
   async deleteArtist(@Param('id') id: string) {
     await this.artistsService.delete(id)
     return { message: 'Artist deleted successfully' }
   }
 
+  @UseGuards(AdminJwtGuard)
   @Delete('deleteMany/:ids')
   async deleteManyArtists(@Param('ids') ids: string) {
     const deletedCount = await this.artistsService.deleteMany(ids)
