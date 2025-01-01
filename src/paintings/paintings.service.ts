@@ -116,6 +116,7 @@ export class PaintingsService {
     limit = limit !== undefined ? limit : 10
 
     let sortField = 'priority'
+
     if (sort) {
       try {
         const parsedSort = JSON.parse(sort)
@@ -128,6 +129,7 @@ export class PaintingsService {
       }
     }
 
+    this.logger.debug(`sortField: ${sortField}, order: ${order}`)
     /* filters starts */
     const parsedFilters = filters ? JSON.parse(filters) : {}
     const {
@@ -181,9 +183,16 @@ export class PaintingsService {
     if (sortField === 'artist.artistName') {
       orderBy = Sequelize.literal(`"artist"."artistName" COLLATE "POSIX"`)
     } else if (
-      ['id', 'priority', 'price', 'height', 'width', 'yearOfCreation'].includes(
-        sortField
-      )
+      [
+        'id',
+        'priority',
+        'price',
+        'height',
+        'width',
+        'yearOfCreation',
+        'createdAt',
+        'updatedAt'
+      ].includes(sortField)
     ) {
       orderBy = Sequelize.col(`Painting.${sortField}`)
     } else {
