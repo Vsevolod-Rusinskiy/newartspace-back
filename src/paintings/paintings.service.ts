@@ -200,10 +200,12 @@ export class PaintingsService {
     }
 
     const options: FindOptions = {
-      order: [
-        [Sequelize.col('priority'), 'DESC'],
-        [orderBy, order]
-      ],
+      order: ['createdAt', 'price'].includes(sortField)
+        ? [[orderBy, order]]
+        : [
+            [Sequelize.col('priority'), 'DESC'],
+            [orderBy, order]
+          ],
       limit: limit,
       offset: (page - 1) * limit,
       where: whereConditions,
