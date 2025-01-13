@@ -421,4 +421,31 @@ export class PaintingsService {
       )
     }
   }
+
+  async findMany(ids: string) {
+    this.logger.debug(`ids: ${ids}`, 1111111)
+    if (!ids) {
+      return []
+    }
+
+    const idArray = ids.split(',').map((id) => +id)
+
+    if (!idArray.length) {
+      return []
+    }
+
+    const paintings = await this.paintingModel.findAll({
+      where: {
+        id: {
+          [Op.in]: idArray
+        }
+      },
+      include: [
+        { model: Artist, attributes: ['artistName'] },
+        { model: Attributes, through: { attributes: ['type'] } }
+      ]
+    })
+
+    return paintings
+  }
 }

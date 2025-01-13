@@ -15,7 +15,8 @@ import {
   Query,
   UploadedFile,
   UseInterceptors,
-  UseGuards
+  UseGuards,
+  Logger
 } from '@nestjs/common'
 
 import { CreatePaintingDto } from './dto/create-painting.dto'
@@ -26,6 +27,7 @@ import { AdminJwtGuard } from 'src/auth/guards/admin-jwt.guard'
 
 @Controller('paintings')
 export class PaintingsController {
+  private readonly logger = new Logger(PaintingsController.name)
   constructor(
     private readonly paintingService: PaintingsService,
     private readonly storageService: StorageService
@@ -123,5 +125,11 @@ export class PaintingsController {
   async deleteManyPaintings(@Param('ids') ids: string) {
     const deletedCount = await this.paintingService.deleteMany(ids)
     return { message: 'Paintings deleted successfully', deletedCount }
+  }
+
+  @Get('getMany/:ids')
+  async getManyPaintings(@Param('ids') ids: string) {
+    const paintings = await this.paintingService.findMany(ids)
+    return paintings
   }
 }
