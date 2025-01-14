@@ -84,6 +84,8 @@ export class PaintingsController {
       filters,
       artStyle
     )
+
+    this.logger.debug(`Received data: ${JSON.stringify(filters)}`)
     return { data, total, page, pageCount: Math.ceil(total / limit) }
   }
 
