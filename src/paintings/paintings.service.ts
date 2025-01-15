@@ -147,15 +147,26 @@ export class PaintingsService {
     const { min, max } = parsePriceRange(priceList)
     const sizeConditions = parseSizeList(sizeList)
 
+    // Извлекаем строки значений из новых структур
+    const colorValuesList = colorsList.map((item) => Object.values(item)[0])
+    const materialValuesList = materialsList.map(
+      (item) => Object.values(item)[0]
+    )
+    const techniqueValuesList = techniquesList.map(
+      (item) => Object.values(item)[0]
+    )
+    const themeValuesList = themesList.map((item) => Object.values(item)[0])
+
     const whereConditions: any = {}
 
     if (artTypesList.length) whereConditions.artType = artTypesList
     if (formatsList.length) whereConditions.format = formatsList
     if (stylesList.length) whereConditions.style = stylesList
-    if (materialsList.length) whereConditions.material = materialsList
-    if (techniquesList.length) whereConditions.technique = techniquesList
-    if (themesList.length) whereConditions.theme = themesList
-    if (colorsList.length) whereConditions.color = colorsList
+    if (materialValuesList.length) whereConditions.material = materialValuesList
+    if (techniqueValuesList.length)
+      whereConditions.technique = techniqueValuesList
+    if (themeValuesList.length) whereConditions.theme = themeValuesList
+    if (colorValuesList.length) whereConditions.color = colorValuesList
     if (priceList) {
       whereConditions.price = {
         [Op.gte]: min,
