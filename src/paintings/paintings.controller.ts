@@ -38,6 +38,7 @@ export class PaintingsController {
   @HttpCode(HttpStatus.CREATED)
   @Header('Content-Type', 'application/json')
   createPainting(@Body() createPainting: CreatePaintingDto) {
+    this.logger.debug(`Received data: ${JSON.stringify(createPainting)}`)
     return this.paintingService.create(createPainting)
   }
 
