@@ -134,12 +134,12 @@ export class PaintingsService {
     const parsedFilters = filters ? JSON.parse(filters) : {}
     const {
       artTypesList = [],
-      colorsList = [],
       formatsList = [],
+      colorsList = [],
       materialsList = [],
       techniquesList = [],
-      stylesList = [],
       themesList = [],
+      stylesList = [],
       priceList = '',
       sizeList = []
     } = parsedFilters
