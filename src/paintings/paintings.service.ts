@@ -150,12 +150,12 @@ export class PaintingsService {
     const whereConditions: any = {}
 
     if (artTypesList.length) whereConditions.artType = artTypesList
-    if (colorsList.length) whereConditions.color = colorsList
     if (formatsList.length) whereConditions.format = formatsList
+    if (stylesList.length) whereConditions.style = stylesList
     if (materialsList.length) whereConditions.material = materialsList
     if (techniquesList.length) whereConditions.technique = techniquesList
-    if (stylesList.length) whereConditions.style = stylesList
     if (themesList.length) whereConditions.theme = themesList
+    if (colorsList.length) whereConditions.color = colorsList
     if (priceList) {
       whereConditions.price = {
         [Op.gte]: min,

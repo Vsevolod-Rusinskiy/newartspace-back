@@ -102,6 +102,7 @@ export class PaintingsController {
     @Body() updatePainting: UpdatePaintingDto,
     @Param('id') id: string
   ) {
+    this.logger.debug(`Received data: ${JSON.stringify(updatePainting)}`)
     const painting = await this.paintingService.update(+id, updatePainting)
     return painting
   }
