@@ -158,15 +158,75 @@ export class PaintingsService {
     const themeValuesList = themesList.map((item) => Object.values(item)[0])
 
     const whereConditions: any = {}
+    const orConditions = []
 
     if (artTypesList.length) whereConditions.artType = artTypesList
     if (formatsList.length) whereConditions.format = formatsList
     if (stylesList.length) whereConditions.style = stylesList
-    if (materialValuesList.length) whereConditions.material = materialValuesList
-    if (techniqueValuesList.length)
-      whereConditions.technique = techniqueValuesList
-    if (themeValuesList.length) whereConditions.theme = themeValuesList
-    if (colorValuesList.length) whereConditions.color = colorValuesList
+    if (materialValuesList.length) {
+      orConditions.push(
+        { material: materialValuesList },
+        {
+          id: {
+            [Op.in]: Sequelize.literal(`(
+              SELECT DISTINCT "paintingId"
+              FROM "PaintingAttributes" pa
+              JOIN "Attributes" a ON a.id = pa."attributeId"
+              WHERE pa.type = 'materialsList'
+              AND a.value IN ('${materialValuesList.join("','")}')
+            )`)
+          }
+        }
+      )
+    }
+    if (techniqueValuesList.length) {
+      orConditions.push(
+        { technique: techniqueValuesList },
+        {
+          id: {
+            [Op.in]: Sequelize.literal(`(
+              SELECT DISTINCT "paintingId"
+              FROM "PaintingAttributes" pa
+              JOIN "Attributes" a ON a.id = pa."attributeId"
+              WHERE pa.type = 'techniquesList'
+              AND a.value IN ('${techniqueValuesList.join("','")}')
+            )`)
+          }
+        }
+      )
+    }
+    if (themeValuesList.length) {
+      orConditions.push(
+        { theme: themeValuesList },
+        {
+          id: {
+            [Op.in]: Sequelize.literal(`(
+              SELECT DISTINCT "paintingId"
+              FROM "PaintingAttributes" pa
+              JOIN "Attributes" a ON a.id = pa."attributeId"
+              WHERE pa.type = 'themesList'
+              AND a.value IN ('${themeValuesList.join("','")}')
+            )`)
+          }
+        }
+      )
+    }
+    if (colorValuesList.length) {
+      orConditions.push(
+        { color: colorValuesList },
+        {
+          id: {
+            [Op.in]: Sequelize.literal(`(
+              SELECT DISTINCT "paintingId"
+              FROM "PaintingAttributes" pa
+              JOIN "Attributes" a ON a.id = pa."attributeId"
+              WHERE pa.type = 'colorsList'
+              AND a.value IN ('${colorValuesList.join("','")}')
+            )`)
+          }
+        }
+      )
+    }
     if (priceList) {
       whereConditions.price = {
         [Op.gte]: min,
@@ -174,13 +234,22 @@ export class PaintingsService {
       }
     }
     if (sizeList.length) {
-      whereConditions[Op.or] = sizeConditions.map(
-        ({ heightMin, heightMax, widthMin, widthMax }) => ({
-          height: { [Op.gte]: heightMin, [Op.lte]: heightMax },
-          width: { [Op.gte]: widthMin, [Op.lte]: widthMax }
-        })
+      orConditions.push(
+        ...sizeConditions.map(
+          ({ heightMin, heightMax, widthMin, widthMax }) => ({
+            height: { [Op.gte]: heightMin, [Op.lte]: heightMax },
+            width: { [Op.gte]: widthMin, [Op.lte]: widthMax }
+          })
+        )
       )
     }
+
+    if (orConditions.length) {
+      whereConditions[Op.or] = orConditions
+    }
+
+    this.logger.debug(`Where conditions: ${JSON.stringify(whereConditions)}`)
+    this.logger.debug(`OR conditions: ${JSON.stringify(orConditions)}`)
     /* filters ends */
 
     if (artStyle) whereConditions.artStyle = artStyle
@@ -228,7 +297,11 @@ export class PaintingsService {
 
     const total = await this.paintingModel.count({
       where: whereConditions,
-      distinct: true
+      distinct: true,
+      include: [
+        { model: Artist, attributes: ['artistName'] },
+        { model: Attributes, through: { attributes: ['type'] } }
+      ]
     })
 
     const data = await this.paintingModel.findAll(options)
