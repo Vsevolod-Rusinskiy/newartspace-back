@@ -38,6 +38,7 @@ export class PaintingsController {
   @HttpCode(HttpStatus.CREATED)
   @Header('Content-Type', 'application/json')
   createPainting(@Body() createPainting: CreatePaintingDto) {
+    this.logger.debug(`Received data: ${JSON.stringify(createPainting)}`)
     return this.paintingService.create(createPainting)
   }
 
@@ -84,6 +85,8 @@ export class PaintingsController {
       filters,
       artStyle
     )
+
+    this.logger.debug(`Received data: ${JSON.stringify(filters)}`)
     return { data, total, page, pageCount: Math.ceil(total / limit) }
   }
 
@@ -99,6 +102,7 @@ export class PaintingsController {
     @Body() updatePainting: UpdatePaintingDto,
     @Param('id') id: string
   ) {
+    this.logger.debug(`Received data: ${JSON.stringify(updatePainting)}`)
     const painting = await this.paintingService.update(+id, updatePainting)
     return painting
   }

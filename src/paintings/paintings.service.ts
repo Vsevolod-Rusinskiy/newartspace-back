@@ -134,12 +134,12 @@ export class PaintingsService {
     const parsedFilters = filters ? JSON.parse(filters) : {}
     const {
       artTypesList = [],
-      colorsList = [],
       formatsList = [],
+      colorsList = [],
       materialsList = [],
       techniquesList = [],
-      stylesList = [],
       themesList = [],
+      stylesList = [],
       priceList = '',
       sizeList = []
     } = parsedFilters
@@ -147,15 +147,86 @@ export class PaintingsService {
     const { min, max } = parsePriceRange(priceList)
     const sizeConditions = parseSizeList(sizeList)
 
+    // Извлекаем строки значений из новых структур
+    const colorValuesList = colorsList.map((item) => Object.values(item)[0])
+    const materialValuesList = materialsList.map(
+      (item) => Object.values(item)[0]
+    )
+    const techniqueValuesList = techniquesList.map(
+      (item) => Object.values(item)[0]
+    )
+    const themeValuesList = themesList.map((item) => Object.values(item)[0])
+
     const whereConditions: any = {}
+    const orConditions = []
 
     if (artTypesList.length) whereConditions.artType = artTypesList
-    if (colorsList.length) whereConditions.color = colorsList
     if (formatsList.length) whereConditions.format = formatsList
-    if (materialsList.length) whereConditions.material = materialsList
-    if (techniquesList.length) whereConditions.technique = techniquesList
     if (stylesList.length) whereConditions.style = stylesList
-    if (themesList.length) whereConditions.theme = themesList
+    if (materialValuesList.length) {
+      orConditions.push(
+        { material: materialValuesList },
+        {
+          id: {
+            [Op.in]: Sequelize.literal(`(
+              SELECT DISTINCT "paintingId"
+              FROM "PaintingAttributes" pa
+              JOIN "Attributes" a ON a.id = pa."attributeId"
+              WHERE pa.type = 'materialsList'
+              AND a.value IN ('${materialValuesList.join("','")}')
+            )`)
+          }
+        }
+      )
+    }
+    if (techniqueValuesList.length) {
+      orConditions.push(
+        { technique: techniqueValuesList },
+        {
+          id: {
+            [Op.in]: Sequelize.literal(`(
+              SELECT DISTINCT "paintingId"
+              FROM "PaintingAttributes" pa
+              JOIN "Attributes" a ON a.id = pa."attributeId"
+              WHERE pa.type = 'techniquesList'
+              AND a.value IN ('${techniqueValuesList.join("','")}')
+            )`)
+          }
+        }
+      )
+    }
+    if (themeValuesList.length) {
+      orConditions.push(
+        { theme: themeValuesList },
+        {
+          id: {
+            [Op.in]: Sequelize.literal(`(
+              SELECT DISTINCT "paintingId"
+              FROM "PaintingAttributes" pa
+              JOIN "Attributes" a ON a.id = pa."attributeId"
+              WHERE pa.type = 'themesList'
+              AND a.value IN ('${themeValuesList.join("','")}')
+            )`)
+          }
+        }
+      )
+    }
+    if (colorValuesList.length) {
+      orConditions.push(
+        { color: colorValuesList },
+        {
+          id: {
+            [Op.in]: Sequelize.literal(`(
+              SELECT DISTINCT "paintingId"
+              FROM "PaintingAttributes" pa
+              JOIN "Attributes" a ON a.id = pa."attributeId"
+              WHERE pa.type = 'colorsList'
+              AND a.value IN ('${colorValuesList.join("','")}')
+            )`)
+          }
+        }
+      )
+    }
     if (priceList) {
       whereConditions.price = {
         [Op.gte]: min,
@@ -163,13 +234,22 @@ export class PaintingsService {
       }
     }
     if (sizeList.length) {
-      whereConditions[Op.or] = sizeConditions.map(
-        ({ heightMin, heightMax, widthMin, widthMax }) => ({
-          height: { [Op.gte]: heightMin, [Op.lte]: heightMax },
-          width: { [Op.gte]: widthMin, [Op.lte]: widthMax }
-        })
+      orConditions.push(
+        ...sizeConditions.map(
+          ({ heightMin, heightMax, widthMin, widthMax }) => ({
+            height: { [Op.gte]: heightMin, [Op.lte]: heightMax },
+            width: { [Op.gte]: widthMin, [Op.lte]: widthMax }
+          })
+        )
       )
     }
+
+    if (orConditions.length) {
+      whereConditions[Op.or] = orConditions
+    }
+
+    this.logger.debug(`Where conditions: ${JSON.stringify(whereConditions)}`)
+    this.logger.debug(`OR conditions: ${JSON.stringify(orConditions)}`)
     /* filters ends */
 
     if (artStyle) whereConditions.artStyle = artStyle
@@ -217,7 +297,11 @@ export class PaintingsService {
 
     const total = await this.paintingModel.count({
       where: whereConditions,
-      distinct: true
+      distinct: true,
+      include: [
+        { model: Artist, attributes: ['artistName'] },
+        { model: Attributes, through: { attributes: ['type'] } }
+      ]
     })
 
     const data = await this.paintingModel.findAll(options)
