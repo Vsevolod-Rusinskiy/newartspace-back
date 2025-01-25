@@ -3,7 +3,8 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
-  IsNumber
+  IsNumber,
+  IsArray
 } from 'class-validator'
 
 export class RequestFormDto {
@@ -31,4 +32,9 @@ export class RequestFormDto {
   @IsOptional()
   @IsNumber()
   paintingId?: number
+
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  cartItemIds?: number[]
 }
