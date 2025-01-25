@@ -58,4 +58,5 @@ import { MailModule } from './mail/mail.module'
   ],
   controllers: [AppController]
 })
+/* eslint-disable */
 export class AppModule {}
