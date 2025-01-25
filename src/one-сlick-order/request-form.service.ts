@@ -29,7 +29,7 @@ export class RequestFormService {
     }
   }
 
-  async sendOrder(orderData: RequestFormDto) {
+  async sendOrderReproduction(orderData: RequestFormDto) {
     this.logger.log('Отправка заказа: ' + JSON.stringify(orderData))
 
     const message = `Имя: ${orderData.name}, Телефон: ${orderData.phone}, Email: ${orderData.email}`
@@ -43,5 +43,9 @@ export class RequestFormService {
         HttpStatus.BAD_REQUEST
       )
     }
+  }
+
+  async sendOrderCart(orderData: RequestFormDto) {
+    this.logger.debug('Отправка заказа: ' + JSON.stringify(orderData))
   }
 }

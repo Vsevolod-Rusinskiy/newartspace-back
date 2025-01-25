@@ -13,4 +13,12 @@ export class RequestFormDto {
   @IsOptional()
   @IsString()
   captcha?: string
+
+  @IsOptional()
+  @IsString()
+  paintingName?: string
+
+  @IsOptional()
+  @IsString()
+  formType?: string
 }
