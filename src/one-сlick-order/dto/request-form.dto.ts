@@ -1,6 +1,6 @@
 import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator'
 
-export class OneClickOrderDto {
+export class RequestFormDto {
   @IsNotEmpty()
   name: string
 

@@ -1,11 +1,11 @@
 // src/one-click-order/one-click-order.service.ts
 import { HttpStatus, HttpException, Injectable, Logger } from '@nestjs/common'
 import axios from 'axios'
-import { OneClickOrderDto } from './dto/one-click-order.dto'
+import { RequestFormDto } from './dto/request-form.dto'
 
 @Injectable()
-export class OneClickOrderService {
-  private readonly logger = new Logger(OneClickOrderService.name)
+export class RequestFormService {
+  private readonly logger = new Logger(RequestFormService.name)
 
   private async sendTelegramMessage(message: string) {
     const TELEGRAM_BOT_TOKEN = process.env.YOUR_BOT_TOKEN
@@ -29,7 +29,7 @@ export class OneClickOrderService {
     }
   }
 
-  async sendOrder(orderData: OneClickOrderDto) {
+  async sendOrder(orderData: RequestFormDto) {
     this.logger.log('Отправка заказа: ' + JSON.stringify(orderData))
 
     const message = `Имя: ${orderData.name}, Телефон: ${orderData.phone}, Email: ${orderData.email}`
