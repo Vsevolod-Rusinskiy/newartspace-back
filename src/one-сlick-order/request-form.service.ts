@@ -32,10 +32,15 @@ export class RequestFormService {
   async sendOrderReproduction(orderData: RequestFormDto) {
     this.logger.log('Отправка заказа: ' + JSON.stringify(orderData))
 
-    const message = `Имя: ${orderData.name}, Телефон: ${orderData.phone}, Email: ${orderData.email}`
+    const message = `Имя: ${orderData.name}
+Телефон: ${orderData.phone}
+Email: ${orderData.email}
+ID картины: ${orderData.paintingId || 'Не указано'}
+Тип формы: ${orderData.formType || 'Не указан'}`
 
     try {
-      const result = await this.sendTelegramMessage(`Новый заказ: ${message}`)
+      const result = await this.sendTelegramMessage(`Новый заказ: 
+${message}`)
       return result
     } catch (error) {
       throw new HttpException(

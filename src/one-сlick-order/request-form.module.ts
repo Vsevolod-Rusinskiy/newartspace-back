@@ -6,4 +6,6 @@ import { RequestFormController } from './request-form.controller'
   controllers: [RequestFormController],
   providers: [RequestFormService]
 })
+/* eslint-disable */
 export class RequestFormModule {}
+/* eslint-enable */

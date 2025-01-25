@@ -1,4 +1,10 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsNumber
+} from 'class-validator'
 
 export class RequestFormDto {
   @IsNotEmpty()
@@ -21,4 +27,8 @@ export class RequestFormDto {
   @IsOptional()
   @IsString()
   formType?: string
+
+  @IsOptional()
+  @IsNumber()
+  paintingId?: number
 }
