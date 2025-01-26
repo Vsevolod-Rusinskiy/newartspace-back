@@ -5,6 +5,7 @@ import { RequestFormDto } from './dto/request-form.dto'
 import { InjectModel } from '@nestjs/sequelize'
 import { Painting } from '../paintings/models/painting.model'
 import { Artist } from '../artists/models/artist.model'
+import { MailService } from '../mail/mail.service'
 
 @Injectable()
 export class RequestFormService {
@@ -12,16 +13,14 @@ export class RequestFormService {
 
   constructor(
     @InjectModel(Painting)
-    private paintingModel: typeof Painting
+    private paintingModel: typeof Painting,
+    private mailService: MailService
   ) {}
 
   private async sendTelegramMessage(message: string) {
     const TELEGRAM_BOT_TOKEN = process.env.YOUR_BOT_TOKEN
     const CHAT_ID = process.env.CHAT_ID
     const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`
-
-    console.log('Токен бота:', TELEGRAM_BOT_TOKEN)
-    console.log('Chat ID:', CHAT_ID)
 
     try {
       await axios.post(url, {
@@ -34,6 +33,42 @@ export class RequestFormService {
         'Ошибка при отправке сообщения в Telegram: ' + error.message
       )
       throw new Error(error.message)
+    }
+  }
+
+  private async sendEmails(
+    clientEmail: string,
+    adminMessage: string,
+    paintingInfo: string
+  ) {
+    try {
+      // Отправка письма клиенту
+      const clientMessage = `Здравствуйте!
+
+Мы получили ваш заказ на ${paintingInfo}
+Мы все сейчас проверим и дадим ответ.
+
+Спасибо за ваш заказ!
+С уважением,
+Команда Новое пространство`
+
+      await this.mailService.sendMail(
+        'Ваш заказ получен',
+        clientEmail,
+        clientMessage
+      )
+
+      // Отправка письма админу
+      await this.mailService.sendMail(
+        'Новый заказ',
+        process.env.NODEMAILER_EMAIL,
+        adminMessage
+      )
+
+      this.logger.log('Письма успешно отправлены')
+    } catch (error) {
+      this.logger.error('Ошибка при отправке писем:', error.message)
+      throw new Error('Ошибка при отправке писем')
     }
   }
 
@@ -60,9 +95,9 @@ ${paintingInfo}
 Тип формы: репродукция`
 
     try {
-      const result = await this.sendTelegramMessage(`Новый заказ: 
-${message}`)
-      return result
+      await this.sendTelegramMessage(`Новый заказ: \n${message}`)
+      await this.sendEmails(orderData.email, message, paintingInfo)
+      return { success: true }
     } catch (error) {
       throw new HttpException(
         'Ошибка при создании заказа',
@@ -75,6 +110,7 @@ ${message}`)
     this.logger.log('Отправка заказа корзины: ' + JSON.stringify(orderData))
 
     let cartItemsInfo = 'Картины не выбраны'
+    let paintingsListForClient = ''
 
     if (orderData.cartItemIds && orderData.cartItemIds.length > 0) {
       const paintings = await this.paintingModel.findAll({
@@ -91,6 +127,12 @@ ${message}`)
           .join('\n')
 
         cartItemsInfo = `Выбранные картины:\n${paintingsList}`
+        paintingsListForClient = paintings
+          .map(
+            (painting) =>
+              `"${painting.title}" художника ${painting.artist.artistName}`
+          )
+          .join(', ')
       }
     }
 
@@ -101,9 +143,9 @@ ${cartItemsInfo}
 Тип формы: заказ из корзины`
 
     try {
-      const result = await this.sendTelegramMessage(`Новый заказ: 
-${message}`)
-      return result
+      await this.sendTelegramMessage(`Новый заказ: \n${message}`)
+      await this.sendEmails(orderData.email, message, paintingsListForClient)
+      return { success: true }
     } catch (error) {
       throw new HttpException(
         'Ошибка при создании заказа',
