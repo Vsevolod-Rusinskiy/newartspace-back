@@ -12,7 +12,7 @@ import { ValidationPipe } from '@nestjs/common'
 import { ArtistsModule } from './artists/artists.module'
 import { AppController } from './app.controller'
 import { AttributesModule } from './attributes/attributes.module'
-import { OneClickOrderModule } from './one-сlick-order/one-click-order.module'
+import { RequestFormModule } from './one-сlick-order/request-form.module'
 import { EventsModule } from './events/events.module'
 import { UsersModule } from './users/users.module'
 import { AuthModule } from './auth/auth.module'
@@ -36,7 +36,7 @@ import { MailModule } from './mail/mail.module'
     PaintingsModule,
     EventsModule,
     StorageModule,
-    OneClickOrderModule,
+    RequestFormModule,
     UsersModule,
     AuthModule,
     ProfileModule,
@@ -58,4 +58,5 @@ import { MailModule } from './mail/mail.module'
   ],
   controllers: [AppController]
 })
+/* eslint-disable */
 export class AppModule {}
