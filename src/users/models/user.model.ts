@@ -1,4 +1,4 @@
-import { Table, Column, Model } from 'sequelize-typescript'
+import { Table, Column, Model, DataType } from 'sequelize-typescript'
 
 @Table
 export class User extends Model {
@@ -25,4 +25,16 @@ export class User extends Model {
 
   @Column({ defaultValue: false })
   isAdmin: boolean
+
+  @Column({
+    type: DataType.ARRAY(DataType.INTEGER),
+    defaultValue: []
+  })
+  favorites: number[]
+
+  @Column({
+    type: DataType.ARRAY(DataType.INTEGER),
+    defaultValue: []
+  })
+  cart: number[]
 }
