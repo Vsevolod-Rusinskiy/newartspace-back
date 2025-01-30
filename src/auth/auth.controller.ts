@@ -44,7 +44,8 @@ export class AuthController {
       ...access,
       ...refresh,
       userName: user.userName,
-      isAdmin: user.isAdmin
+      isAdmin: user.isAdmin,
+      userId: user.id
     })
   }
 
