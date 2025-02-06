@@ -75,7 +75,8 @@ export class PaintingsController {
     @Query('page') page,
     @Query('limit') limit,
     @Query('filters') filters,
-    @Query('artStyle') artStyle
+    @Query('artStyle') artStyle,
+    @Query('filter') filter: string
   ) {
     const { data, total } = await this.paintingService.getAllSortedPaintings(
       sort,
@@ -83,10 +84,12 @@ export class PaintingsController {
       page,
       limit,
       filters,
-      artStyle
+      artStyle,
+      filter
     )
 
     this.logger.debug(`Received data: ${JSON.stringify(filters)}`)
+    this.logger.debug(`Search filter: ${filter}`)
     return { data, total, page, pageCount: Math.ceil(total / limit) }
   }
 

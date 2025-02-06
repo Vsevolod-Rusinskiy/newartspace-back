@@ -109,7 +109,8 @@ export class PaintingsService {
     page?: number,
     limit?: number,
     filters?: string,
-    artStyle?: string
+    artStyle?: string,
+    filter?: string
   ): Promise<{ data: Painting[]; total: number }> {
     order = order || 'ASC'
     page = page !== undefined ? page : 1
@@ -159,6 +160,20 @@ export class PaintingsService {
 
     const whereConditions: any = {}
     const orConditions = []
+
+    // Добавляем условия поиска по названию и автору
+    if (filter) {
+      try {
+        const searchFilter = JSON.parse(filter)
+        if (searchFilter.title) {
+          whereConditions.title = {
+            [Op.iLike]: `%${searchFilter.title}%`
+          }
+        }
+      } catch (error) {
+        this.logger.error('Failed to parse search filter:', error)
+      }
+    }
 
     if (artTypesList.length) whereConditions.artType = artTypesList
     if (formatsList.length) whereConditions.format = formatsList
@@ -254,6 +269,28 @@ export class PaintingsService {
 
     if (artStyle) whereConditions.artStyle = artStyle
 
+    // Настройка условий для поиска по автору
+    const includeArtist = {
+      model: Artist,
+      attributes: ['artistName'],
+      required: true
+    }
+
+    if (filter) {
+      try {
+        const searchFilter = JSON.parse(filter)
+        if (searchFilter.artist?.artistName) {
+          includeArtist['where'] = {
+            artistName: {
+              [Op.iLike]: `%${searchFilter.artist.artistName}%`
+            }
+          }
+        }
+      } catch (error) {
+        this.logger.error('Failed to parse artist search filter:', error)
+      }
+    }
+
     // Логика для определения порядка сортировки для react-admin
     // Определяем порядок сортировки в зависимости от типа поля:
     // 1. Для имени автора используем COLLATE для регистронезависимой сортировки.
@@ -290,7 +327,7 @@ export class PaintingsService {
       offset: (page - 1) * limit,
       where: whereConditions,
       include: [
-        { model: Artist, attributes: ['artistName'], required: true },
+        includeArtist,
         { model: Attributes, through: { attributes: ['type'] } }
       ]
     }
@@ -299,7 +336,7 @@ export class PaintingsService {
       where: whereConditions,
       distinct: true,
       include: [
-        { model: Artist, attributes: ['artistName'] },
+        includeArtist,
         { model: Attributes, through: { attributes: ['type'] } }
       ]
     })
