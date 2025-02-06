@@ -44,7 +44,8 @@ export class ArtistsService {
     order?: 'ASC' | 'DESC',
     page?: number,
     limit?: number,
-    letter?: string
+    letter?: string,
+    filter?: string
   ): Promise<{ data: Artist[]; total: number }> {
     order = order || 'ASC'
     page = page !== undefined ? page : 1
@@ -77,8 +78,32 @@ export class ArtistsService {
       orderBy = Sequelize.literal(`"${sortField}" COLLATE "POSIX"`)
     }
 
+    const whereConditions: any = {}
+
+    // Добавляем условие для поиска по имени художника
+    if (filter) {
+      try {
+        const searchFilter = JSON.parse(filter)
+        if (searchFilter.artistName) {
+          whereConditions.artistName = {
+            [Op.iLike]: `%${searchFilter.artistName}%`
+          }
+        }
+      } catch (error) {
+        this.logger.error('Failed to parse search filter:', error)
+      }
+    }
+
+    // Добавляем условие для фильтрации по первой букве имени художника
+    if (letter) {
+      whereConditions.artistName = {
+        ...whereConditions.artistName,
+        [Op.like]: `${letter}%`
+      }
+    }
+
     const options: FindOptions = {
-      where: {},
+      where: whereConditions,
       order: [
         [Sequelize.col('priority'), 'DESC'],
         [orderBy, order]
@@ -91,16 +116,6 @@ export class ArtistsService {
           as: 'paintings'
         }
       ]
-    }
-
-    // Добавляем условие для фильтрации по первой букве имени художника
-    if (letter) {
-      options.where = {
-        ...options.where,
-        artistName: {
-          [Op.like]: `${letter}%`
-        }
-      }
     }
 
     const { rows: data, count: total } = await this.artistModel.findAndCountAll(
