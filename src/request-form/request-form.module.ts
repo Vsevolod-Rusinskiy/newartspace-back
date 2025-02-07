@@ -4,9 +4,10 @@ import { RequestFormService } from './request-form.service'
 import { SequelizeModule } from '@nestjs/sequelize'
 import { Painting } from '../paintings/models/painting.model'
 import { MailModule } from '../mail/mail.module'
+import { OrdersModule } from '../orders/orders.module'
 
 @Module({
-  imports: [SequelizeModule.forFeature([Painting]), MailModule],
+  imports: [SequelizeModule.forFeature([Painting]), MailModule, OrdersModule],
   controllers: [RequestFormController],
   providers: [RequestFormService]
 })

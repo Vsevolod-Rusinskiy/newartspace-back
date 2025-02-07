@@ -11,6 +11,8 @@ import { Attributes } from '../attributes/models/attributes.model'
 import { PaintingAttributes } from '../paintings/models/painting-attributes.model'
 import { Event } from '../events/models/event.model'
 import { User } from '../users/models/user.model'
+import { Order } from '../orders/models/order.model'
+import { OrderItem } from '../orders/models/order-item.model'
 @Injectable()
 export class SequelizeConfigService implements SequelizeOptionsFactory {
   constructor(private readonly configService: ConfigService) {}
@@ -28,7 +30,16 @@ export class SequelizeConfigService implements SequelizeOptionsFactory {
       username,
       password,
       database,
-      models: [Painting, Artist, Attributes, PaintingAttributes, Event, User],
+      models: [
+        Painting,
+        Artist,
+        Attributes,
+        PaintingAttributes,
+        Event,
+        User,
+        Order,
+        OrderItem
+      ],
       autoLoadModels: true,
       synchronize: true
     }

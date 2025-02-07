@@ -18,6 +18,7 @@ import { UsersModule } from './users/users.module'
 import { AuthModule } from './auth/auth.module'
 import { ProfileModule } from './profile/profile.module'
 import { MailModule } from './mail/mail.module'
+import { OrdersModule } from './orders/orders.module'
 
 @Module({
   imports: [
@@ -40,7 +41,8 @@ import { MailModule } from './mail/mail.module'
     UsersModule,
     AuthModule,
     ProfileModule,
-    MailModule
+    MailModule,
+    OrdersModule
   ],
   providers: [
     {
