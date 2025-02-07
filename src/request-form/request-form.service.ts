@@ -8,6 +8,7 @@ import { Artist } from '../artists/models/artist.model'
 import { MailService } from '../mail/mail.service'
 import { OrdersService } from '../orders/orders.service'
 import { CreateOrderDto } from '../orders/dto/create-order.dto'
+import { UsersService } from '../users/users.service'
 
 @Injectable()
 export class RequestFormService {
@@ -17,8 +18,19 @@ export class RequestFormService {
     @InjectModel(Painting)
     private paintingModel: typeof Painting,
     private mailService: MailService,
-    private ordersService: OrdersService
+    private ordersService: OrdersService,
+    private usersService: UsersService
   ) {}
+
+  private async findUserByEmail(email: string): Promise<number | null> {
+    try {
+      const user = await this.usersService.findOne(email)
+      return user ? user.id : null
+    } catch (error) {
+      this.logger.warn(`User not found for email: ${email}`)
+      return null
+    }
+  }
 
   private async sendTelegramMessage(message: string) {
     const TELEGRAM_BOT_TOKEN = process.env.YOUR_BOT_TOKEN
@@ -111,6 +123,9 @@ ${paintingInfo}
       await this.sendTelegramMessage(`Новый заказ: \n${message}`)
       await this.sendEmails(orderData.email, message, paintingInfo)
 
+      // Ищем пользователя по email
+      const userId = await this.findUserByEmail(orderData.email)
+
       // Создаем заказ
       if (painting) {
         const createOrderDto: CreateOrderDto = {
@@ -119,6 +134,7 @@ ${paintingInfo}
           customerPhone: orderData.phone,
           description: 'Заказ репродукции',
           totalPrice: painting.price,
+          userId: userId,
           orderItems: [
             {
               paintingId: painting.id,
@@ -180,6 +196,9 @@ ${cartItemsInfo}
       await this.sendTelegramMessage(`Новый заказ: \n${message}`)
       await this.sendEmails(orderData.email, message, paintingsListForClient)
 
+      // Ищем пользователя по email
+      const userId = await this.findUserByEmail(orderData.email)
+
       // Создаем заказ
       if (paintings.length > 0) {
         const totalPrice = paintings.reduce(
@@ -192,6 +211,7 @@ ${cartItemsInfo}
           customerPhone: orderData.phone,
           description: 'Заказ из корзины',
           totalPrice: totalPrice,
+          userId: userId,
           orderItems: paintings.map((painting) => ({
             paintingId: painting.id,
             quantity: 1,
