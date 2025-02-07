@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/sequelize'
 import { Order } from './models/order.model'
 import { OrderItem } from './models/order-item.model'
@@ -57,27 +57,78 @@ export class OrdersService {
   }
 
   async findOne(id: number): Promise<Order> {
-    return this.orderModel.findOne({
+    const order = await this.orderModel.findOne({
       where: { id },
       include: [{ model: OrderItem }, { model: OrderStatus }]
     })
+
+    if (!order) {
+      this.logger.warn(`Order with id ${id} not found`)
+      throw new NotFoundException(`Order with id ${id} not found`)
+    }
+
+    return order
   }
 
   async updateStatus(orderId: number, statusId: number): Promise<Order> {
-    const order = await this.orderModel.findOne({ where: { id: orderId } })
-    if (!order) {
-      throw new Error('Order not found')
+    try {
+      // Проверяем существование статуса
+      const status = await this.orderStatusModel.findOne({
+        where: { id: statusId }
+      })
+
+      if (!status) {
+        this.logger.warn(`Status with id ${statusId} not found`)
+        throw new NotFoundException(`Status with id ${statusId} not found`)
+      }
+
+      // Проверяем существование заказа
+      const order = await this.orderModel.findOne({
+        where: { id: orderId }
+      })
+
+      if (!order) {
+        this.logger.warn(`Order with id ${orderId} not found`)
+        throw new NotFoundException(`Order with id ${orderId} not found`)
+      }
+
+      // Обновляем статус
+      order.statusId = statusId
+      await order.save()
+
+      this.logger.log(`Updated order ${orderId} status to ${statusId}`)
+
+      // Возвращаем обновленный заказ со всеми связями
+      return this.findOne(orderId)
+    } catch (error) {
+      this.logger.error(
+        `Error updating order ${orderId} status: ${error.message}`,
+        error.stack
+      )
+      throw error
     }
-
-    order.statusId = statusId
-    await order.save()
-
-    return this.findOne(orderId)
   }
 
   async getStatuses(): Promise<OrderStatus[]> {
-    return this.orderStatusModel.findAll({
-      order: [['sortOrder', 'ASC']]
-    })
+    try {
+      return await this.orderStatusModel.findAll({
+        order: [['sortOrder', 'ASC']]
+      })
+    } catch (error) {
+      this.logger.error(`Error getting statuses: ${error.message}`, error.stack)
+      throw error
+    }
+  }
+
+  async findAll(): Promise<Order[]> {
+    try {
+      return await this.orderModel.findAll({
+        include: [{ model: OrderItem }, { model: OrderStatus }],
+        order: [['createdAt', 'DESC']]
+      })
+    } catch (error) {
+      this.logger.error(`Error getting orders: ${error.message}`, error.stack)
+      throw error
+    }
   }
 }

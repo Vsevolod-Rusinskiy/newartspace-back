@@ -44,4 +44,9 @@ export class OrdersController {
   async getStatuses(): Promise<OrderStatus[]> {
     return this.ordersService.getStatuses()
   }
+
+  @Get()
+  async findAll(): Promise<Order[]> {
+    return this.ordersService.findAll()
+  }
 }
