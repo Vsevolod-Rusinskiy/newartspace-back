@@ -4,12 +4,11 @@ import {
   Model,
   ForeignKey,
   BelongsTo,
-  HasMany,
-  DataType
+  HasMany
 } from 'sequelize-typescript'
 import { User } from '../../users/models/user.model'
-import { OrderStatus } from '../enums/order-status.enum'
 import { OrderItem } from './order-item.model'
+import { OrderStatus } from './order-status.model'
 
 @Table
 export class Order extends Model {
@@ -31,10 +30,11 @@ export class Order extends Model {
   @Column
   totalPrice: number
 
-  @Column({
-    type: DataType.ENUM(...Object.values(OrderStatus)),
-    defaultValue: OrderStatus.NEW
-  })
+  @ForeignKey(() => OrderStatus)
+  @Column
+  statusId: number
+
+  @BelongsTo(() => OrderStatus)
   status: OrderStatus
 
   @ForeignKey(() => User)
