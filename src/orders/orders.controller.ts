@@ -5,7 +5,8 @@ import {
   Get,
   Param,
   Patch,
-  Logger
+  Logger,
+  Query
 } from '@nestjs/common'
 import { OrdersService } from './orders.service'
 import { CreateOrderDto } from './dto/create-order.dto'
@@ -46,7 +47,13 @@ export class OrdersController {
   }
 
   @Get()
-  async findAll(): Promise<Order[]> {
-    return this.ordersService.findAll()
+  async findAll(
+    @Query('sort') sort: string,
+    @Query('order') order: 'ASC' | 'DESC',
+    @Query('page') page: number,
+    @Query('limit') limit: number,
+    @Query('filter') filter: string
+  ) {
+    return this.ordersService.findAll(sort, order, page, limit, filter)
   }
 }

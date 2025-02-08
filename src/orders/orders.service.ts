@@ -5,6 +5,7 @@ import { OrderItem } from './models/order-item.model'
 import { OrderStatus } from './models/order-status.model'
 import { CreateOrderDto } from './dto/create-order.dto'
 import { Sequelize } from 'sequelize-typescript'
+import { Op } from 'sequelize'
 
 @Injectable()
 export class OrdersService {
@@ -19,6 +20,76 @@ export class OrdersService {
     private orderStatusModel: typeof OrderStatus,
     private sequelize: Sequelize
   ) {}
+
+  async findAll(
+    sort?: string,
+    order?: 'ASC' | 'DESC',
+    page?: number,
+    limit?: number,
+    filter?: string
+  ) {
+    try {
+      order = order || 'DESC'
+      page = page !== undefined ? page : 1
+      limit = limit !== undefined ? limit : 10
+
+      let sortField = 'createdAt'
+      if (sort) {
+        try {
+          const parsedSort = JSON.parse(sort)
+          if (Array.isArray(parsedSort) && parsedSort.length === 2) {
+            sortField = parsedSort[0]
+            order = parsedSort[1]
+          }
+        } catch (error) {
+          this.logger.error('Failed to parse sort parameter:', error)
+        }
+      }
+
+      // Подготавливаем условия поиска
+      const whereConditions: any = {}
+      if (filter) {
+        try {
+          const searchFilter = JSON.parse(filter)
+          if (searchFilter.customerEmail) {
+            whereConditions.customerEmail = {
+              [Op.iLike]: `%${searchFilter.customerEmail}%`
+            }
+          }
+          if (searchFilter.customerName) {
+            whereConditions.customerName = {
+              [Op.iLike]: `%${searchFilter.customerName}%`
+            }
+          }
+          if (searchFilter.statusId) {
+            whereConditions.statusId = searchFilter.statusId
+          }
+        } catch (error) {
+          this.logger.error('Failed to parse filter:', error)
+        }
+      }
+
+      const { rows: data, count: total } =
+        await this.orderModel.findAndCountAll({
+          where: whereConditions,
+          include: [{ model: OrderItem }, { model: OrderStatus }],
+          order: [[sortField, order]],
+          limit: limit,
+          offset: (page - 1) * limit,
+          distinct: true
+        })
+
+      return {
+        data,
+        total,
+        page,
+        pageCount: Math.ceil(total / limit)
+      }
+    } catch (error) {
+      this.logger.error(`Error getting orders: ${error.message}`, error.stack)
+      throw error
+    }
+  }
 
   async create(createOrderDto: CreateOrderDto): Promise<Order> {
     const transaction = await this.sequelize.transaction()
@@ -116,18 +187,6 @@ export class OrdersService {
       })
     } catch (error) {
       this.logger.error(`Error getting statuses: ${error.message}`, error.stack)
-      throw error
-    }
-  }
-
-  async findAll(): Promise<Order[]> {
-    try {
-      return await this.orderModel.findAll({
-        include: [{ model: OrderItem }, { model: OrderStatus }],
-        order: [['createdAt', 'DESC']]
-      })
-    } catch (error) {
-      this.logger.error(`Error getting orders: ${error.message}`, error.stack)
       throw error
     }
   }
