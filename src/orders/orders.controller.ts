@@ -6,7 +6,8 @@ import {
   Param,
   Patch,
   Logger,
-  Query
+  Query,
+  Delete
 } from '@nestjs/common'
 import { OrdersService } from './orders.service'
 import { CreateOrderDto } from './dto/create-order.dto'
@@ -40,6 +41,12 @@ export class OrdersController {
   ): Promise<Order> {
     this.logger.log(`Updating order ${id}`)
     return this.ordersService.update(+id, updateOrderDto)
+  }
+
+  @Delete(':id')
+  async delete(@Param('id') id: string): Promise<void> {
+    this.logger.log(`Deleting order ${id}`)
+    return this.ordersService.delete(+id)
   }
 
   @Get('statuses/list')

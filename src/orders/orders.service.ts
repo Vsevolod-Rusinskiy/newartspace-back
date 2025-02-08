@@ -211,4 +211,34 @@ export class OrdersService {
       throw error
     }
   }
+
+  async delete(id: number): Promise<void> {
+    const transaction = await this.sequelize.transaction()
+
+    try {
+      const order = await this.orderModel.findOne({
+        where: { id },
+        transaction
+      })
+
+      if (!order) {
+        throw new NotFoundException(`Order with id ${id} not found`)
+      }
+
+      // Удаляем связанные orderItems
+      await this.orderItemModel.destroy({
+        where: { orderId: id },
+        transaction
+      })
+
+      // Удаляем сам заказ
+      await order.destroy({ transaction })
+
+      await transaction.commit()
+    } catch (error) {
+      await transaction.rollback()
+      this.logger.error(`Error deleting order: ${error.message}`, error.stack)
+      throw error
+    }
+  }
 }
