@@ -55,7 +55,13 @@ import { OrdersModule } from './orders/orders.module'
     },
     {
       provide: APP_PIPE,
-      useClass: ValidationPipe
+      useValue: new ValidationPipe({
+        whitelist: true,
+        transform: true,
+        forbidNonWhitelisted: false,
+        validateCustomDecorators: true,
+        transformOptions: { enableImplicitConversion: true }
+      })
     }
   ],
   controllers: [AppController]

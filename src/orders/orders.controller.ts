@@ -12,6 +12,7 @@ import { OrdersService } from './orders.service'
 import { CreateOrderDto } from './dto/create-order.dto'
 import { Order } from './models/order.model'
 import { OrderStatus } from './models/order-status.model'
+import { UpdateOrderDto } from './dto/update-order.dto'
 
 @Controller('orders')
 export class OrdersController {
@@ -32,13 +33,13 @@ export class OrdersController {
     return this.ordersService.findOne(+id)
   }
 
-  @Patch(':id/status/:statusId')
-  async updateStatus(
+  @Patch(':id')
+  async update(
     @Param('id') id: string,
-    @Param('statusId') statusId: string
+    @Body() updateOrderDto: UpdateOrderDto
   ): Promise<Order> {
-    this.logger.log(`Updating order ${id} status to ${statusId}`)
-    return this.ordersService.updateStatus(+id, +statusId)
+    this.logger.log(`Updating order ${id}`)
+    return this.ordersService.update(+id, updateOrderDto)
   }
 
   @Get('statuses/list')

@@ -4,6 +4,7 @@ import { Order } from './models/order.model'
 import { OrderItem } from './models/order-item.model'
 import { OrderStatus } from './models/order-status.model'
 import { CreateOrderDto } from './dto/create-order.dto'
+import { UpdateOrderDto } from './dto/update-order.dto'
 import { Sequelize } from 'sequelize-typescript'
 import { Op } from 'sequelize'
 
@@ -141,41 +142,61 @@ export class OrdersService {
     return order
   }
 
-  async updateStatus(orderId: number, statusId: number): Promise<Order> {
+  async update(id: number, updateOrderDto: UpdateOrderDto): Promise<Order> {
+    const transaction = await this.sequelize.transaction()
+
     try {
-      // Проверяем существование статуса
-      const status = await this.orderStatusModel.findOne({
-        where: { id: statusId }
-      })
-
-      if (!status) {
-        this.logger.warn(`Status with id ${statusId} not found`)
-        throw new NotFoundException(`Status with id ${statusId} not found`)
-      }
-
-      // Проверяем существование заказа
       const order = await this.orderModel.findOne({
-        where: { id: orderId }
+        where: { id },
+        include: [{ model: OrderItem }, { model: OrderStatus }]
       })
 
       if (!order) {
-        this.logger.warn(`Order with id ${orderId} not found`)
-        throw new NotFoundException(`Order with id ${orderId} not found`)
+        throw new NotFoundException(`Order with id ${id} not found`)
       }
 
-      // Обновляем статус
-      order.statusId = statusId
-      await order.save()
+      // Если передан statusId, проверяем существование статуса
+      if (updateOrderDto.statusId) {
+        const status = await this.orderStatusModel.findOne({
+          where: { id: updateOrderDto.statusId }
+        })
 
-      this.logger.log(`Updated order ${orderId} status to ${statusId}`)
+        if (!status) {
+          throw new NotFoundException(
+            `Status with id ${updateOrderDto.statusId} not found`
+          )
+        }
+      }
 
-      // Возвращаем обновленный заказ со всеми связями
-      return this.findOne(orderId)
+      // Обновляем основные поля заказа
+      await order.update(updateOrderDto, { transaction })
+
+      // Если переданы orderItems, обновляем их
+      if (updateOrderDto.orderItems) {
+        // Удаляем старые orderItems
+        await this.orderItemModel.destroy({
+          where: { orderId: id },
+          transaction
+        })
+
+        // Создаем новые orderItems
+        const orderItems = updateOrderDto.orderItems.map((item) => ({
+          orderId: id,
+          paintingId: item.paintingId,
+          quantity: item.quantity,
+          price: item.price
+        }))
+
+        await this.orderItemModel.bulkCreate(orderItems, { transaction })
+      }
+
+      await transaction.commit()
+
+      // Возвращаем обновленный заказ
+      return this.findOne(id)
     } catch (error) {
-      this.logger.error(
-        `Error updating order ${orderId} status: ${error.message}`,
-        error.stack
-      )
+      await transaction.rollback()
+      this.logger.error(`Error updating order: ${error.message}`, error.stack)
       throw error
     }
   }
