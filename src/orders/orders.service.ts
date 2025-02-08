@@ -7,6 +7,7 @@ import { CreateOrderDto } from './dto/create-order.dto'
 import { UpdateOrderDto } from './dto/update-order.dto'
 import { Sequelize } from 'sequelize-typescript'
 import { Op } from 'sequelize'
+import { Painting } from '../paintings/models/painting.model'
 
 @Injectable()
 export class OrdersService {
@@ -73,7 +74,13 @@ export class OrdersService {
       const { rows: data, count: total } =
         await this.orderModel.findAndCountAll({
           where: whereConditions,
-          include: [{ model: OrderItem }, { model: OrderStatus }],
+          include: [
+            {
+              model: OrderItem,
+              include: [{ model: Painting }]
+            },
+            { model: OrderStatus }
+          ],
           order: [[sortField, order]],
           limit: limit,
           offset: (page - 1) * limit,
@@ -131,7 +138,13 @@ export class OrdersService {
   async findOne(id: number): Promise<Order> {
     const order = await this.orderModel.findOne({
       where: { id },
-      include: [{ model: OrderItem }, { model: OrderStatus }]
+      include: [
+        {
+          model: OrderItem,
+          include: [{ model: Painting }]
+        },
+        { model: OrderStatus }
+      ]
     })
 
     if (!order) {
@@ -238,6 +251,118 @@ export class OrdersService {
     } catch (error) {
       await transaction.rollback()
       this.logger.error(`Error deleting order: ${error.message}`, error.stack)
+      throw error
+    }
+  }
+
+  async deleteMany(ids: string): Promise<{ deletedCount: number }> {
+    const transaction = await this.sequelize.transaction()
+    let deletedCount = 0
+
+    try {
+      const idArray = JSON.parse(ids).map((id) => id.toString())
+
+      // Удаляем связанные orderItems
+      await this.orderItemModel.destroy({
+        where: {
+          orderId: {
+            [Op.in]: idArray
+          }
+        },
+        transaction
+      })
+
+      // Удаляем заказы
+      deletedCount = await this.orderModel.destroy({
+        where: {
+          id: {
+            [Op.in]: idArray
+          }
+        },
+        transaction
+      })
+
+      await transaction.commit()
+      return { deletedCount }
+    } catch (error) {
+      await transaction.rollback()
+      this.logger.error(`Error deleting orders: ${error.message}`, error.stack)
+      throw error
+    }
+  }
+
+  async getMany(ids: string) {
+    if (!ids) {
+      return []
+    }
+
+    const idArray = ids.split(',').map((id) => +id)
+
+    if (!idArray.length) {
+      return []
+    }
+
+    const orders = await this.orderModel.findAll({
+      where: {
+        id: {
+          [Op.in]: idArray
+        }
+      },
+      include: [
+        {
+          model: OrderItem,
+          include: [{ model: Painting }]
+        },
+        { model: OrderStatus }
+      ]
+    })
+
+    return orders
+  }
+
+  async deleteItems(orderId: number, itemIds: number[]): Promise<void> {
+    const transaction = await this.sequelize.transaction()
+    this.logger.debug(
+      `Starting deleteItems. OrderId: ${orderId}, ItemIds: ${itemIds}`
+    )
+
+    try {
+      const order = await this.orderModel.findOne({
+        where: { id: orderId },
+        include: [{ model: OrderItem }],
+        transaction
+      })
+
+      if (!order) {
+        throw new NotFoundException(`Order with id ${orderId} not found`)
+      }
+
+      this.logger.debug(
+        `Current order items: ${JSON.stringify(order.orderItems)}`
+      )
+      this.logger.debug(
+        `Found order ${orderId}, deleting items with ids: ${itemIds}`
+      )
+
+      const result = await this.orderItemModel.destroy({
+        where: {
+          orderId,
+          id: {
+            [Op.in]: itemIds
+          }
+        },
+        transaction
+      })
+
+      this.logger.debug(`Deleted ${result} items`)
+      await transaction.commit()
+      this.logger.debug(`Successfully deleted items from order ${orderId}`)
+    } catch (error) {
+      await transaction.rollback()
+      this.logger.error(
+        `Error deleting order items: ${error.message}`,
+        error.stack
+      )
       throw error
     }
   }

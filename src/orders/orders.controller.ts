@@ -34,6 +34,11 @@ export class OrdersController {
     return this.ordersService.findOne(+id)
   }
 
+  @Get('getMany/:ids')
+  async getMany(@Param('ids') ids: string) {
+    return this.ordersService.getMany(ids)
+  }
+
   @Patch(':id')
   async update(
     @Param('id') id: string,
@@ -47,6 +52,12 @@ export class OrdersController {
   async delete(@Param('id') id: string): Promise<void> {
     this.logger.log(`Deleting order ${id}`)
     return this.ordersService.delete(+id)
+  }
+
+  @Delete('deleteMany/:ids')
+  async deleteMany(@Param('ids') ids: string) {
+    this.logger.log(`Deleting orders with ids: ${ids}`)
+    return this.ordersService.deleteMany(ids)
   }
 
   @Get('statuses/list')
@@ -63,5 +74,19 @@ export class OrdersController {
     @Query('filter') filter: string
   ) {
     return this.ordersService.findAll(sort, order, page, limit, filter)
+  }
+
+  @Delete(':orderId/items')
+  async deleteItems(
+    @Param('orderId') orderId: string,
+    @Body() dto: { itemIds: number[] }
+  ) {
+    this.logger.debug(
+      `Request to delete items. OrderId: ${orderId}, Body: ${JSON.stringify(dto)}`
+    )
+    this.logger.debug(
+      `ItemIds type: ${typeof dto.itemIds}, Value: ${dto.itemIds}`
+    )
+    return this.ordersService.deleteItems(+orderId, dto.itemIds)
   }
 }
