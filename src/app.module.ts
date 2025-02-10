@@ -12,12 +12,13 @@ import { ValidationPipe } from '@nestjs/common'
 import { ArtistsModule } from './artists/artists.module'
 import { AppController } from './app.controller'
 import { AttributesModule } from './attributes/attributes.module'
-import { RequestFormModule } from './one-сlick-order/request-form.module'
+import { RequestFormModule } from './request-form/request-form.module'
 import { EventsModule } from './events/events.module'
 import { UsersModule } from './users/users.module'
 import { AuthModule } from './auth/auth.module'
 import { ProfileModule } from './profile/profile.module'
 import { MailModule } from './mail/mail.module'
+import { OrdersModule } from './orders/orders.module'
 
 @Module({
   imports: [
@@ -40,7 +41,8 @@ import { MailModule } from './mail/mail.module'
     UsersModule,
     AuthModule,
     ProfileModule,
-    MailModule
+    MailModule,
+    OrdersModule
   ],
   providers: [
     {
@@ -53,7 +55,13 @@ import { MailModule } from './mail/mail.module'
     },
     {
       provide: APP_PIPE,
-      useClass: ValidationPipe
+      useValue: new ValidationPipe({
+        whitelist: true,
+        transform: true,
+        forbidNonWhitelisted: false,
+        validateCustomDecorators: true,
+        transformOptions: { enableImplicitConversion: true }
+      })
     }
   ],
   controllers: [AppController]

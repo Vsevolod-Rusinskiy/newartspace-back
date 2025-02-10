@@ -6,6 +6,9 @@ import { InjectModel } from '@nestjs/sequelize'
 import { Painting } from '../paintings/models/painting.model'
 import { Artist } from '../artists/models/artist.model'
 import { MailService } from '../mail/mail.service'
+import { OrdersService } from '../orders/orders.service'
+import { CreateOrderDto } from '../orders/dto/create-order.dto'
+import { UsersService } from '../users/users.service'
 
 @Injectable()
 export class RequestFormService {
@@ -14,8 +17,20 @@ export class RequestFormService {
   constructor(
     @InjectModel(Painting)
     private paintingModel: typeof Painting,
-    private mailService: MailService
+    private mailService: MailService,
+    private ordersService: OrdersService,
+    private usersService: UsersService
   ) {}
+
+  private async findUserByEmail(email: string): Promise<number | null> {
+    try {
+      const user = await this.usersService.findOne(email)
+      return user ? user.id : null
+    } catch (error) {
+      this.logger.warn(`User not found for email: ${email}`)
+      return null
+    }
+  }
 
   private async sendTelegramMessage(message: string) {
     const TELEGRAM_BOT_TOKEN = process.env.YOUR_BOT_TOKEN
@@ -42,7 +57,6 @@ export class RequestFormService {
     paintingInfo: string
   ) {
     try {
-      // Отправка письма клиенту
       const clientMessage = `Здравствуйте!
 
 Мы получили ваш заказ на ${paintingInfo}
@@ -70,14 +84,11 @@ export class RequestFormService {
         clientEmail,
         clientMessage
       )
-
-      // Отправка письма админу
       await this.mailService.sendMail(
         'Новый заказ',
         process.env.NODEMAILER_EMAIL,
         adminMessage
       )
-
       this.logger.log('Письма успешно отправлены')
     } catch (error) {
       this.logger.error('Ошибка при отправке писем:', error.message)
@@ -89,9 +100,10 @@ export class RequestFormService {
     this.logger.log('Отправка заказа: ' + JSON.stringify(orderData))
 
     let paintingInfo = 'Картина не выбрана'
+    let painting = null
 
     if (orderData.paintingId) {
-      const painting = await this.paintingModel.findOne({
+      painting = await this.paintingModel.findOne({
         where: { id: orderData.paintingId },
         include: [{ model: Artist }]
       })
@@ -110,6 +122,30 @@ ${paintingInfo}
     try {
       await this.sendTelegramMessage(`Новый заказ: \n${message}`)
       await this.sendEmails(orderData.email, message, paintingInfo)
+
+      // Ищем пользователя по email
+      const userId = await this.findUserByEmail(orderData.email)
+
+      // Создаем заказ
+      if (painting) {
+        const createOrderDto: CreateOrderDto = {
+          customerName: orderData.name,
+          customerEmail: orderData.email,
+          customerPhone: orderData.phone,
+          description: 'Заказ репродукции',
+          totalPrice: painting.price,
+          userId: userId,
+          orderItems: [
+            {
+              paintingId: painting.id,
+              quantity: 1,
+              price: painting.price
+            }
+          ]
+        }
+        await this.ordersService.create(createOrderDto)
+      }
+
       return { success: true }
     } catch (error) {
       throw new HttpException(
@@ -124,9 +160,10 @@ ${paintingInfo}
 
     let cartItemsInfo = 'Картины не выбраны'
     let paintingsListForClient = ''
+    let paintings = []
 
     if (orderData.cartItemIds && orderData.cartItemIds.length > 0) {
-      const paintings = await this.paintingModel.findAll({
+      paintings = await this.paintingModel.findAll({
         where: { id: orderData.cartItemIds },
         include: [{ model: Artist }]
       })
@@ -158,6 +195,32 @@ ${cartItemsInfo}
     try {
       await this.sendTelegramMessage(`Новый заказ: \n${message}`)
       await this.sendEmails(orderData.email, message, paintingsListForClient)
+
+      // Ищем пользователя по email
+      const userId = await this.findUserByEmail(orderData.email)
+
+      // Создаем заказ
+      if (paintings.length > 0) {
+        const totalPrice = paintings.reduce(
+          (sum, painting) => sum + painting.price,
+          0
+        )
+        const createOrderDto: CreateOrderDto = {
+          customerName: orderData.name,
+          customerEmail: orderData.email,
+          customerPhone: orderData.phone,
+          description: 'Заказ из корзины',
+          totalPrice: totalPrice,
+          userId: userId,
+          orderItems: paintings.map((painting) => ({
+            paintingId: painting.id,
+            quantity: 1,
+            price: painting.price
+          }))
+        }
+        await this.ordersService.create(createOrderDto)
+      }
+
       return { success: true }
     } catch (error) {
       throw new HttpException(
