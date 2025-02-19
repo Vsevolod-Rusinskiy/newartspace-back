@@ -7,9 +7,5 @@ export class UpdateProfileDto {
 
   @IsString()
   @IsOptional()
-  phone?: string
-
-  @IsString()
-  @IsOptional()
   newPassword?: string
 }

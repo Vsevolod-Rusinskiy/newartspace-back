@@ -23,14 +23,13 @@ export class ProfileService {
   }
 
   async findAll() {
-    // ищем покупки пользователя
     return `This action returns all profile`
   }
 
   async getUserInfo(userId: number) {
     const user = await this.userModel.findOne({
       where: { id: userId },
-      attributes: ['id', 'userName', 'email', 'phone'] // исключаем пароль и другие чувствительные данные
+      attributes: ['id', 'userName', 'email']
     })
 
     return user
@@ -41,10 +40,6 @@ export class ProfileService {
 
     if (updateProfileDto.userName) {
       updates.userName = updateProfileDto.userName
-    }
-
-    if (updateProfileDto.phone) {
-      updates.phone = updateProfileDto.phone
     }
 
     if (updateProfileDto.newPassword) {
@@ -61,12 +56,7 @@ export class ProfileService {
   async getUserPurchases(userId: number) {
     const purchases = await this.orderModel.findAll({
       where: { userId },
-      order: [['createdAt', 'DESC']], // сортировка по дате создания
-      include: [
-        {
-          all: true // включаем все связанные модели (можно настроить конкретные)
-        }
-      ]
+      order: [['createdAt', 'DESC']]
     })
 
     return purchases
