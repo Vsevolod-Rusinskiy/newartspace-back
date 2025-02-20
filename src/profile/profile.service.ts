@@ -5,7 +5,9 @@ import * as bcrypt from 'bcryptjs'
 import { User } from '../users/models/user.model'
 import { InjectModel } from '@nestjs/sequelize'
 import { Order } from 'src/orders/models/order.model'
-
+import { OrderItem } from 'src/orders/models/order-item.model'
+import { OrderStatus } from 'src/orders/models/order-status.model'
+import { Painting } from 'src/paintings/models/painting.model'
 @Injectable()
 export class ProfileService {
   private readonly logger = new Logger(ProfileService.name)
@@ -14,7 +16,13 @@ export class ProfileService {
     @InjectModel(User)
     private readonly userModel: typeof User,
     @InjectModel(Order)
-    private readonly orderModel: typeof Order
+    private readonly orderModel: typeof Order,
+    @InjectModel(OrderItem)
+    private readonly orderItemModel: typeof OrderItem,
+    @InjectModel(OrderStatus)
+    private readonly orderStatusModel: typeof OrderStatus,
+    @InjectModel(Painting)
+    private readonly paintingModel: typeof Painting
   ) {}
 
   create(createProfileDto: CreateProfileDto) {
@@ -56,6 +64,21 @@ export class ProfileService {
   async getUserPurchases(userId: number) {
     const purchases = await this.orderModel.findAll({
       where: { userId },
+      include: [
+        {
+          model: OrderItem,
+          include: [
+            {
+              model: Painting,
+              attributes: ['id', 'title', 'price', 'imgUrl']
+            }
+          ]
+        },
+        {
+          model: OrderStatus,
+          attributes: ['id', 'displayName']
+        }
+      ],
       order: [['createdAt', 'DESC']]
     })
 
