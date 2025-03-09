@@ -27,14 +27,19 @@ export class MailService {
     })
   }
 
-  async sendMail(subject: string, toEmail: string, text: string) {
+  async sendMail(
+    subject: string,
+    toEmail: string,
+    text: string,
+    replyToEmail?: string
+  ) {
     try {
       const mailOptions = {
-        from: process.env.ADMIN_EMAIL,
+        from: process.env.NODEMAILER_EMAIL,
         to: toEmail,
         subject,
         text,
-        replyTo: process.env.ADMIN_EMAIL
+        replyTo: replyToEmail || process.env.ADMIN_EMAIL
       }
 
       const response = await this.transporter.sendMail(mailOptions)

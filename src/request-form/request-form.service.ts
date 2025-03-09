@@ -82,12 +82,14 @@ export class RequestFormService {
       await this.mailService.sendMail(
         'Ваш заказ получен',
         clientEmail,
-        clientMessage
+        clientMessage,
+        process.env.ADMIN_EMAIL
       )
       await this.mailService.sendMail(
         'Новый заказ',
         process.env.ADMIN_EMAIL,
-        adminMessage
+        adminMessage,
+        clientEmail
       )
       this.logger.log('Письма успешно отправлены')
     } catch (error) {
