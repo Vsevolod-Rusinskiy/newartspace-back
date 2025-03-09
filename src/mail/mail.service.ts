@@ -35,7 +35,7 @@ export class MailService {
   ) {
     try {
       const mailOptions = {
-        from: process.env.NODEMAILER_EMAIL,
+        from: '"Новое пространство" <' + process.env.ADMIN_EMAIL + '>',
         to: toEmail,
         subject,
         text,
