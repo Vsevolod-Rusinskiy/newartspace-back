@@ -86,7 +86,7 @@ export class RequestFormService {
       )
       await this.mailService.sendMail(
         'Новый заказ',
-        process.env.NODEMAILER_EMAIL,
+        process.env.ADMIN_EMAIL,
         adminMessage
       )
       this.logger.log('Письма успешно отправлены')
