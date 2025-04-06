@@ -87,7 +87,7 @@ export class RequestFormService {
       'Не указаны'
 
     return `
-    <div style="display: flex; margin-bottom: 20px; padding: 15px; border: 1px solid #eaeaea; border-radius: 5px; background-color: #fff; font-family: 'Oswald', sans-serif;">
+    <div style="display: flex; margin-bottom: 20px; padding: 15px; border: 1px solid #eaeaea; border-radius: 5px; background-color: #fff; font-family: 'Oswald', sans-serif; min-width: 560px;">
       <div style="width: 150px; height: 150px; position: relative; margin-right: 15px; flex-shrink: 0;">
         <img src="${painting.imgUrl}" alt="${painting.title}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;" />
       </div>
