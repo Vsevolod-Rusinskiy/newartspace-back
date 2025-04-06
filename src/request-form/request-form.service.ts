@@ -64,14 +64,14 @@ export class RequestFormService {
 
     if (painting.priceType === 'Скидка' && painting.discount) {
       finalPrice = calculatePriceWithDiscount(painting.price, painting.discount)
-      discountText = `<div style="color: #ff3a44; font-weight: bold;">СКИДКА ${painting.discount}%</div>`
-      originalPriceHTML = `<span style="text-decoration: line-through; color: #878787; margin-right: 8px;">${painting.price} ₽</span>`
+      discountText = `СКИДКА ${painting.discount}%`
+      originalPriceHTML = `${painting.price} ₽`
     } else if (painting.priceType === 'Специальное предложение') {
-      discountText = `<div style="color: #ff3a44; font-weight: bold;">СПЕЦИАЛЬНОЕ ПРЕДЛОЖЕНИЕ</div>`
+      discountText = 'СПЕЦИАЛЬНОЕ ПРЕДЛОЖЕНИЕ'
     } else if (painting.discount) {
       finalPrice = calculatePriceWithDiscount(painting.price, painting.discount)
-      discountText = `<div style="color: #ff3a44; font-weight: bold;">СКИДКА ${painting.discount}%</div>`
-      originalPriceHTML = `<span style="text-decoration: line-through; color: #878787; margin-right: 8px;">${painting.price} ₽</span>`
+      discountText = `СКИДКА ${painting.discount}%`
+      originalPriceHTML = `${painting.price} ₽`
     }
 
     // Информация о размерах
@@ -101,11 +101,23 @@ export class RequestFormService {
         </div>
       </div>
       
-      <div style="width: 150px; display: flex; flex-direction: column; align-items: flex-end; border-left: 1px solid #eaeaea; padding-left: 15px;">
-        <div style="text-align: right; margin-bottom: 15px; font-family: 'Oswald', sans-serif;">
-          ${originalPriceHTML}
-          <span style="font-size: 18px; font-weight: bold; color: #ff3a44;">${finalPrice} ₽</span>
-          ${discountText}
+      <div style="width: 130px; margin-left: auto; padding-left: 15px; border-left: 1px solid #eaeaea;">
+        <div style="text-align: right;">
+          ${
+            originalPriceHTML
+              ? `
+            <div style="color: #878787; text-decoration: line-through; margin-bottom: 4px; font-size: 14px;">${originalPriceHTML}</div>
+          `
+              : ''
+          }
+          <div style="color: #ff3a44; font-weight: bold; font-size: 18px; margin-bottom: 4px;">${finalPrice} ₽</div>
+          ${
+            discountText
+              ? `
+            <div style="color: #ff3a44; font-weight: bold; font-size: 12px;">${discountText}</div>
+          `
+              : ''
+          }
         </div>
       </div>
     </div>
