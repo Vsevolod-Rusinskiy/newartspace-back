@@ -64,13 +64,14 @@ export class EmailTemplateService {
   }
 
   /**
-   * Создает HTML для хедера письма (заготовка)
+   * Создает HTML для хедера письма с изображением
    */
   private createHeader(): string {
+    // Используем ту же картинку, что и в футере
+    const imageUrl = 'http://193.108.113.149/email-footer.png'
+
     return `
-    <div class="header">
-      <h1 style="color: #878787; margin: 0; font-family: 'Oswald', sans-serif; font-weight: 700;">Новое пространство</h1>
-      <p style="color: #878787; font-family: 'Oswald', sans-serif; font-weight: 400;">Галерея молодых и малоизвестных художников</p>
+    <div style="margin-bottom: 30px; padding: 30px 20px; background-image: url('${imageUrl}'); background-size: cover; background-position: center; color: #ffffff; font-family: 'Oswald', sans-serif; border-radius: 5px;">
     </div>
     `
   }
@@ -79,8 +80,37 @@ export class EmailTemplateService {
    * Создает HTML для футера письма (заготовка)
    */
   private createFooter(): string {
+    const footerImageUrl = 'http://193.108.113.149/email-footer.png'
+
     return `
-    <!-- Здесь будет футер, заполняется из файлов фронтенда -->
+    <div style="margin-top: 30px; padding: 30px 20px; background-image: url('${footerImageUrl}'); background-size: cover; background-position: center; color: #ffffff; font-family: 'Oswald', sans-serif; border-radius: 5px;">
+      <div style="max-width: 600px; margin: 0 auto; text-align: center;">
+        <p style="font-size: 16px; margin-bottom: 5px; font-weight: 500;">Кабанченко Светлана Геннадьевна</p>
+        <p style="font-size: 14px; margin-bottom: 20px;">ИНН 781432217443</p>
+        
+        <p style="font-size: 14px; margin: 5px 0;">
+          Санкт-Петербург, ул. Ново-Рыбинская,<br>
+          д. 19-21, БЦ «Квартал», центральный<br>
+          вход, 2 этаж, пом. 9
+        </p>
+        
+        <p style="font-size: 14px; margin: 15px 0;">
+          Тел: <a href="tel:+79219326215" style="color: #ffffff; text-decoration: none;">+7 (921) 932-62-15</a>
+        </p>
+        
+        <p style="font-size: 14px; margin: 15px 0;">
+          E-mail: <a href="mailto:9326215@mail.ru" style="color: #ffffff; text-decoration: none;">9326215@mail.ru</a>
+        </p>
+        
+        <p style="font-size: 12px; margin-top: 20px; opacity: 0.8;">
+          © 2021 – 2025 Галерея молодых и малоизвестных художников «Новое пространство».
+        </p>
+        
+        <p style="font-size: 12px; margin-top: 5px; opacity: 0.8;">
+          Все права защищены и запатентованы
+        </p>
+      </div>
+    </div>
     `
   }
 
