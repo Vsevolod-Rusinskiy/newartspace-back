@@ -67,7 +67,8 @@ export class RequestFormService {
       discountText = `СКИДКА ${painting.discount}%`
       originalPriceHTML = `${painting.price} ₽`
     } else if (painting.priceType === 'Специальное предложение') {
-      discountText = 'СПЕЦИАЛЬНОЕ ПРЕДЛОЖЕНИЕ'
+      // Для специального предложения выводим полный текст
+      discountText = `СПЕЦИАЛЬНОЕ ПРЕДЛОЖЕНИЕ${painting.discount ? ` ${painting.discount}% ОТ ЦЕНЫ НА КАРТУ` : ''}`
     } else if (painting.discount) {
       finalPrice = calculatePriceWithDiscount(painting.price, painting.discount)
       discountText = `СКИДКА ${painting.discount}%`
@@ -101,7 +102,7 @@ export class RequestFormService {
         </div>
       </div>
       
-      <div style="width: 130px; margin-left: auto; padding-left: 15px; border-left: 1px solid #eaeaea;">
+      <div style="width: 170px; margin-left: auto; padding-left: 15px; border-left: 1px solid #eaeaea;">
         <div style="text-align: right;">
           ${
             originalPriceHTML
@@ -114,7 +115,7 @@ export class RequestFormService {
           ${
             discountText
               ? `
-            <div style="color: #ff3a44; font-weight: bold; font-size: 12px;">${discountText}</div>
+            <div style="color: #ff3a44; font-weight: bold; font-size: 12px; text-align: right; line-height: 1.2;">${discountText}</div>
           `
               : ''
           }
