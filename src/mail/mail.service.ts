@@ -30,16 +30,22 @@ export class MailService {
   async sendMail(
     subject: string,
     toEmail: string,
-    text: string,
-    replyToEmail?: string
+    content: string,
+    replyToEmail?: string,
+    isHtml: boolean = false
   ) {
     try {
       const mailOptions = {
         from: '"Новое пространство" <' + process.env.ADMIN_EMAIL + '>',
         to: toEmail,
         subject,
-        text,
         replyTo: replyToEmail || process.env.ADMIN_EMAIL
+      }
+
+      if (isHtml) {
+        mailOptions['html'] = content
+      } else {
+        mailOptions['text'] = content
       }
 
       const response = await this.transporter.sendMail(mailOptions)
