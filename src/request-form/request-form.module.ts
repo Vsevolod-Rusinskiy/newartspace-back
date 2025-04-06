@@ -6,13 +6,17 @@ import { Painting } from '../paintings/models/painting.model'
 import { MailModule } from '../mail/mail.module'
 import { OrdersModule } from '../orders/orders.module'
 import { UsersModule } from '../users/users.module'
+import { EmailTemplatesModule } from '../email-templates/email-templates.module'
+import { TelegramModule } from '../telegram/telegram.module'
 
 @Module({
   imports: [
     SequelizeModule.forFeature([Painting]),
     MailModule,
     OrdersModule,
-    UsersModule
+    UsersModule,
+    EmailTemplatesModule,
+    TelegramModule
   ],
   controllers: [RequestFormController],
   providers: [RequestFormService]
