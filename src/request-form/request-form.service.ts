@@ -57,20 +57,32 @@ export class RequestFormService {
       return Math.round(price - (price * discount) / 100)
     }
 
+    // Функция для расчета итоговой цены товара с учетом типа цены и скидки
+    const calculateItemPrice = (painting) => {
+      switch (painting.priceType) {
+        case 'Специальное предложение':
+          return painting.price
+        case 'Скидка':
+          return calculatePriceWithDiscount(painting.price, painting.discount)
+        default:
+          return painting.discount
+            ? calculatePriceWithDiscount(painting.price, painting.discount)
+            : painting.price
+      }
+    }
+
     // Вычисление итоговой цены для товара
-    let finalPrice = painting.price
+    const finalPrice = calculateItemPrice(painting)
     let discountText = ''
     let originalPriceHTML = ''
 
     if (painting.priceType === 'Скидка' && painting.discount) {
-      finalPrice = calculatePriceWithDiscount(painting.price, painting.discount)
       discountText = `СКИДКА ${painting.discount}%`
       originalPriceHTML = `${painting.price} ₽`
     } else if (painting.priceType === 'Специальное предложение') {
       // Для специального предложения выводим полный текст
       discountText = `СПЕЦИАЛЬНОЕ ПРЕДЛОЖЕНИЕ${painting.discount ? ` ${painting.discount}% ОТ ЦЕНЫ НА КАРТУ` : ''}`
     } else if (painting.discount) {
-      finalPrice = calculatePriceWithDiscount(painting.price, painting.discount)
       discountText = `СКИДКА ${painting.discount}%`
       originalPriceHTML = `${painting.price} ₽`
     }
@@ -129,16 +141,13 @@ export class RequestFormService {
     clientName: string,
     paintings: Painting[],
     totalSum: number,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     deliveryMethod: string
   ): string {
     // Создаем HTML для каждого товара
     const itemsHTML = paintings
       .map((painting) => this.createCartItemHTML(painting))
       .join('')
-
-    // Определяем метод доставки
-    const deliveryText =
-      deliveryMethod === 'delivery' ? 'Доставка' : 'Самовывоз из галереи'
 
     // HTML-шаблон для письма
     return `
@@ -153,15 +162,13 @@ export class RequestFormService {
       <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&display=swap" rel="stylesheet">
       <style>
         body { font-family: 'Oswald', sans-serif; line-height: 1.6; color: #878787; background-color: #f9f9f9; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .container { max-width: 660px; margin: 0 auto; padding: 20px; }
         .header { text-align: center; padding: 20px 0; border-bottom: 1px solid #eaeaea; }
         .content { background-color: #fff; padding: 20px; border-radius: 5px; margin-top: 20px; }
-        .footer { text-align: center; margin-top: 30px; padding: 20px 0; border-top: 1px solid #eaeaea; font-size: 12px; color: #878787; }
-        .cart-total { background-color: #f8f8f8; padding: 15px; border-radius: 5px; margin-top: 20px; }
-        .cart-total-row { display: flex; justify-content: space-between; padding: 10px 0; }
-        .cart-total-label { font-size: 16px; color: #ff3a44; }
-        .cart-total-value { font-size: 18px; font-weight: bold; color: #ff3a44; }
-        .delivery-info { margin-top: 20px; padding: 10px; background-color: #f0f0f0; border-left: 4px solid #ff3a44; }
+        .cart-total { margin-top: 30px; padding: 15px 25px; border-top: 1px solid #eaeaea; text-align: right; }
+        .cart-total-row { display: inline-block; }
+        .cart-total-label { font-family: 'Oswald', sans-serif; font-size: 18px; color: #878787; font-weight: 500; margin-right: 15px; display: inline-block; }
+        .cart-total-value { font-family: 'Oswald', sans-serif; font-size: 24px; font-weight: 700; color: #ff3a44; display: inline-block; }
       </style>
     </head>
     <body>
@@ -179,32 +186,12 @@ export class RequestFormService {
             ${itemsHTML}
           </div>
           
-          <div class="delivery-info">
-            <p><strong>Способ получения:</strong> ${deliveryText}</p>
-          </div>
-          
           <div class="cart-total">
             <div class="cart-total-row">
               <span class="cart-total-label">Итого:</span>
               <span class="cart-total-value">${totalSum} ₽</span>
             </div>
           </div>
-          
-          <p style="margin-top: 30px;">В ближайшее время наш менеджер свяжется с вами для уточнения деталей.</p>
-        </div>
-        
-        <div class="footer">
-          <p><strong>Контакты:</strong><br>
-          +7 (921) 932-62-15<br>
-          Пн - Пт с 13:00 до 19:00<br>
-          Сб - по предварительной договоренности</p>
-          
-          <p><strong>Адрес:</strong><br>
-          Санкт-Петербург, ул. Ново-Рыбинская,<br>
-          д. 19-21, БЦ «Квартал», центральный<br>
-          вход, 2 этаж, пом. 9</p>
-          
-          <p>© Новое пространство</p>
         </div>
       </div>
     </body>
@@ -287,7 +274,26 @@ ${deliveryInfo}
 
       // Создаем массив с одной картиной для HTML шаблона
       const paintings = painting ? [painting] : []
-      const totalPrice = painting ? painting.price : 0
+      // Функция для расчета цены с учетом скидки
+      const calculatePriceWithDiscount = (price: number, discount: number) => {
+        return Math.round(price - (price * discount) / 100)
+      }
+
+      // Функция для расчета итоговой цены товара с учетом типа цены и скидки
+      const calculateItemPrice = (item) => {
+        switch (item.priceType) {
+          case 'Специальное предложение':
+            return item.price
+          case 'Скидка':
+            return calculatePriceWithDiscount(item.price, item.discount)
+          default:
+            return item.discount
+              ? calculatePriceWithDiscount(item.price, item.discount)
+              : item.price
+        }
+      }
+      // Рассчитываем итоговую цену, используя ту же логику, что и для корзины
+      const totalPrice = painting ? calculateItemPrice(painting) : 0
 
       // Отправляем email с красивым HTML для клиента
       await this.sendEmails(
@@ -307,13 +313,13 @@ ${deliveryInfo}
           customerEmail: orderData.email,
           customerPhone: orderData.phone,
           description: `Заказ репродукции. ${deliveryInfo}`,
-          totalPrice: painting.price,
+          totalPrice: totalPrice,
           userId: userId,
           orderItems: [
             {
               paintingId: painting.id,
               quantity: 1,
-              price: painting.price
+              price: totalPrice
             }
           ]
         }
@@ -375,18 +381,28 @@ ${deliveryInfo}
       // Ищем пользователя по email
       const userId = await this.findUserByEmail(orderData.email)
 
-      // Рассчитываем общую сумму
-      const totalPrice = paintings.reduce((sum, painting) => {
-        // Учитываем скидки при расчете
-        if (painting.discount) {
-          return (
-            sum +
-            Math.round(
-              painting.price - (painting.price * painting.discount) / 100
-            )
-          )
+      // Функция для расчета цены с учетом скидки
+      const calculatePriceWithDiscount = (price: number, discount: number) => {
+        return Math.round(price - (price * discount) / 100)
+      }
+
+      // Функция для расчета итоговой цены товара с учетом типа цены и скидки
+      const calculateItemPrice = (painting) => {
+        switch (painting.priceType) {
+          case 'Специальное предложение':
+            return painting.price
+          case 'Скидка':
+            return calculatePriceWithDiscount(painting.price, painting.discount)
+          default:
+            return painting.discount
+              ? calculatePriceWithDiscount(painting.price, painting.discount)
+              : painting.price
         }
-        return sum + painting.price
+      }
+
+      // Рассчитываем общую сумму по той же логике, что и на фронтенде
+      const totalPrice = paintings.reduce((sum, painting) => {
+        return sum + calculateItemPrice(painting)
       }, 0)
 
       // Отправляем email с красивым HTML для клиента
@@ -412,7 +428,7 @@ ${deliveryInfo}
           orderItems: paintings.map((painting) => ({
             paintingId: painting.id,
             quantity: 1,
-            price: painting.price
+            price: calculateItemPrice(painting) // Используем ту же функцию для цены отдельных товаров
           }))
         }
         await this.ordersService.create(createOrderDto)
