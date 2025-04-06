@@ -48,7 +48,6 @@ export class EmailTemplateService {
         
         <div class="content">
           <h2 style="font-family: 'Oswald', sans-serif; font-weight: 600; color: #878787;">Здравствуйте, ${clientName}!</h2>
-          <p>Благодарим за ваш заказ. Вот детали вашего заказа:</p>
           
           <div class="items-container">
             ${itemsHTML}
