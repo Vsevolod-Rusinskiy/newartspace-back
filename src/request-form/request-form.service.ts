@@ -115,10 +115,13 @@ export class RequestFormService {
       }
     }
 
+    const deliveryInfo = `Способ доставки: ${orderData.deliveryMethod === 'delivery' ? 'Доставка' : 'Самовывоз из галереи'}`
+
     const message = `Имя: ${orderData.name}
 Телефон: ${orderData.phone}
 Email: ${orderData.email}
 ${paintingInfo}
+${deliveryInfo}
 Тип формы: репродукция`
 
     try {
@@ -134,7 +137,7 @@ ${paintingInfo}
           customerName: orderData.name,
           customerEmail: orderData.email,
           customerPhone: orderData.phone,
-          description: 'Заказ репродукции',
+          description: `Заказ репродукции. ${deliveryInfo}`,
           totalPrice: painting.price,
           userId: userId,
           orderItems: [
@@ -188,10 +191,13 @@ ${paintingInfo}
       }
     }
 
+    const deliveryInfo = `Способ доставки: ${orderData.deliveryMethod === 'delivery' ? 'Доставка' : 'Самовывоз из галереи'}`
+
     const message = `Имя: ${orderData.name}
 Телефон: ${orderData.phone}
 Email: ${orderData.email}
 ${cartItemsInfo}
+${deliveryInfo}
 Тип формы: заказ из корзины`
 
     try {
@@ -211,7 +217,7 @@ ${cartItemsInfo}
           customerName: orderData.name,
           customerEmail: orderData.email,
           customerPhone: orderData.phone,
-          description: 'Заказ из корзины',
+          description: `Заказ из корзины. ${deliveryInfo}`,
           totalPrice: totalPrice,
           userId: userId,
           orderItems: paintings.map((painting) => ({
