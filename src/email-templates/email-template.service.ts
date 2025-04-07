@@ -36,10 +36,6 @@ export class EmailTemplateService {
         .container { max-width: 660px; margin: 0 auto; padding: 20px; }
         .header { text-align: center; padding: 20px 0; border-bottom: 1px solid #eaeaea; }
         .content { background-color: #fff; padding: 20px; border-radius: 5px; margin-top: 20px; }
-        .cart-total { margin-top: 30px; padding: 15px 25px; border-top: 1px solid #eaeaea; text-align: right; }
-        .cart-total-row { display: inline-block; }
-        .cart-total-label { font-family: 'Oswald', sans-serif; font-size: 18px; color: #878787; font-weight: 500; margin-right: 15px; display: inline-block; }
-        .cart-total-value { font-family: 'Oswald', sans-serif; font-size: 24px; font-weight: 700; color: #ff3a44; display: inline-block; }
       </style>
     </head>
     <body>
@@ -125,10 +121,10 @@ export class EmailTemplateService {
    */
   private createTotalSection(totalSum: number): string {
     return `
-    <div class="cart-total">
-      <div class="cart-total-row">
-        <span class="cart-total-label">Итого:</span>
-        <span class="cart-total-value">${totalSum} ₽</span>
+    <div style="margin-top: 30px; padding: 15px 25px; border-top: 1px solid #eaeaea; text-align: right;">
+      <div style="display: inline-block;">
+        <span style="font-family: 'Oswald', sans-serif; font-size: 18px; color: #878787; font-weight: 500; margin-right: 15px; display: inline-block;">Итого:</span>
+        <span style="font-family: 'Oswald', sans-serif; font-size: 24px; font-weight: 700; color: #ff3a44; display: inline-block;">${totalSum} ₽</span>
       </div>
     </div>
     `
