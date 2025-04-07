@@ -9,6 +9,7 @@ dotenv.config()
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
   const logger = new Logger('ValidationPipe')
+
   app.enableCors()
   // app.enableCors({
   //   origin: function (origin, callback) {

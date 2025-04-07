@@ -4,7 +4,8 @@ import {
   IsOptional,
   IsString,
   IsNumber,
-  IsArray
+  IsArray,
+  IsIn
 } from 'class-validator'
 
 export class RequestFormDto {
@@ -37,4 +38,9 @@ export class RequestFormDto {
   @IsArray()
   @IsNumber({}, { each: true })
   cartItemIds?: number[]
+
+  @IsNotEmpty()
+  @IsString()
+  @IsIn(['delivery', 'pickup'])
+  deliveryMethod: string
 }
