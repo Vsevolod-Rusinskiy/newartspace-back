@@ -71,7 +71,13 @@ export class EmailTemplateService {
     const imageUrl = 'http://193.108.113.149/email-footer.png'
 
     return `
-    <div style="margin-bottom: 30px; padding: 30px 20px; background-image: url('${imageUrl}'); background-size: cover; background-position: center; color: #ffffff; font-family: 'Oswald', sans-serif; border-radius: 5px;">
+    <div style="margin-bottom: 30px; padding: 30px 20px; background-image: url('${imageUrl}'); background-size: cover; background-position: center; color: #ffffff; font-family: 'Oswald', sans-serif; border-radius: 5px; text-align: center;">
+      <p style="font-family: 'Oswald', sans-serif; font-size: 16px; font-weight: 300; margin: 0 0 5px; padding: 0; letter-spacing: 1px; text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);">
+        Галерея молодых и малоизвестных художников
+      </p>
+      <h1 style="font-family: 'Oswald', sans-serif; font-size: 40px; font-weight: 400; margin: 0; padding: 0; letter-spacing: 2px; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">
+        Новое пространство
+      </h1>
     </div>
     `
   }
