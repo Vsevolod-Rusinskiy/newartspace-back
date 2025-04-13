@@ -41,14 +41,12 @@ export class EmailTemplateService {
           max-width: 660px; 
           margin: 0 auto; 
           background-color: #fff5f6; 
-          border-radius: 5px; 
         }
         .header { text-align: center; padding: 20px 0; border-bottom: 1px solid #eaeaea; }
-        .content { background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0; }
+        .content { background-color: #fff; padding: 20px; margin: 20px 0; }
         .message-block {
           background-color: #fff5f6;
           padding: 20px;
-          border-radius: 5px;
           margin: 20px 0;
           font-family: Arial, Helvetica, sans-serif;
           color: #555;
@@ -66,7 +64,6 @@ export class EmailTemplateService {
           font-weight: 500;
           text-decoration: none;
           padding: 7px 25px;
-          border-radius: 5px;
           width: fit-content;
         }
         .btn-back:hover {
@@ -78,16 +75,16 @@ export class EmailTemplateService {
       <div class="container">
         ${this.createHeader()}
         
-        <a href="${process.env.FRONTEND_URL || 'http://localhost:3001'}" class="btn-back" style="display: block; text-align: center; margin: 20px auto; color: #ffffff; background-color: #730f0d; font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: 500; text-decoration: none; padding: 7px 25px; border-radius: 5px; width: fit-content;">
+        <a href="${process.env.FRONTEND_URL || 'http://localhost:3001'}" class="btn-back" style="display: block; text-align: center; margin: 20px auto; color: #ffffff; background-color: #730f0d; font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: 500; text-decoration: none; padding: 7px 25px; width: fit-content;">
           Обратно на сайт
         </a>
         
-        <div class="message-block" style="background-color: #fff5f6; padding: 20px; border-radius: 5px; margin: 20px 0; font-family: Arial, Helvetica, sans-serif; color: #555; font-size: 17px;">
+        <div class="message-block" style="background-color: #fff5f6; padding: 20px; margin: 20px 0; font-family: Arial, Helvetica, sans-serif; color: #555; font-size: 17px;">
           <h2 style="font-family: Arial, Helvetica, sans-serif; font-weight: 600; color: #555; margin-top: 0;">Здравствуйте, ${clientName}!</h2>
           <p style="margin-bottom: 0; font-size: 17px;">Благодарим за заказ, оформленный в нашей Галерее.</p>
         </div>
         
-        <div class="content" style="margin: 20px 0;">
+        <div class="content" style="background-color: #fff; padding: 20px; margin: 20px 0;">
           <div class="items-container">
             ${itemsHTML}
           </div>
@@ -95,7 +92,7 @@ export class EmailTemplateService {
           ${this.createTotalSection(totalSum)}
         </div>
         
-        <div class="message-block" style="background-color: #fff5f6; padding: 20px; border-radius: 5px; margin: 20px 0; font-family: Arial, Helvetica, sans-serif; color: #555; font-size: 17px;">
+        <div class="message-block" style="background-color: #fff5f6; padding: 20px; margin: 20px 0; font-family: Arial, Helvetica, sans-serif; color: #555; font-size: 17px;">
           <p style="margin-top: 0; font-size: 17px;">Сейчас мы проверяем наличие произведений искусства. Для продолжения покупки, пожалуйста, дождитесь следующего письма.</p>
           <p style="margin-bottom: 0; font-size: 17px;">С наилучшими пожеланиями, Кабанченко Светлана.</p>
         </div>
@@ -115,7 +112,7 @@ export class EmailTemplateService {
     const imageUrl = 'http://193.108.113.149/email-footer.png'
 
     return `
-    <div style="margin-bottom: 30px; padding: 30px 20px; background-image: url('${imageUrl}'); background-size: cover; background-position: center; color: #ffffff; font-family: Arial, Helvetica, sans-serif; border-radius: 5px; text-align: center;">
+    <div style="margin-bottom: 30px; padding: 30px 20px; background-image: url('${imageUrl}'); background-size: cover; background-position: center; color: #ffffff; font-family: Arial, Helvetica, sans-serif; text-align: center;">
       <p style="font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: 300; margin: 0 0 5px; padding: 0; letter-spacing: 1px; text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);">
         Галерея молодых и малоизвестных художников
       </p>
@@ -133,7 +130,7 @@ export class EmailTemplateService {
     const footerImageUrl = 'http://193.108.113.149/email-footer.png'
 
     return `
-    <div style="margin-top: 30px; padding: 30px 20px; background-image: url('${footerImageUrl}'); background-size: cover; background-position: center; color: #ffffff; font-family: Arial, Helvetica, sans-serif; border-radius: 5px;">
+    <div style="margin-top: 30px; padding: 30px 20px; background-image: url('${footerImageUrl}'); background-size: cover; background-position: center; color: #ffffff; font-family: Arial, Helvetica, sans-serif;">
       <div style="max-width: 600px; margin: 0 auto; text-align: center;">
         <p style="font-size: 16px; margin-bottom: 5px; font-weight: 500;">Кабанченко Светлана Геннадьевна</p>
         <p style="font-size: 14px; margin-bottom: 20px;">ИНН 781432217443</p>
@@ -229,9 +226,9 @@ export class EmailTemplateService {
       'Не указаны'
 
     return `
-    <div style="display: flex; margin-bottom: 20px; padding: 15px; border: 1px solid #eaeaea; border-radius: 5px; background-color: #fff; font-family: Arial, Helvetica, sans-serif; min-width: 560px;">
+    <div style="display: flex; margin-bottom: 20px; padding: 15px; border: 1px solid #eaeaea; background-color: #fff; font-family: Arial, Helvetica, sans-serif; min-width: 560px;">
       <div style="width: 150px; height: 150px; position: relative; margin-right: 15px; flex-shrink: 0;">
-        <img src="${painting.imgUrl}" alt="${painting.title}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;" />
+        <img src="${painting.imgUrl}" alt="${painting.title}" style="width: 100%; height: 100%; object-fit: cover;" />
       </div>
       
       <div style="flex: 1; display: flex; flex-direction: column;">
