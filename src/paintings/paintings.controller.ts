@@ -24,6 +24,7 @@ import { UpdatePaintingDto } from './dto/update-painting.dto'
 import { PaintingsService } from './paintings.service'
 import { StorageService } from '../common/services/storage.service'
 import { AdminJwtGuard } from 'src/auth/guards/admin-jwt.guard'
+import { PaintingWithAuthor } from './paintings.service'
 
 @Controller('paintings')
 export class PaintingsController {
@@ -94,7 +95,7 @@ export class PaintingsController {
   }
 
   @Get(':id')
-  async getOnePainting(@Param('id') id: string) {
+  async getOnePainting(@Param('id') id: string): Promise<PaintingWithAuthor> {
     const painting = await this.paintingService.findOne(id)
     return painting
   }

@@ -18,6 +18,10 @@ import { parseSizeList } from '../utils/parseSizeList'
 import { Sequelize } from 'sequelize-typescript'
 import { PaintingAttributes } from './models/painting-attributes.model'
 
+export interface PaintingWithAuthor extends Painting {
+  author: string | null
+}
+
 @Injectable()
 export class PaintingsService {
   private readonly logger = new Logger(PaintingsService.name)
@@ -346,7 +350,7 @@ export class PaintingsService {
     return { data, total }
   }
 
-  async findOne(id: string): Promise<Painting> {
+  async findOne(id: string): Promise<PaintingWithAuthor> {
     const options: FindOptions = {
       where: { id },
       include: [
@@ -358,7 +362,11 @@ export class PaintingsService {
     if (!painting) {
       throw new NotFoundException(`Painting with id ${id} not found`)
     }
-    return painting
+    const paintingJson = painting.toJSON()
+    return {
+      ...paintingJson,
+      author: paintingJson.artist?.artistName || null
+    } as PaintingWithAuthor
   }
 
   async update(id: number, painting: UpdatePaintingDto): Promise<Painting> {
