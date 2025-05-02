@@ -20,10 +20,9 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '20.9.0'
-          cache: 'yarn'
 
       - name: Install dependencies
         run: yarn install
 
       - name: Run Prettier check
-        run: echo "skip prettier"
+        run: yarn prettier-check
