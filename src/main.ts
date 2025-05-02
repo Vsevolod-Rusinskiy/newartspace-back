@@ -5,6 +5,7 @@ import { BadRequestException, Logger, ValidationPipe } from '@nestjs/common'
 dotenv.config()
 
 // const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',')
+// test
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
