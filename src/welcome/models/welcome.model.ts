@@ -1,7 +1,7 @@
-import { Table, Column, Model } from 'sequelize-typescript'
+import { Table, Column, Model, DataType } from 'sequelize-typescript'
 
 @Table
 export class Welcomes extends Model {
-  @Column
+  @Column(DataType.TEXT)
   content: string
 }
