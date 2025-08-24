@@ -14,7 +14,26 @@ export class WelcomeService {
     return this.welcomeModel.create({ ...createWelcomeDto })
   }
 
-  async findAll(): Promise<Welcomes[]> {
-    return this.welcomeModel.findAll()
+  async getAllSortedWelcomes(
+    sort?: string,
+    order?: 'ASC' | 'DESC',
+    page?: number,
+    limit?: number
+  ): Promise<{ data: Welcomes[]; total: number }> {
+    order = order || 'DESC'
+    page = page !== undefined ? page : 1
+    limit = limit !== undefined ? limit : 10
+
+    const sortField = sort || 'createdAt'
+    const offset = (page - 1) * limit
+
+    const { rows: data, count: total } =
+      await this.welcomeModel.findAndCountAll({
+        order: [[sortField, order]],
+        limit,
+        offset
+      })
+
+    return { data, total }
   }
 }

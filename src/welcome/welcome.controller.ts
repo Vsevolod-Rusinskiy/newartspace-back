@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body } from '@nestjs/common'
+import { Controller, Get, Post, Body, Query } from '@nestjs/common'
 import { WelcomeService } from './welcome.service'
 import { CreateWelcomeDto } from './dto/create-welcome.dto'
 import { Welcomes } from './models/welcome.model'
@@ -13,7 +13,18 @@ export class WelcomeController {
   }
 
   @Get()
-  findAll(): Promise<Welcomes[]> {
-    return this.welcomeService.findAll()
+  async getAllSortedWelcomes(
+    @Query('sort') sort: string,
+    @Query('order') order: 'ASC' | 'DESC' = 'DESC',
+    @Query('page') page,
+    @Query('limit') limit
+  ) {
+    const { data, total } = await this.welcomeService.getAllSortedWelcomes(
+      sort,
+      order,
+      page,
+      limit
+    )
+    return { data, total, page, pageCount: Math.ceil(total / limit) }
   }
 }
