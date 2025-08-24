@@ -19,6 +19,7 @@ import { AuthModule } from './auth/auth.module'
 import { ProfileModule } from './profile/profile.module'
 import { MailModule } from './mail/mail.module'
 import { OrdersModule } from './orders/orders.module'
+import { WelcomeModule } from './welcome/welcome.module'
 
 @Module({
   imports: [
@@ -42,7 +43,8 @@ import { OrdersModule } from './orders/orders.module'
     AuthModule,
     ProfileModule,
     MailModule,
-    OrdersModule
+    OrdersModule,
+    WelcomeModule
   ],
   providers: [
     {
