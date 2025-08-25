@@ -14,6 +14,7 @@ import { User } from '../users/models/user.model'
 import { Order } from '../orders/models/order.model'
 import { OrderItem } from '../orders/models/order-item.model'
 import { OrderStatus } from '../orders/models/order-status.model'
+import { Welcomes } from '../welcome/models/welcome.model'
 @Injectable()
 export class SequelizeConfigService implements SequelizeOptionsFactory {
   constructor(private readonly configService: ConfigService) {}
@@ -40,7 +41,8 @@ export class SequelizeConfigService implements SequelizeOptionsFactory {
         User,
         Order,
         OrderItem,
-        OrderStatus
+        OrderStatus,
+        Welcomes
       ],
       autoLoadModels: true,
       synchronize: true
