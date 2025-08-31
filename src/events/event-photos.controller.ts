@@ -57,12 +57,7 @@ export class EventPhotosController {
       throw new BadRequestException('File is required')
     }
 
-    const maxSizeInBytes = 1048576 // 1 MB
-    if (file.size > maxSizeInBytes) {
-      throw new BadRequestException(
-        'File size exceeds the maximum limit of 1 MB'
-      )
-    }
+    await this.validateFileSize(file)
 
     const fileName = file.originalname
     const yandexImgUrl = await this.storageService.uploadFile(
@@ -72,6 +67,26 @@ export class EventPhotosController {
     )
     return {
       imgUrl: yandexImgUrl
+    }
+  }
+
+  async validateFileSize(file: Express.Multer.File) {
+    const imageMaxSize = 1 * 1024 * 1024 // 1 MB
+    const videoMaxSize = 5 * 1024 * 1024 // 5 MB
+
+    if (file) {
+      const isImage = file.mimetype.startsWith('image/')
+      const isVideo = file.mimetype.startsWith('video/')
+
+      if (isImage && file.size > imageMaxSize) {
+        throw new BadRequestException(
+          'Размер изображения должен быть не более 1MB'
+        )
+      }
+
+      if (isVideo && file.size > videoMaxSize) {
+        throw new BadRequestException('Размер видео должен быть не более 5MB')
+      }
     }
   }
 }
