@@ -66,6 +66,36 @@ export class EventPhotosService {
     return eventPhoto
   }
 
+  async update(
+    id: number,
+    updateEventPhotoDto: UpdateEventPhotoDto
+  ): Promise<{ data: EventPhoto }> {
+    const eventPhoto = await this.findOne(id.toString())
+    if (!eventPhoto) {
+      throw new NotFoundException(`Event photo with id ${id} not found`)
+    }
+
+    // Если меняется URL картинки, удаляем старый файл
+    if (
+      updateEventPhotoDto.imgUrl &&
+      eventPhoto.imgUrl !== updateEventPhotoDto.imgUrl
+    ) {
+      const prevImgUrl = eventPhoto.imgUrl
+      const fileName = getFileNameFromUrl(prevImgUrl)
+      await this.storageService.deleteFile(fileName, 'events')
+    }
+
+    const [, [updatedPhoto]] = await this.eventPhotoModel.update(
+      updateEventPhotoDto,
+      {
+        where: { id },
+        returning: true
+      }
+    )
+
+    return { data: updatedPhoto }
+  }
+
   async delete(id: string): Promise<void> {
     const eventPhoto = await this.findOne(id)
     if (!eventPhoto) {

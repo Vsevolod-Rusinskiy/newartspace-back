@@ -8,6 +8,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Query,
   UploadedFile,
@@ -16,6 +17,7 @@ import {
 } from '@nestjs/common'
 
 import { CreateEventPhotoDto } from './dto/create-event-photo.dto'
+import { UpdateEventPhotoDto } from './dto/update-event-photo.dto'
 import { EventPhotosService } from './event-photos.service'
 import { StorageService } from '../common/services/storage.service'
 import { AdminJwtGuard } from 'src/auth/guards/admin-jwt.guard'
@@ -30,8 +32,9 @@ export class EventPhotosController {
   @UseGuards(AdminJwtGuard)
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createEventPhotoDto: CreateEventPhotoDto) {
-    return this.eventPhotosService.create(createEventPhotoDto)
+  async create(@Body() createEventPhotoDto: CreateEventPhotoDto) {
+    const photo = await this.eventPhotosService.create(createEventPhotoDto)
+    return { data: photo }
   }
 
   @Get()
@@ -46,14 +49,25 @@ export class EventPhotosController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.eventPhotosService.findOne(id)
+  async findOne(@Param('id') id: string) {
+    const photo = await this.eventPhotosService.findOne(id)
+    return { data: photo }
+  }
+
+  @UseGuards(AdminJwtGuard)
+  @Patch(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() updateEventPhotoDto: UpdateEventPhotoDto
+  ) {
+    return this.eventPhotosService.update(Number(id), updateEventPhotoDto)
   }
 
   @UseGuards(AdminJwtGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.eventPhotosService.delete(id)
+  async remove(@Param('id') id: string) {
+    await this.eventPhotosService.delete(id)
+    return { data: { success: true } }
   }
 
   @UseGuards(AdminJwtGuard)
@@ -73,7 +87,7 @@ export class EventPhotosController {
       'events'
     )
     return {
-      imgUrl: yandexImgUrl
+      data: { imgUrl: yandexImgUrl }
     }
   }
 
