@@ -6,6 +6,7 @@ import {
   NotFoundException
 } from '@nestjs/common'
 import { CreateEventPhotoDto } from './dto/create-event-photo.dto'
+import { UpdateEventPhotoDto } from './dto/update-event-photo.dto'
 import { EventPhoto } from './models/event-photo.model'
 import { StorageService } from '../common/services/storage.service'
 import { getFileNameFromUrl } from '../utils'
