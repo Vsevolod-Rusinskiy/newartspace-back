@@ -1,4 +1,4 @@
-import { IsString, IsOptional } from 'class-validator'
+import { IsString, IsOptional, IsBoolean } from 'class-validator'
 
 export class UpdateWelcomeDto {
   @IsOptional()
@@ -7,4 +7,8 @@ export class UpdateWelcomeDto {
   @IsOptional()
   @IsString()
   readonly content?: string
+
+  @IsOptional()
+  @IsBoolean()
+  readonly isActive?: boolean
 }
