@@ -34,7 +34,7 @@ export class EventPhotosController {
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createEventPhotoDto: CreateEventPhotoDto) {
     const photo = await this.eventPhotosService.create(createEventPhotoDto)
-    return { data: photo }
+    return photo
   }
 
   @Get()
@@ -51,7 +51,7 @@ export class EventPhotosController {
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const photo = await this.eventPhotosService.findOne(id)
-    return { data: photo }
+    return photo
   }
 
   @UseGuards(AdminJwtGuard)
@@ -64,14 +64,14 @@ export class EventPhotosController {
       Number(id),
       updateEventPhotoDto
     )
-    return { data: photo }
+    return photo
   }
 
   @UseGuards(AdminJwtGuard)
   @Delete(':id')
   async remove(@Param('id') id: string) {
     await this.eventPhotosService.delete(id)
-    return { data: { success: true } }
+    return { success: true }
   }
 
   @UseGuards(AdminJwtGuard)

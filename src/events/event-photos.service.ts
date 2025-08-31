@@ -57,7 +57,7 @@ export class EventPhotosService {
 
   async findOne(id: string): Promise<EventPhoto> {
     const eventPhoto = await this.eventPhotoModel.findOne({
-      where: { id }
+      where: { id: Number(id) }
     })
 
     if (!eventPhoto) {
