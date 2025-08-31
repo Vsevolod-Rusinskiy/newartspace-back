@@ -9,6 +9,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors
@@ -34,8 +35,14 @@ export class EventPhotosController {
   }
 
   @Get()
-  findAll() {
-    return this.eventPhotosService.findAll()
+  async findAll(@Query('page') page?: number, @Query('limit') limit?: number) {
+    const { data, total } = await this.eventPhotosService.findAll(page, limit)
+    return {
+      data,
+      total,
+      page,
+      pageCount: Math.ceil(total / limit)
+    }
   }
 
   @Get(':id')

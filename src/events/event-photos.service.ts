@@ -36,10 +36,22 @@ export class EventPhotosService {
     }
   }
 
-  async findAll(): Promise<EventPhoto[]> {
-    return this.eventPhotoModel.findAll({
-      order: [['priority', 'DESC']]
-    })
+  async findAll(
+    page?: number,
+    limit?: number
+  ): Promise<{ data: EventPhoto[]; total: number }> {
+    page = page !== undefined ? page : 1
+    limit = limit !== undefined ? limit : 10
+
+    const { rows: data, count: total } =
+      await this.eventPhotoModel.findAndCountAll({
+        order: [['priority', 'DESC']],
+        limit: limit,
+        offset: (page - 1) * limit,
+        distinct: true
+      })
+
+    return { data, total }
   }
 
   async findOne(id: string): Promise<EventPhoto> {
