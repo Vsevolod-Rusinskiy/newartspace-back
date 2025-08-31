@@ -49,8 +49,7 @@ export class EventPhotosController {
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    const photo = await this.eventPhotosService.findOne(id)
-    return { data: photo }
+    return this.eventPhotosService.findOne(id)
   }
 
   @UseGuards(AdminJwtGuard)
