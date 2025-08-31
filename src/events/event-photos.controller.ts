@@ -87,7 +87,7 @@ export class EventPhotosController {
       'events'
     )
     return {
-      data: { imgUrl: yandexImgUrl }
+      imgUrl: yandexImgUrl
     }
   }
 
