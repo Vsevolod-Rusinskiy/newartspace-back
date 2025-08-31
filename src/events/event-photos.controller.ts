@@ -33,8 +33,7 @@ export class EventPhotosController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createEventPhotoDto: CreateEventPhotoDto) {
-    const photo = await this.eventPhotosService.create(createEventPhotoDto)
-    return { data: photo }
+    return this.eventPhotosService.create(createEventPhotoDto)
   }
 
   @Get()
