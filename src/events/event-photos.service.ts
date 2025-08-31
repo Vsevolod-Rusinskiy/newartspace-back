@@ -21,16 +21,14 @@ export class EventPhotosService {
     private readonly storageService: StorageService
   ) {}
 
-  async create(
-    createEventPhotoDto: CreateEventPhotoDto
-  ): Promise<{ data: EventPhoto }> {
+  async create(createEventPhotoDto: CreateEventPhotoDto): Promise<EventPhoto> {
     try {
       const eventPhoto = new EventPhoto({
         ...createEventPhotoDto,
         priority: createEventPhotoDto.priority || 0
       })
       await eventPhoto.save()
-      return { data: eventPhoto }
+      return eventPhoto
     } catch (error) {
       this.logger.error(`Error creating event photo: ${error.message}`)
       throw new InternalServerErrorException(
@@ -57,7 +55,7 @@ export class EventPhotosService {
     return { data, total }
   }
 
-  async findOne(id: string): Promise<{ data: EventPhoto }> {
+  async findOne(id: string): Promise<EventPhoto> {
     const eventPhoto = await this.eventPhotoModel.findOne({
       where: { id }
     })
@@ -66,13 +64,13 @@ export class EventPhotosService {
       throw new NotFoundException(`Event photo with id ${id} not found`)
     }
 
-    return { data: eventPhoto }
+    return eventPhoto
   }
 
   async update(
     id: number,
     updateEventPhotoDto: UpdateEventPhotoDto
-  ): Promise<{ data: EventPhoto }> {
+  ): Promise<EventPhoto> {
     const eventPhoto = await this.findOne(id.toString())
     if (!eventPhoto) {
       throw new NotFoundException(`Event photo with id ${id} not found`)
@@ -81,9 +79,9 @@ export class EventPhotosService {
     // Если меняется URL картинки, удаляем старый файл
     if (
       updateEventPhotoDto.imgUrl &&
-      eventPhoto.data.imgUrl !== updateEventPhotoDto.imgUrl
+      eventPhoto.imgUrl !== updateEventPhotoDto.imgUrl
     ) {
-      const prevImgUrl = eventPhoto.data.imgUrl
+      const prevImgUrl = eventPhoto.imgUrl
       const fileName = getFileNameFromUrl(prevImgUrl)
       await this.storageService.deleteFile(fileName, 'events')
     }
@@ -96,7 +94,7 @@ export class EventPhotosService {
       }
     )
 
-    return { data: updatedPhoto }
+    return updatedPhoto
   }
 
   async delete(id: string): Promise<void> {
@@ -107,11 +105,11 @@ export class EventPhotosService {
 
     try {
       // Удаляем файл из хранилища
-      const fileName = getFileNameFromUrl(eventPhoto.data.imgUrl)
+      const fileName = getFileNameFromUrl(eventPhoto.imgUrl)
       await this.storageService.deleteFile(fileName, 'events')
 
       // Удаляем запись из БД
-      await eventPhoto.data.destroy()
+      await eventPhoto.destroy()
     } catch (error) {
       this.logger.error(`Error deleting event photo: ${error.message}`)
       throw new InternalServerErrorException(

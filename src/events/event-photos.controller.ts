@@ -33,7 +33,8 @@ export class EventPhotosController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createEventPhotoDto: CreateEventPhotoDto) {
-    return this.eventPhotosService.create(createEventPhotoDto)
+    const photo = await this.eventPhotosService.create(createEventPhotoDto)
+    return { data: photo }
   }
 
   @Get()
@@ -49,7 +50,8 @@ export class EventPhotosController {
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    return this.eventPhotosService.findOne(id)
+    const photo = await this.eventPhotosService.findOne(id)
+    return { data: photo }
   }
 
   @UseGuards(AdminJwtGuard)
@@ -58,7 +60,11 @@ export class EventPhotosController {
     @Param('id') id: string,
     @Body() updateEventPhotoDto: UpdateEventPhotoDto
   ) {
-    return this.eventPhotosService.update(Number(id), updateEventPhotoDto)
+    const photo = await this.eventPhotosService.update(
+      Number(id),
+      updateEventPhotoDto
+    )
+    return { data: photo }
   }
 
   @UseGuards(AdminJwtGuard)
