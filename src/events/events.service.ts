@@ -114,8 +114,10 @@ export class EventsService {
   }
 
   async findOne(id: string): Promise<Event> {
+    // Find event with related photos
     const options: FindOptions = {
-      where: { id }
+      where: { id },
+      include: [{ model: EventPhoto, as: 'eventPhotos' }]
     }
     const event = await this.eventModel.findOne(options)
     if (!event) {
@@ -129,31 +131,32 @@ export class EventsService {
     if (!existingEvent) {
       throw new NotFoundException(`Event with id ${id} not found`)
     }
-    // Проверяем, изменился ли URL картинки
+    // Check if image url changed
     if (existingEvent.imgUrl !== event.imgUrl) {
-      // Удаляем старый файл, если URL изменился
+      // Remove old file if url changed
       const prevImgUrl = existingEvent.imgUrl
       const fileName = getFileNameFromUrl(prevImgUrl)
       await this.storageService.deleteFile(fileName, 'events')
     }
     const { eventPhotoIds, ...eventData } = event
-    const data = await this.eventModel.update(eventData, {
+    await this.eventModel.update(eventData, {
       where: { id },
       returning: true
     })
-    // Сначала отвязываем все фото от этого события
+    // Unlink all photos from this event
     await this.eventPhotoModel.update(
       { eventId: null },
       { where: { eventId: id } }
     )
-    // Привязываем новые фото
+    // Link new photos
     if (eventPhotoIds && Array.isArray(eventPhotoIds)) {
       await this.eventPhotoModel.update(
         { eventId: id },
         { where: { id: eventPhotoIds } }
       )
     }
-    return data[1][0]
+    // Return updated event with related photos
+    return this.findOne(id.toString())
   }
 
   async delete(id: string): Promise<void> {
