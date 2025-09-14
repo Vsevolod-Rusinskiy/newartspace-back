@@ -39,12 +39,19 @@ export class EventPhotosController {
 
   @Get()
   async findAll(@Query('page') page?: number, @Query('limit') limit?: number) {
-    const { data, total } = await this.eventPhotosService.findAll(page, limit)
+    // Делаем значения по умолчанию, если не переданы
+    const safePage = page ? Number(page) : 1
+    const safeLimit = limit ? Number(limit) : 1000 // или другое подходящее значение
+
+    const { data, total } = await this.eventPhotosService.findAll(
+      safePage,
+      safeLimit
+    )
     return {
       data,
       total,
-      page,
-      pageCount: Math.ceil(total / limit)
+      page: safePage,
+      pageCount: Math.ceil(total / safeLimit)
     }
   }
 
