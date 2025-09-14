@@ -1,4 +1,5 @@
-import { Table, Column, Model } from 'sequelize-typescript'
+import { Table, Column, Model, HasMany } from 'sequelize-typescript'
+import { EventPhoto } from './event-photo.model'
 
 @Table
 export class Event extends Model {
@@ -16,4 +17,7 @@ export class Event extends Model {
 
   @Column
   date: Date
+
+  @HasMany(() => EventPhoto)
+  eventPhotos: EventPhoto[]
 }

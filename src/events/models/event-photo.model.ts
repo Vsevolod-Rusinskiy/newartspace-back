@@ -3,8 +3,11 @@ import {
   Column,
   Model,
   PrimaryKey,
-  AutoIncrement
+  AutoIncrement,
+  ForeignKey,
+  BelongsTo
 } from 'sequelize-typescript'
+import { Event } from './event.model'
 
 @Table({
   tableName: 'EventsPhotos'
@@ -23,4 +26,11 @@ export class EventPhoto extends Model {
 
   @Column
   priority: number
+
+  @ForeignKey(() => Event)
+  @Column({ field: 'eventId' })
+  eventId: number
+
+  @BelongsTo(() => Event)
+  event: Event
 }

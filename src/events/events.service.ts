@@ -9,6 +9,7 @@ import {
 import { CreateEventDto } from './dto/create-event.dto'
 import { UpdateEventDto } from './dto/update-event.dto'
 import { Event } from './models/event.model'
+import { EventPhoto } from './models/event-photo.model'
 import { StorageService } from '../common/services/storage.service'
 import { getFileNameFromUrl } from '../utils'
 
@@ -19,15 +20,25 @@ export class EventsService {
   constructor(
     @InjectModel(Event)
     private eventModel: typeof Event,
+    @InjectModel(EventPhoto)
+    private eventPhotoModel: typeof EventPhoto,
     private readonly storageService: StorageService
   ) {}
 
   async create(createEventDto: CreateEventDto): Promise<Event> {
     try {
+      const { eventPhotoIds, ...eventData } = createEventDto
       const event = new Event({
-        ...createEventDto
+        ...eventData
       })
       await event.save()
+      // Привязываем фото к событию
+      if (eventPhotoIds && Array.isArray(eventPhotoIds)) {
+        await this.eventPhotoModel.update(
+          { eventId: event.id },
+          { where: { id: eventPhotoIds } }
+        )
+      }
       return event
     } catch (error) {
       throw new InternalServerErrorException(
@@ -125,12 +136,23 @@ export class EventsService {
       const fileName = getFileNameFromUrl(prevImgUrl)
       await this.storageService.deleteFile(fileName, 'events')
     }
-
-    const data = await this.eventModel.update(event, {
+    const { eventPhotoIds, ...eventData } = event
+    const data = await this.eventModel.update(eventData, {
       where: { id },
       returning: true
     })
-
+    // Сначала отвязываем все фото от этого события
+    await this.eventPhotoModel.update(
+      { eventId: null },
+      { where: { eventId: id } }
+    )
+    // Привязываем новые фото
+    if (eventPhotoIds && Array.isArray(eventPhotoIds)) {
+      await this.eventPhotoModel.update(
+        { eventId: id },
+        { where: { id: eventPhotoIds } }
+      )
+    }
     return data[1][0]
   }
 

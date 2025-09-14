@@ -31,6 +31,9 @@ export class UpdateEventDto {
   readonly pictures?: Image | null
 
   @IsOptional()
+  readonly eventPhotoIds?: number[]
+
+  @IsOptional()
   @IsDateString()
   readonly updatedAt?: string
 
