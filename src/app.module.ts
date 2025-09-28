@@ -14,6 +14,7 @@ import { AppController } from './app.controller'
 import { AttributesModule } from './attributes/attributes.module'
 import { RequestFormModule } from './request-form/request-form.module'
 import { EventsModule } from './events/events.module'
+import { EventPhotosModule } from './events/event-photos.module'
 import { UsersModule } from './users/users.module'
 import { AuthModule } from './auth/auth.module'
 import { ProfileModule } from './profile/profile.module'
@@ -37,6 +38,7 @@ import { WelcomeModule } from './welcome/welcome.module'
     ArtistsModule,
     PaintingsModule,
     EventsModule,
+    EventPhotosModule,
     StorageModule,
     RequestFormModule,
     UsersModule,

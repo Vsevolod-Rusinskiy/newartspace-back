@@ -9,6 +9,7 @@ import {
 import { CreateEventDto } from './dto/create-event.dto'
 import { UpdateEventDto } from './dto/update-event.dto'
 import { Event } from './models/event.model'
+import { EventPhoto } from './models/event-photo.model'
 import { StorageService } from '../common/services/storage.service'
 import { getFileNameFromUrl } from '../utils'
 
@@ -19,15 +20,25 @@ export class EventsService {
   constructor(
     @InjectModel(Event)
     private eventModel: typeof Event,
+    @InjectModel(EventPhoto)
+    private eventPhotoModel: typeof EventPhoto,
     private readonly storageService: StorageService
   ) {}
 
   async create(createEventDto: CreateEventDto): Promise<Event> {
     try {
+      const { eventPhotoIds, ...eventData } = createEventDto
       const event = new Event({
-        ...createEventDto
+        ...eventData
       })
       await event.save()
+      // Привязываем фото к событию
+      if (eventPhotoIds && Array.isArray(eventPhotoIds)) {
+        await this.eventPhotoModel.update(
+          { eventId: event.id },
+          { where: { id: eventPhotoIds } }
+        )
+      }
       return event
     } catch (error) {
       throw new InternalServerErrorException(
@@ -103,8 +114,10 @@ export class EventsService {
   }
 
   async findOne(id: string): Promise<Event> {
+    // Find event with related photos
     const options: FindOptions = {
-      where: { id }
+      where: { id },
+      include: [{ model: EventPhoto, as: 'eventPhotos' }]
     }
     const event = await this.eventModel.findOne(options)
     if (!event) {
@@ -118,20 +131,32 @@ export class EventsService {
     if (!existingEvent) {
       throw new NotFoundException(`Event with id ${id} not found`)
     }
-    // Проверяем, изменился ли URL картинки
+    // Check if image url changed
     if (existingEvent.imgUrl !== event.imgUrl) {
-      // Удаляем старый файл, если URL изменился
+      // Remove old file if url changed
       const prevImgUrl = existingEvent.imgUrl
       const fileName = getFileNameFromUrl(prevImgUrl)
       await this.storageService.deleteFile(fileName, 'events')
     }
-
-    const data = await this.eventModel.update(event, {
+    const { eventPhotoIds, ...eventData } = event
+    await this.eventModel.update(eventData, {
       where: { id },
       returning: true
     })
-
-    return data[1][0]
+    // Unlink all photos from this event
+    await this.eventPhotoModel.update(
+      { eventId: null },
+      { where: { eventId: id } }
+    )
+    // Link new photos
+    if (eventPhotoIds && Array.isArray(eventPhotoIds)) {
+      await this.eventPhotoModel.update(
+        { eventId: id },
+        { where: { id: eventPhotoIds } }
+      )
+    }
+    // Return updated event with related photos
+    return this.findOne(id.toString())
   }
 
   async delete(id: string): Promise<void> {

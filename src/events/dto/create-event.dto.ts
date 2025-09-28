@@ -28,6 +28,9 @@ export class CreateEventDto {
   readonly priority?: number
 
   @IsOptional()
+  readonly eventPhotoIds?: number[]
+
+  @IsOptional()
   @IsDateString()
   readonly createdAt?: string
 
