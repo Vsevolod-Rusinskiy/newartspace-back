@@ -1,5 +1,9 @@
 name: Master CI/CD
 
+permissions:
+  contents: read
+  packages: write
+
 on:
   push:
     branches:
@@ -8,19 +12,18 @@ on:
 jobs:
   prettier-lint-check:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '20.9.0'
           cache: 'yarn'
 
       - name: Install dependencies
-        run: yarn install
+        run: yarn install --frozen-lockfile
 
       - name: Run Prettier check
         run: yarn prettier-check
@@ -28,58 +31,36 @@ jobs:
       - name: Run Lint check
         run: yarn lint
 
-#  build-and-push-image:
-#    needs: prettier-lint-check
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Checkout code
-#        uses: actions/checkout@v2
-#
-#      # Логинимся в GitHub Container Registry, используя созданный токен
-#      - name: Log in to GitHub Container Registry
-#        uses: docker/login-action@v2
-#        with:
-#          registry: ghcr.io
-#          username: ${{ github.actor }}
-#          password: ${{ secrets.GH_TOKEN }}
-#
-#      # Сборка и загрузка Docker образа в GitHub Packages
-#      - name: Build and push Docker image
-#        uses: docker/build-push-action@v3
-#        with:
-#          context: .
-#          file: ./Dockerfile
-#          push: true
-#          tags: ghcr.io/vsevolod-rusinskiy/newartspace-back:latest
-
   deploy:
     needs: prettier-lint-check
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-        with:
-          node-version: '20.9.0'
-          cache: 'yarn'
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20.9.0'
-          cache: 'yarn'
-
       - name: Deploy to Server
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 360m
+          command_timeout: 60m
           script: |
+            set -e
+
+            echo "=== SSH DEPLOY START ==="
+            echo "Date: $(date)"
+            echo "User: $(whoami)"
+            echo "Host: $(hostname)"
+            echo "Uptime: $(uptime || true)"
+            echo "Workdir: $(pwd)"
+
+            echo "=== Scripts directory ==="
+            ls -la /var/www/newartspace/scripts
+
+            echo "=== Running deploy.sh ==="
             cd /var/www/newartspace/scripts
             ./deploy.sh
 
-#            kubectl rollout restart deployment backend
-#            kubectl get pods -n default
+            echo "=== Containers status (top) ==="
+            docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | sed -n '1,30p'
 
+            echo "=== SSH DEPLOY END ==="
+            echo "Date: $(date)"
