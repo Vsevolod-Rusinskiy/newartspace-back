@@ -40,7 +40,7 @@
     "postgres": "^3.4.4",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
-    "sequelize": "^6.37.2",
+    "sequelize": "^6.37.8",
     "sequelize-typescript": "^2.1.6",
     "uuid": "^10.0.0"
   },
@@ -95,7 +95,16 @@
   "resolutions": {
     "form-data": "^4.0.4",
     "body-parser": "1.20.4",
+    "braces": "3.0.3",
+    "eslint/**/minimatch": "3.1.4",
+    "glob": "10.5.0",
+    "glob/minimatch": "9.0.7",
+    "jest/**/minimatch": "3.1.4",
+    "multer": "2.1.0",
+    "@nestjs/cli/**/minimatch": "3.1.4",
+    "@typescript-eslint/**/minimatch": "9.0.7",
     "serialize-javascript": "6.0.2",
+    "sequelize-cli/**/minimatch": "9.0.7",
     "webpack": "5.97.1"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
