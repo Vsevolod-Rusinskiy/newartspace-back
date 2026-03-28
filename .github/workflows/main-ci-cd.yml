@@ -1,26 +1,33 @@
 name: Master CI/CD
 
+permissions:
+  contents: read
+  packages: write
+
 on:
   push:
     branches:
       - master
 
 jobs:
-  prettier-lint-check:
+  checks:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '20.9.0'
           cache: 'yarn'
 
       - name: Install dependencies
-        run: yarn install
+        run: yarn install --frozen-lockfile
+
+      - name: Security audit (non-blocking)
+        run: |
+          yarn audit || true
 
       - name: Run Prettier check
         run: yarn prettier-check
@@ -28,58 +35,42 @@ jobs:
       - name: Run Lint check
         run: yarn lint
 
-#  build-and-push-image:
-#    needs: prettier-lint-check
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Checkout code
-#        uses: actions/checkout@v2
-#
-#      # Логинимся в GitHub Container Registry, используя созданный токен
-#      - name: Log in to GitHub Container Registry
-#        uses: docker/login-action@v2
-#        with:
-#          registry: ghcr.io
-#          username: ${{ github.actor }}
-#          password: ${{ secrets.GH_TOKEN }}
-#
-#      # Сборка и загрузка Docker образа в GitHub Packages
-#      - name: Build and push Docker image
-#        uses: docker/build-push-action@v3
-#        with:
-#          context: .
-#          file: ./Dockerfile
-#          push: true
-#          tags: ghcr.io/vsevolod-rusinskiy/newartspace-back:latest
-
-  deploy:
-    needs: prettier-lint-check
+  build-and-push:
+    needs: checks
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
-        with:
-          node-version: '20.9.0'
-          cache: 'yarn'
+        uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          node-version: '20.9.0'
-          cache: 'yarn'
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
 
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ghcr.io/vsevolod-rusinskiy/newartspace-back:sha-${{ github.sha }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
       - name: Deploy to Server
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 360m
+          command_timeout: 60m
           script: |
+            set -e
             cd /var/www/newartspace/scripts
-            ./deploy.sh
-
-#            kubectl rollout restart deployment backend
-#            kubectl get pods -n default
-
+            ./deploy.sh back sha-${{ github.sha }}
+            docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | sed -n '1,30p'
