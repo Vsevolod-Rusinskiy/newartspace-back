@@ -174,6 +174,12 @@ export class PaintingsService {
             [Op.iLike]: `%${searchFilter.title}%`
           }
         }
+        if (searchFilter.id) {
+          const paintingId = Number(searchFilter.id)
+          if (!Number.isNaN(paintingId)) {
+            whereConditions.id = paintingId
+          }
+        }
       } catch (error) {
         this.logger.error('Failed to parse search filter:', error)
       }
