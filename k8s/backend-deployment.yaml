@@ -69,16 +69,6 @@ spec:
                 secretKeyRef:
                   name: backend-secret
                   key: BUCKET_NAME
-            - name: YOUR_BOT_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: backend-secrets
-                  key: YOUR_BOT_TOKEN
-            - name: CHAT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: backend-secrets
-                  key: CHAT_ID
           resources:
             requests:
               memory: '50Mi'
