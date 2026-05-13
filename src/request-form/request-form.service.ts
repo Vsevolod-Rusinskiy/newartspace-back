@@ -87,7 +87,7 @@ export class RequestFormService {
       })
 
       if (painting) {
-        paintingInfo = `Картина "${painting.title}" художника ${painting.artist.artistName}`
+        paintingInfo = `Картина ID ${painting.id}: "${painting.title}" художника ${painting.artist.artistName}`
       }
     }
 
@@ -169,7 +169,7 @@ ${deliveryInfo}
         const paintingsList = paintings
           .map(
             (painting) =>
-              `- "${painting.title}" художника ${painting.artist.artistName}`
+              `- ID ${painting.id}: "${painting.title}" художника ${painting.artist.artistName}`
           )
           .join('\n')
 
