@@ -8,7 +8,6 @@ import { MailService } from '../mail/mail.service'
 import { OrdersService } from '../orders/orders.service'
 import { CreateOrderDto } from '../orders/dto/create-order.dto'
 import { UsersService } from '../users/users.service'
-import { TelegramService } from '../telegram/telegram.service'
 import { EmailTemplateService } from '../email-templates/email-template.service'
 
 @Injectable()
@@ -21,7 +20,6 @@ export class RequestFormService {
     private mailService: MailService,
     private ordersService: OrdersService,
     private usersService: UsersService,
-    private telegramService: TelegramService,
     private emailTemplateService: EmailTemplateService
   ) {}
 
@@ -32,16 +30,6 @@ export class RequestFormService {
     } catch (error) {
       this.logger.error('Ошибка при поиске пользователя:', error.message)
       return null
-    }
-  }
-
-  private async sendTelegramMessage(message: string) {
-    try {
-      await this.telegramService.sendMessage(message)
-      this.logger.log('Сообщение в Telegram отправлено успешно')
-    } catch (error) {
-      this.logger.error('Ошибка при отправке в Telegram:', error.message)
-      // не бросаем исключение, чтобы остальные операции могли продолжиться
     }
   }
 
@@ -110,11 +98,9 @@ export class RequestFormService {
 Email: ${orderData.email}
 ${paintingInfo}
 ${deliveryInfo}
-Тип формы: репродукция`
+    Тип формы: репродукция`
 
     try {
-      await this.sendTelegramMessage(`Новый заказ: \n${message}`)
-
       // Ищем пользователя по email
       const userId = await this.findUserByEmail(orderData.email)
 
@@ -207,8 +193,6 @@ ${deliveryInfo}
 Тип формы: заказ из корзины`
 
     try {
-      await this.sendTelegramMessage(`Новый заказ: \n${message}`)
-
       // Ищем пользователя по email
       const userId = await this.findUserByEmail(orderData.email)
 

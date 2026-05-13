@@ -7,7 +7,6 @@ import { MailModule } from '../mail/mail.module'
 import { OrdersModule } from '../orders/orders.module'
 import { UsersModule } from '../users/users.module'
 import { EmailTemplatesModule } from '../email-templates/email-templates.module'
-import { TelegramModule } from '../telegram/telegram.module'
 
 @Module({
   imports: [
@@ -15,8 +14,7 @@ import { TelegramModule } from '../telegram/telegram.module'
     MailModule,
     OrdersModule,
     UsersModule,
-    EmailTemplatesModule,
-    TelegramModule
+    EmailTemplatesModule
   ],
   controllers: [RequestFormController],
   providers: [RequestFormService]
