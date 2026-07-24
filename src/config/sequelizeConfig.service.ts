@@ -16,6 +16,8 @@ import { OrderItem } from '../orders/models/order-item.model'
 import { OrderStatus } from '../orders/models/order-status.model'
 import { Welcomes } from '../welcome/models/welcome.model'
 import { EventPhoto } from 'src/events/models/event-photo.model'
+import { About } from '../about/models/about.model'
+import { WorkingHours } from '../working-hours/models/working-hours.model'
 @Injectable()
 export class SequelizeConfigService implements SequelizeOptionsFactory {
   constructor(private readonly configService: ConfigService) {}
@@ -44,7 +46,9 @@ export class SequelizeConfigService implements SequelizeOptionsFactory {
         OrderItem,
         OrderStatus,
         Welcomes,
-        EventPhoto
+        EventPhoto,
+        About,
+        WorkingHours
       ],
       autoLoadModels: true,
       synchronize: true

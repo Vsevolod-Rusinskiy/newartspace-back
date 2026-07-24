@@ -19,6 +19,7 @@ import { AdminJwtGuard } from '../auth/guards/admin-jwt.guard'
 export class WelcomeController {
   constructor(private readonly welcomeService: WelcomeService) {}
 
+  @UseGuards(AdminJwtGuard)
   @Post()
   create(@Body() createWelcomeDto: CreateWelcomeDto): Promise<Welcomes> {
     return this.welcomeService.create(createWelcomeDto)
