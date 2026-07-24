@@ -6,16 +6,19 @@ import {
   Patch,
   Param,
   Delete,
-  Query
+  Query,
+  UseGuards
 } from '@nestjs/common'
 import { AttributesService } from './attributes.service'
 import { CreateAttributeDto } from './dto/create-attribute.dto'
 import { UpdateAttributeDto } from './dto/update-attribute.dto'
+import { AdminJwtGuard } from 'src/auth/guards/admin-jwt.guard'
 
 @Controller('attributes')
 export class AttributesController {
   constructor(private readonly attributesService: AttributesService) {}
 
+  @UseGuards(AdminJwtGuard)
   @Post()
   create(@Body() createAttributeDto: CreateAttributeDto) {
     return this.attributesService.create(createAttributeDto)
@@ -38,6 +41,7 @@ export class AttributesController {
     return this.attributesService.findOne(+id)
   }
 
+  @UseGuards(AdminJwtGuard)
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -46,6 +50,7 @@ export class AttributesController {
     return this.attributesService.update(+id, updateAttributeDto)
   }
 
+  @UseGuards(AdminJwtGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.attributesService.remove(+id)

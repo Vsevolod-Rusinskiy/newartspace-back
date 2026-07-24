@@ -6,10 +6,12 @@ import { OrderStatus } from './models/order-status.model'
 import { OrdersService } from './orders.service'
 import { OrdersController } from './orders.controller'
 import { Painting } from '../paintings/models/painting.model'
+import { AuthModule } from '../auth/auth.module'
 
 @Module({
   imports: [
-    SequelizeModule.forFeature([Order, OrderItem, OrderStatus, Painting])
+    SequelizeModule.forFeature([Order, OrderItem, OrderStatus, Painting]),
+    AuthModule
   ],
   providers: [OrdersService],
   controllers: [OrdersController],

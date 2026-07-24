@@ -7,13 +7,15 @@ import {
   Patch,
   Logger,
   Query,
-  Delete
+  Delete,
+  UseGuards
 } from '@nestjs/common'
 import { OrdersService } from './orders.service'
 import { CreateOrderDto } from './dto/create-order.dto'
 import { Order } from './models/order.model'
 import { OrderStatus } from './models/order-status.model'
 import { UpdateOrderDto } from './dto/update-order.dto'
+import { AdminJwtGuard } from 'src/auth/guards/admin-jwt.guard'
 
 @Controller('orders')
 export class OrdersController {
@@ -21,6 +23,7 @@ export class OrdersController {
 
   constructor(private readonly ordersService: OrdersService) {}
 
+  @UseGuards(AdminJwtGuard)
   @Post()
   async create(@Body() createOrderDto: CreateOrderDto): Promise<Order> {
     this.logger.log(
@@ -29,16 +32,19 @@ export class OrdersController {
     return this.ordersService.create(createOrderDto)
   }
 
+  @UseGuards(AdminJwtGuard)
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<Order> {
     return this.ordersService.findOne(+id)
   }
 
+  @UseGuards(AdminJwtGuard)
   @Get('getMany/:ids')
   async getMany(@Param('ids') ids: string) {
     return this.ordersService.getMany(ids)
   }
 
+  @UseGuards(AdminJwtGuard)
   @Patch(':id')
   async update(
     @Param('id') id: string,
@@ -48,12 +54,14 @@ export class OrdersController {
     return this.ordersService.update(+id, updateOrderDto)
   }
 
+  @UseGuards(AdminJwtGuard)
   @Delete(':id')
   async delete(@Param('id') id: string): Promise<void> {
     this.logger.log(`Deleting order ${id}`)
     return this.ordersService.delete(+id)
   }
 
+  @UseGuards(AdminJwtGuard)
   @Delete('deleteMany/:ids')
   async deleteMany(@Param('ids') ids: string) {
     this.logger.log(`Deleting orders with ids: ${ids}`)
@@ -65,6 +73,7 @@ export class OrdersController {
     return this.ordersService.getStatuses()
   }
 
+  @UseGuards(AdminJwtGuard)
   @Get()
   async findAll(
     @Query('sort') sort: string,
@@ -76,6 +85,7 @@ export class OrdersController {
     return this.ordersService.findAll(sort, order, page, limit, filter)
   }
 
+  @UseGuards(AdminJwtGuard)
   @Delete(':orderId/items')
   async deleteItems(
     @Param('orderId') orderId: string,

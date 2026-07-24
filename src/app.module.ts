@@ -21,6 +21,8 @@ import { ProfileModule } from './profile/profile.module'
 import { MailModule } from './mail/mail.module'
 import { OrdersModule } from './orders/orders.module'
 import { WelcomeModule } from './welcome/welcome.module'
+import { AboutModule } from './about/about.module'
+import { WorkingHoursModule } from './working-hours/working-hours.module'
 
 @Module({
   imports: [
@@ -46,7 +48,9 @@ import { WelcomeModule } from './welcome/welcome.module'
     ProfileModule,
     MailModule,
     OrdersModule,
-    WelcomeModule
+    WelcomeModule,
+    AboutModule,
+    WorkingHoursModule
   ],
   providers: [
     {
