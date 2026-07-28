@@ -150,12 +150,17 @@ export class ArtistsService {
     if (!existingArtist) {
       throw new NotFoundException(`Artist with id ${id} not found`)
     }
-    // Проверяем, изменился ли URL картинки
-    if (existingArtist.imgUrl !== artist.imgUrl) {
-      // Удаляем старый файл, если URL изменился
+    // Delete old file only when a new imgUrl is explicitly provided and differs.
+    if (
+      artist.imgUrl !== undefined &&
+      artist.imgUrl !== null &&
+      existingArtist.imgUrl !== artist.imgUrl
+    ) {
       const prevImgUrl = existingArtist.imgUrl
-      const fileName = getFileNameFromUrl(prevImgUrl)
-      await this.storageService.deleteFile(fileName, 'artists')
+      if (prevImgUrl) {
+        const fileName = getFileNameFromUrl(prevImgUrl)
+        await this.storageService.deleteFile(fileName, 'artists')
+      }
     }
 
     const data = await this.artistModel.update(artist, {

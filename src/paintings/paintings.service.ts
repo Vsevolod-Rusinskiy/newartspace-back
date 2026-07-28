@@ -381,12 +381,19 @@ export class PaintingsService {
       throw new NotFoundException(`Painting with id ${id} not found`)
     }
 
-    // Проверяем, изменился ли URL картинки
-    if (existingPainting.imgUrl !== painting.imgUrl) {
-      // Удаляем старый файл, ели URL изменился
+    // Удаляем старый файл только если явно передан новый imgUrl и он другой.
+    // Иначе PATCH без картинки (например, только title) сравнивает URL с undefined
+    // и стирает файл в Object Storage.
+    if (
+      painting.imgUrl !== undefined &&
+      painting.imgUrl !== null &&
+      existingPainting.imgUrl !== painting.imgUrl
+    ) {
       const prevImgUrl = existingPainting.imgUrl
-      const fileName = getFileNameFromUrl(prevImgUrl)
-      await this.storageService.deleteFile(fileName, 'paintings')
+      if (prevImgUrl) {
+        const fileName = getFileNameFromUrl(prevImgUrl)
+        await this.storageService.deleteFile(fileName, 'paintings')
+      }
     }
 
     // Обновляем картину без include

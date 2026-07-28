@@ -131,12 +131,17 @@ export class EventsService {
     if (!existingEvent) {
       throw new NotFoundException(`Event with id ${id} not found`)
     }
-    // Check if image url changed
-    if (existingEvent.imgUrl !== event.imgUrl) {
-      // Remove old file if url changed
+    // Delete old file only when a new imgUrl is explicitly provided and differs.
+    if (
+      event.imgUrl !== undefined &&
+      event.imgUrl !== null &&
+      existingEvent.imgUrl !== event.imgUrl
+    ) {
       const prevImgUrl = existingEvent.imgUrl
-      const fileName = getFileNameFromUrl(prevImgUrl)
-      await this.storageService.deleteFile(fileName, 'events')
+      if (prevImgUrl) {
+        const fileName = getFileNameFromUrl(prevImgUrl)
+        await this.storageService.deleteFile(fileName, 'events')
+      }
     }
     const { eventPhotoIds, ...eventData } = event
     await this.eventModel.update(eventData, {
