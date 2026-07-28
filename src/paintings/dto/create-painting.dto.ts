@@ -5,11 +5,16 @@ import {
   IsArray,
   IsInt,
   IsDateString,
-  IsBoolean
+  IsBoolean,
+  Validate,
+  ValidateIf,
+  Min,
+  Max
 } from 'class-validator'
 import { Image } from '../../types/image.interface'
 import { Type } from 'class-transformer'
 import { Attributes } from 'src/attributes/models/attributes.model'
+import { IsNotFilenameTitleConstraint } from './painting-title.validator'
 
 export class CreatePaintingDto {
   @IsOptional()
@@ -22,6 +27,7 @@ export class CreatePaintingDto {
 
   @IsOptional()
   @IsString()
+  @Validate(IsNotFilenameTitleConstraint)
   readonly title?: string
 
   @IsOptional()
@@ -101,8 +107,14 @@ export class CreatePaintingDto {
   readonly width?: number
 
   @IsOptional()
-  @IsInt()
-  readonly yearOfCreation?: number
+  @ValidateIf(
+    (_, value) => value !== null && value !== undefined && value !== ''
+  )
+  @Type(() => Number)
+  @IsInt({ message: 'Год должен быть целым числом' })
+  @Min(1000, { message: 'Год должен быть не раньше 1000' })
+  @Max(2100, { message: 'Год должен быть не позже 2100' })
+  readonly yearOfCreation?: number | null
 
   @IsOptional()
   @IsString()
