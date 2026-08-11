@@ -34,12 +34,14 @@ $ yarn install
 
 ## Running the app
 
+Для общей локальной проверки сначала запускается backend, затем frontend и admin. Порты и полная последовательность описаны в [`../LOCAL_DEVELOPMENT.md`](../LOCAL_DEVELOPMENT.md).
+
 ```bash
 # development
-$ yarn run start
+$ yarn run dev
 
 # watch mode
-$ yarn run start:dev
+$ yarn run dev
 
 # production mode
 $ yarn run start:prod
