@@ -34,12 +34,23 @@ $ yarn install
 
 ## Running the app
 
+Для общей локальной проверки сначала запускается backend, затем frontend и admin. Порты и полная последовательность описаны в [`../LOCAL_DEVELOPMENT.md`](../LOCAL_DEVELOPMENT.md).
+
+Перед первым запуском после получения изменений схемы примените миграции и проверьте их статус:
+
+```bash
+$ yarn db:migrate
+$ yarn db:migrate:status
+```
+
+Все строки в выводе статуса должны иметь состояние `up`. `synchronize` при запуске приложения не заменяет миграции существующей базы.
+
 ```bash
 # development
-$ yarn run start
+$ yarn run dev
 
 # watch mode
-$ yarn run start:dev
+$ yarn run dev
 
 # production mode
 $ yarn run start:prod

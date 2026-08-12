@@ -89,7 +89,8 @@ export class EventsService {
       where: {},
       order: [
         [Sequelize.col('priority'), 'DESC'],
-        [orderBy, order]
+        [orderBy, order],
+        [Sequelize.col('Event.id'), 'ASC']
       ],
       limit: limit,
       offset: (page - 1) * limit

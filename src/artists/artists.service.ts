@@ -106,14 +106,17 @@ export class ArtistsService {
       where: whereConditions,
       order: [
         [Sequelize.col('priority'), 'DESC'],
-        [orderBy, order]
+        [orderBy, order],
+        [Sequelize.col('Artist.id'), 'ASC']
       ],
       limit: limit,
       offset: (page - 1) * limit,
       include: [
         {
           model: this.paintingModel,
-          as: 'paintings'
+          as: 'paintings',
+          where: { isHidden: false },
+          required: false
         }
       ]
     }
@@ -134,7 +137,9 @@ export class ArtistsService {
       include: [
         {
           model: this.paintingModel,
-          as: 'paintings'
+          as: 'paintings',
+          where: { isHidden: false },
+          required: false
         }
       ]
     }
