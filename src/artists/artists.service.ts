@@ -106,7 +106,8 @@ export class ArtistsService {
       where: whereConditions,
       order: [
         [Sequelize.col('priority'), 'DESC'],
-        [orderBy, order]
+        [orderBy, order],
+        [Sequelize.col('Artist.id'), 'ASC']
       ],
       limit: limit,
       offset: (page - 1) * limit,

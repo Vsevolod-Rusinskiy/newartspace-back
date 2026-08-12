@@ -51,6 +51,18 @@ describe('PaintingsService public visibility', () => {
     )
   })
 
+  it('uses the painting id as a stable pagination tie-breaker', async () => {
+    await service.getAllSortedPaintings()
+
+    const options = paintingModel.findAll.mock.calls[0][0]
+    const order = options.order as Array<[unknown, string]>
+
+    expect(order[order.length - 1]).toEqual([
+      expect.objectContaining({ col: 'Painting.id' }),
+      'ASC'
+    ])
+  })
+
   it('returns the same not-found result for a hidden public direct link', async () => {
     paintingModel.findOne.mockResolvedValue(null)
 
