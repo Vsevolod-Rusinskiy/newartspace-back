@@ -11,6 +11,7 @@ import {
   HttpStatus,
   Param,
   Patch,
+  ParseIntPipe,
   Post,
   Query,
   UploadedFile,
@@ -25,6 +26,7 @@ import { PaintingsService } from './paintings.service'
 import { StorageService } from '../common/services/storage.service'
 import { AdminJwtGuard } from 'src/auth/guards/admin-jwt.guard'
 import { PaintingWithAuthor } from './paintings.service'
+import { SimilarPaintingsQueryDto } from './dto/similar-paintings-query.dto'
 
 @Controller('paintings')
 export class PaintingsController {
@@ -94,9 +96,55 @@ export class PaintingsController {
     return { data, total, page, pageCount: Math.ceil(total / limit) }
   }
 
+  @UseGuards(AdminJwtGuard)
+  @Get('admin')
+  async getAllAdminPaintings(
+    @Query('sort') sort: string,
+    @Query('order') order: 'ASC' | 'DESC' = 'ASC',
+    @Query('page') page,
+    @Query('limit') limit,
+    @Query('filters') filters,
+    @Query('artStyle') artStyle,
+    @Query('filter') filter: string
+  ) {
+    const { data, total } = await this.paintingService.getAllSortedPaintings(
+      sort,
+      order,
+      page,
+      limit,
+      filters,
+      artStyle,
+      filter,
+      true
+    )
+
+    return { data, total, page, pageCount: Math.ceil(total / limit) }
+  }
+
+  @UseGuards(AdminJwtGuard)
+  @Get('admin/:id')
+  async getOneAdminPainting(
+    @Param('id') id: string
+  ): Promise<PaintingWithAuthor> {
+    return this.paintingService.findOne(id)
+  }
+
+  @Get('getMany/:ids')
+  async getManyPaintings(@Param('ids') ids: string) {
+    return this.paintingService.findMany(ids)
+  }
+
+  @Get(':id/similar')
+  async getSimilarPaintings(
+    @Param('id', ParseIntPipe) id: number,
+    @Query() query: SimilarPaintingsQueryDto
+  ): Promise<PaintingWithAuthor[]> {
+    return this.paintingService.findSimilar(id.toString(), query.limit)
+  }
+
   @Get(':id')
   async getOnePainting(@Param('id') id: string): Promise<PaintingWithAuthor> {
-    const painting = await this.paintingService.findOne(id)
+    const painting = await this.paintingService.findPublicOne(id)
     return painting
   }
 
@@ -133,11 +181,5 @@ export class PaintingsController {
   async deleteManyPaintings(@Param('ids') ids: string) {
     const deletedCount = await this.paintingService.deleteMany(ids)
     return { message: 'Paintings deleted successfully', deletedCount }
-  }
-
-  @Get('getMany/:ids')
-  async getManyPaintings(@Param('ids') ids: string) {
-    const paintings = await this.paintingService.findMany(ids)
-    return paintings
   }
 }

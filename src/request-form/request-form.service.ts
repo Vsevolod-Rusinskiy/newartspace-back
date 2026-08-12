@@ -1,5 +1,11 @@
 // src/one-click-order/one-click-order.service.ts
-import { HttpStatus, HttpException, Injectable, Logger } from '@nestjs/common'
+import {
+  BadRequestException,
+  HttpStatus,
+  HttpException,
+  Injectable,
+  Logger
+} from '@nestjs/common'
 import { InjectModel } from '@nestjs/sequelize'
 import { RequestFormDto } from './dto/request-form.dto'
 import { Painting } from '../paintings/models/painting.model'
@@ -82,13 +88,15 @@ export class RequestFormService {
 
     if (orderData.paintingId) {
       painting = await this.paintingModel.findOne({
-        where: { id: orderData.paintingId },
+        where: { id: orderData.paintingId, isHidden: false },
         include: [{ model: Artist }]
       })
 
-      if (painting) {
-        paintingInfo = `Картина ID ${painting.id}: "${painting.title}" художника ${painting.artist.artistName}`
+      if (!painting) {
+        throw new BadRequestException('Картина недоступна для заказа')
       }
+
+      paintingInfo = `Картина ID ${painting.id}: "${painting.title}" художника ${painting.artist.artistName}`
     }
 
     const deliveryInfo = `Способ доставки: ${orderData.deliveryMethod === 'delivery' ? 'Доставка' : 'Самовывоз из галереи'}`
@@ -160,10 +168,17 @@ ${deliveryInfo}
     let paintings = []
 
     if (orderData.cartItemIds && orderData.cartItemIds.length > 0) {
+      const requestedIds = [...new Set(orderData.cartItemIds)]
       paintings = await this.paintingModel.findAll({
-        where: { id: orderData.cartItemIds },
+        where: { id: requestedIds, isHidden: false },
         include: [{ model: Artist }]
       })
+
+      if (paintings.length !== requestedIds.length) {
+        throw new BadRequestException(
+          'Одна или несколько картин недоступны для заказа'
+        )
+      }
 
       if (paintings.length > 0) {
         const paintingsList = paintings

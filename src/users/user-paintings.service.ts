@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/sequelize'
 import { UserPainting } from './models/user-paintings.model'
 import { UpdateUserPaintingsDto } from './dto/update-user-paintings.dto'
 import { Painting } from '../paintings/models/painting.model'
+import { Op } from 'sequelize'
 
 @Injectable()
 export class UserPaintingsService {
@@ -10,7 +11,9 @@ export class UserPaintingsService {
 
   constructor(
     @InjectModel(UserPainting)
-    private userPaintingModel: typeof UserPainting
+    private userPaintingModel: typeof UserPainting,
+    @InjectModel(Painting)
+    private paintingModel: typeof Painting
   ) {}
 
   async getUserPaintings(userId: number) {
@@ -18,7 +21,7 @@ export class UserPaintingsService {
 
     const userPaintings = await this.userPaintingModel.findAll({
       where: { userId },
-      include: [{ model: Painting }]
+      include: [{ model: Painting, where: { isHidden: false }, required: true }]
     })
 
     const result = {
@@ -40,6 +43,15 @@ export class UserPaintingsService {
   async updateUserPaintings(userId: number, data: UpdateUserPaintingsDto) {
     this.logger.log(`Updating paintings for user ${userId}`, data)
 
+    const requestedIds = [...new Set([...data.favorites, ...data.cart])]
+    const visiblePaintings = requestedIds.length
+      ? await this.paintingModel.findAll({
+          attributes: ['id'],
+          where: { id: { [Op.in]: requestedIds }, isHidden: false }
+        })
+      : []
+    const visibleIds = new Set(visiblePaintings.map(({ id }) => id))
+
     // Удаляем старые записи
     await this.userPaintingModel.destroy({
       where: { userId }
@@ -48,21 +60,27 @@ export class UserPaintingsService {
 
     // Сохраняем новые записи
     const userPaintings = [
-      ...data.favorites.map((paintingId) => ({
-        userId,
-        paintingId,
-        type: 'favorite'
-      })),
-      ...data.cart.map((paintingId) => ({ userId, paintingId, type: 'cart' }))
+      ...data.favorites
+        .filter((id) => visibleIds.has(id))
+        .map((paintingId) => ({
+          userId,
+          paintingId,
+          type: 'favorite'
+        })),
+      ...data.cart
+        .filter((id) => visibleIds.has(id))
+        .map((paintingId) => ({ userId, paintingId, type: 'cart' }))
     ]
 
-    await this.userPaintingModel.bulkCreate(userPaintings)
+    if (userPaintings.length) {
+      await this.userPaintingModel.bulkCreate(userPaintings)
+    }
     this.logger.log(`Created new paintings for user ${userId}:`, userPaintings)
 
     // Получаем обновленные данные
     const updatedPaintings = await this.userPaintingModel.findAll({
       where: { userId },
-      include: [{ model: Painting }]
+      include: [{ model: Painting, where: { isHidden: false }, required: true }]
     })
 
     // Разделяем данные на избранное и корзину

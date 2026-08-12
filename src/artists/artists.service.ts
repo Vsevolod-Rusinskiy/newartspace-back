@@ -113,7 +113,9 @@ export class ArtistsService {
       include: [
         {
           model: this.paintingModel,
-          as: 'paintings'
+          as: 'paintings',
+          where: { isHidden: false },
+          required: false
         }
       ]
     }
@@ -134,7 +136,9 @@ export class ArtistsService {
       include: [
         {
           model: this.paintingModel,
-          as: 'paintings'
+          as: 'paintings',
+          where: { isHidden: false },
+          required: false
         }
       ]
     }

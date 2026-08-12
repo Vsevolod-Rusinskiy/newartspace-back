@@ -17,6 +17,10 @@ import { parsePriceRange } from '../utils/parsePriceRange'
 import { parseSizeList } from '../utils/parseSizeList'
 import { Sequelize } from 'sequelize-typescript'
 import { PaintingAttributes } from './models/painting-attributes.model'
+import {
+  rankSimilarPaintings,
+  SimilarPaintingCandidate
+} from './similar-paintings'
 
 export interface PaintingWithAuthor extends Painting {
   author: string | null
@@ -114,7 +118,8 @@ export class PaintingsService {
     limit?: number,
     filters?: string,
     artStyle?: string,
-    filter?: string
+    filter?: string,
+    includeHidden = false
   ): Promise<{ data: Painting[]; total: number }> {
     order = order || 'ASC'
     page = page !== undefined ? page : 1
@@ -162,7 +167,7 @@ export class PaintingsService {
     )
     const themeValuesList = themesList.map((item) => Object.values(item)[0])
 
-    const whereConditions: any = {}
+    const whereConditions: any = includeHidden ? {} : { isHidden: false }
     const orConditions = []
 
     // Добавляем условия поиска по названию и автору
@@ -357,8 +362,50 @@ export class PaintingsService {
   }
 
   async findOne(id: string): Promise<PaintingWithAuthor> {
+    return this.findOneById(id)
+  }
+
+  async findPublicOne(id: string): Promise<PaintingWithAuthor> {
+    return this.findOneById(id, false)
+  }
+
+  async findSimilar(id: string, limit = 20): Promise<PaintingWithAuthor[]> {
+    const source = await this.findPublicOne(id)
+    const candidates = await this.paintingModel.findAll({
+      where: {
+        id: { [Op.ne]: Number(id) },
+        isHidden: false
+      },
+      include: [
+        { model: Artist, attributes: ['artistName'] },
+        { model: Attributes, through: { attributes: ['type'] } }
+      ]
+    })
+    const ranked = rankSimilarPaintings(
+      source as unknown as SimilarPaintingCandidate,
+      candidates as unknown as SimilarPaintingCandidate[],
+      limit
+    )
+
+    return ranked.map((painting) => {
+      const paintingJson =
+        typeof painting.toJSON === 'function'
+          ? painting.toJSON()
+          : (painting as unknown as Record<string, unknown>)
+      const artist = paintingJson.artist as { artistName?: string } | undefined
+      return {
+        ...paintingJson,
+        author: artist?.artistName || null
+      } as PaintingWithAuthor
+    })
+  }
+
+  private async findOneById(
+    id: string,
+    includeHidden = true
+  ): Promise<PaintingWithAuthor> {
     const options: FindOptions = {
-      where: { id },
+      where: includeHidden ? { id } : { id, isHidden: false },
       include: [
         { model: Artist, attributes: ['artistName'] },
         { model: Attributes, through: { attributes: ['type'] } }
@@ -547,6 +594,7 @@ export class PaintingsService {
   ): Promise<Painting[]> {
     const options: FindOptions = {
       where: {
+        isHidden: false,
         artTypeId: artTypesList.length ? artTypesList : undefined,
         styleId: stylesList.length ? stylesList : undefined
       },
@@ -578,6 +626,7 @@ export class PaintingsService {
 
     const paintings = await this.paintingModel.findAll({
       where: {
+        isHidden: false,
         id: {
           [Op.in]: idArray
         }

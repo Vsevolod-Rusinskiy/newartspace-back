@@ -4,7 +4,9 @@ import {
   Model,
   BelongsTo,
   ForeignKey,
-  BelongsToMany
+  BelongsToMany,
+  Default,
+  AllowNull
 } from 'sequelize-typescript'
 import { Artist } from '../../artists/models/artist.model'
 import { PaintingAttributes } from './painting-attributes.model'
@@ -29,6 +31,11 @@ export class Painting extends Model {
 
   @Column
   isAdult: boolean
+
+  @Default(false)
+  @AllowNull(false)
+  @Column
+  isHidden: boolean
 
   @Column
   discount: number

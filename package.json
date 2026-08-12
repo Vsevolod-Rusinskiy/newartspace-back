@@ -19,6 +19,9 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "db:migrate": "sequelize-cli db:migrate --config src/config/config.js",
+    "db:migrate:status": "sequelize-cli db:migrate:status --config src/config/config.js",
+    "db:migrate:undo": "sequelize-cli db:migrate:undo --config src/config/config.js",
     "smoke:prod": "node scripts/smoke-paintings.mjs",
     "prepare": "husky"
   },

@@ -3,6 +3,14 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
+    const tables = await queryInterface.showAllTables()
+    const exists = tables.some((table) =>
+      typeof table === 'string'
+        ? table === 'WorkingHours'
+        : table.tableName === 'WorkingHours'
+    )
+    if (exists) return
+
     await queryInterface.createTable('WorkingHours', {
       id: {
         allowNull: false,
@@ -30,6 +38,14 @@ module.exports = {
   },
 
   async down(queryInterface) {
+    const tables = await queryInterface.showAllTables()
+    const exists = tables.some((table) =>
+      typeof table === 'string'
+        ? table === 'WorkingHours'
+        : table.tableName === 'WorkingHours'
+    )
+    if (!exists) return
+
     await queryInterface.dropTable('WorkingHours')
   }
 }

@@ -59,6 +59,10 @@ export class UpdatePaintingDto {
   readonly isAdult?: boolean
 
   @IsOptional()
+  @IsBoolean()
+  readonly isHidden?: boolean
+
+  @IsOptional()
   @IsNumber()
   readonly discount?: number
 
