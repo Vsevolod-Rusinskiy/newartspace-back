@@ -18,6 +18,7 @@ import { Welcomes } from '../welcome/models/welcome.model'
 import { EventPhoto } from 'src/events/models/event-photo.model'
 import { About } from '../about/models/about.model'
 import { WorkingHours } from '../working-hours/models/working-hours.model'
+import { resolveDatabaseSynchronize } from './database-safety'
 @Injectable()
 export class SequelizeConfigService implements SequelizeOptionsFactory {
   constructor(private readonly configService: ConfigService) {}
@@ -51,7 +52,7 @@ export class SequelizeConfigService implements SequelizeOptionsFactory {
         WorkingHours
       ],
       autoLoadModels: true,
-      synchronize: true
+      synchronize: resolveDatabaseSynchronize(process.env)
     }
   }
 }
