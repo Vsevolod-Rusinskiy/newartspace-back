@@ -24,6 +24,7 @@ import { WelcomeModule } from './welcome/welcome.module'
 import { AboutModule } from './about/about.module'
 import { WorkingHoursModule } from './working-hours/working-hours.module'
 import { SeoSafeReadOnlyGuard } from './common/guards/seo-safe-read-only.guard'
+import { CacheRevalidationModule } from './common/cache-revalidation/cache-revalidation.module'
 
 @Module({
   imports: [
@@ -51,7 +52,8 @@ import { SeoSafeReadOnlyGuard } from './common/guards/seo-safe-read-only.guard'
     OrdersModule,
     WelcomeModule,
     AboutModule,
-    WorkingHoursModule
+    WorkingHoursModule,
+    CacheRevalidationModule
   ],
   providers: [
     {

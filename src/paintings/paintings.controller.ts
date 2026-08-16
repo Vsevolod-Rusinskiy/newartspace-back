@@ -27,22 +27,30 @@ import { StorageService } from '../common/services/storage.service'
 import { AdminJwtGuard } from 'src/auth/guards/admin-jwt.guard'
 import { PaintingWithAuthor } from './paintings.service'
 import { SimilarPaintingsQueryDto } from './dto/similar-paintings-query.dto'
+import { CacheRevalidationPublisher } from '../common/cache-revalidation/cache-revalidation.publisher'
 
 @Controller('paintings')
 export class PaintingsController {
   private readonly logger = new Logger(PaintingsController.name)
   constructor(
     private readonly paintingService: PaintingsService,
-    private readonly storageService: StorageService
+    private readonly storageService: StorageService,
+    private readonly cacheRevalidationPublisher: CacheRevalidationPublisher
   ) {}
 
   @UseGuards(AdminJwtGuard)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Header('Content-Type', 'application/json')
-  createPainting(@Body() createPainting: CreatePaintingDto) {
+  async createPainting(@Body() createPainting: CreatePaintingDto) {
     this.logger.debug(`Received data: ${JSON.stringify(createPainting)}`)
-    return this.paintingService.create(createPainting)
+    const painting = await this.paintingService.create(createPainting)
+    this.cacheRevalidationPublisher.schedule({
+      entity: 'painting',
+      action: 'created',
+      ids: [painting.id]
+    })
+    return painting
   }
 
   @UseGuards(AdminJwtGuard)
@@ -156,6 +164,11 @@ export class PaintingsController {
   ) {
     this.logger.debug(`Received data: ${JSON.stringify(updatePainting)}`)
     const painting = await this.paintingService.update(+id, updatePainting)
+    this.cacheRevalidationPublisher.schedule({
+      entity: 'painting',
+      action: 'updated',
+      ids: [id]
+    })
     return painting
   }
 
@@ -173,13 +186,24 @@ export class PaintingsController {
   @Delete(':id')
   async deletePainting(@Param('id') id: string) {
     await this.paintingService.delete(id)
+    this.cacheRevalidationPublisher.schedule({
+      entity: 'painting',
+      action: 'deleted',
+      ids: [id]
+    })
     return { message: 'Painting deleted successfully' }
   }
 
   @UseGuards(AdminJwtGuard)
   @Delete('deleteMany/:ids')
   async deleteManyPaintings(@Param('ids') ids: string) {
+    const parsedIds = JSON.parse(ids) as Array<string | number>
     const deletedCount = await this.paintingService.deleteMany(ids)
+    this.cacheRevalidationPublisher.schedule({
+      entity: 'painting',
+      action: 'deleted',
+      ids: parsedIds
+    })
     return { message: 'Paintings deleted successfully', deletedCount }
   }
 }

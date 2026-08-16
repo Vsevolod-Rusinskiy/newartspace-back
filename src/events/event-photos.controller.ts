@@ -21,12 +21,14 @@ import { UpdateEventPhotoDto } from './dto/update-event-photo.dto'
 import { EventPhotosService } from './event-photos.service'
 import { StorageService } from '../common/services/storage.service'
 import { AdminJwtGuard } from 'src/auth/guards/admin-jwt.guard'
+import { CacheRevalidationPublisher } from '../common/cache-revalidation/cache-revalidation.publisher'
 
 @Controller('event-photos')
 export class EventPhotosController {
   constructor(
     private readonly eventPhotosService: EventPhotosService,
-    private readonly storageService: StorageService
+    private readonly storageService: StorageService,
+    private readonly cacheRevalidationPublisher: CacheRevalidationPublisher
   ) {}
 
   @UseGuards(AdminJwtGuard)
@@ -34,6 +36,11 @@ export class EventPhotosController {
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createEventPhotoDto: CreateEventPhotoDto) {
     const photo = await this.eventPhotosService.create(createEventPhotoDto)
+    this.cacheRevalidationPublisher.schedule({
+      entity: 'event-photo',
+      action: 'created',
+      ids: [photo.id]
+    })
     return photo
   }
 
@@ -71,6 +78,11 @@ export class EventPhotosController {
       Number(id),
       updateEventPhotoDto
     )
+    this.cacheRevalidationPublisher.schedule({
+      entity: 'event-photo',
+      action: 'updated',
+      ids: [id]
+    })
     return photo
   }
 
@@ -78,6 +90,11 @@ export class EventPhotosController {
   @Delete(':id')
   async remove(@Param('id') id: string) {
     await this.eventPhotosService.delete(id)
+    this.cacheRevalidationPublisher.schedule({
+      entity: 'event-photo',
+      action: 'deleted',
+      ids: [id]
+    })
     return { success: true }
   }
 
