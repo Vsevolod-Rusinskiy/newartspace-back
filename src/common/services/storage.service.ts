@@ -1,7 +1,8 @@
 import {
   Injectable,
   InternalServerErrorException,
-  Logger
+  Logger,
+  ServiceUnavailableException
 } from '@nestjs/common'
 import * as AWS from 'aws-sdk'
 import * as dotenv from 'dotenv'
@@ -12,10 +13,11 @@ dotenv.config()
 @Injectable()
 export class StorageService {
   private readonly logger = new Logger(StorageService.name)
-  private s3: AWS.S3
+  private s3?: AWS.S3
   private bucketName: string = process.env.BUCKET_NAME
 
   constructor() {
+    if (process.env.SEO_SAFE_MODE === 'true') return
     const credentials = new AWS.Credentials({
       accessKeyId: process.env.ACCESS_KEY_ID,
       secretAccessKey: process.env.SECRET_ACCESS_KEY
@@ -34,6 +36,7 @@ export class StorageService {
     originalFileName: string,
     category: string
   ): Promise<string> {
+    this.assertStorageEnabled()
     const fileExtension = originalFileName.split('.').pop()
     const uniqueFileName = `${uuidv4()}.${fileExtension}`
     const key = `${category}/${uniqueFileName}`
@@ -47,7 +50,7 @@ export class StorageService {
     }
 
     try {
-      const data = await this.s3.upload(params).promise()
+      const data = await this.s3!.upload(params).promise()
       this.logger.log(
         `File ${uniqueFileName} uploaded successfully: ${data.Location}`
       )
@@ -63,6 +66,7 @@ export class StorageService {
   }
 
   async deleteFile(fileName: string, category: string): Promise<void> {
+    this.assertStorageEnabled()
     const key = `${category}/${fileName}`
 
     const params = {
@@ -71,7 +75,7 @@ export class StorageService {
     }
 
     try {
-      await this.s3.deleteObject(params).promise()
+      await this.s3!.deleteObject(params).promise()
       this.logger.log(
         `File ${fileName} in category ${category} deleted successfully.`
       )
@@ -81,6 +85,14 @@ export class StorageService {
       )
       throw new InternalServerErrorException(
         `Error deleting file ${fileName} in category ${category}: ${error.message}`
+      )
+    }
+  }
+
+  private assertStorageEnabled(): void {
+    if (process.env.SEO_SAFE_MODE === 'true') {
+      throw new ServiceUnavailableException(
+        'Storage is disabled in SEO_SAFE mode'
       )
     }
   }

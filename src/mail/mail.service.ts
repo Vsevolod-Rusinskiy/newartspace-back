@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
 import * as nodemailer from 'nodemailer'
 
 @Injectable()
@@ -7,6 +7,7 @@ export class MailService {
   private transporter
 
   constructor() {
+    if (process.env.SEO_SAFE_MODE === 'true') return
     this.transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
       port: 587,
@@ -34,6 +35,9 @@ export class MailService {
     replyToEmail?: string,
     isHtml: boolean = false
   ) {
+    if (process.env.SEO_SAFE_MODE === 'true') {
+      throw new ServiceUnavailableException('Mail is disabled in SEO_SAFE mode')
+    }
     try {
       const mailOptions = {
         from: '"Новое пространство" <' + process.env.ADMIN_EMAIL + '>',

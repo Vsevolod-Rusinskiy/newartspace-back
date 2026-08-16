@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common'
-import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
 import { HttpErrorFilter } from './common/filtres/http-error.filter'
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor'
 import { ConfigModule } from '@nestjs/config'
@@ -23,6 +23,7 @@ import { OrdersModule } from './orders/orders.module'
 import { WelcomeModule } from './welcome/welcome.module'
 import { AboutModule } from './about/about.module'
 import { WorkingHoursModule } from './working-hours/working-hours.module'
+import { SeoSafeReadOnlyGuard } from './common/guards/seo-safe-read-only.guard'
 
 @Module({
   imports: [
@@ -60,6 +61,10 @@ import { WorkingHoursModule } from './working-hours/working-hours.module'
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor
+    },
+    {
+      provide: APP_GUARD,
+      useClass: SeoSafeReadOnlyGuard
     },
     {
       provide: APP_PIPE,

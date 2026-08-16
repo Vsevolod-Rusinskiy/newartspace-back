@@ -1,6 +1,7 @@
 import { registerAs } from '@nestjs/config'
 import { Dialect } from 'sequelize'
 import { EnumConfig } from './enumConfig/enumConfig'
+import { resolveDatabaseSynchronize } from './database-safety'
 
 export const pgConfig = registerAs(EnumConfig.DATABASE, () => {
   const dialect = (process.env.SQL_DIALECT as Dialect) || 'postgres'
@@ -18,6 +19,6 @@ export const pgConfig = registerAs(EnumConfig.DATABASE, () => {
     password: process.env.POSTGRES_PASSWORD,
     database: process.env.POSTGRES_NAME,
     autoLoadEntities: true,
-    synchronize: true
+    synchronize: resolveDatabaseSynchronize(process.env)
   }
 })

@@ -23,6 +23,13 @@
     "db:migrate:status": "sequelize-cli db:migrate:status --config src/config/config.js",
     "db:migrate:undo": "sequelize-cli db:migrate:undo --config src/config/config.js",
     "smoke:prod": "node scripts/smoke-paintings.mjs",
+    "test:seo-safe": "node --test scripts/seo-safe/*.test.mjs",
+    "seo-safe:init-env": "node scripts/seo-safe/init-env.mjs",
+    "seo-safe:preflight": "node scripts/seo-safe/preflight.mjs",
+    "seo-safe:restore": "node scripts/seo-safe/restore.mjs",
+    "seo-safe:verify": "node scripts/seo-safe/verify.mjs",
+    "seo-safe:placeholders": "node scripts/seo-safe/placeholder-server.mjs",
+    "seo-safe:backend": "node scripts/seo-safe/run-backend.mjs",
     "prepare": "husky"
   },
   "dependencies": {

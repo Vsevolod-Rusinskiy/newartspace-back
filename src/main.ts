@@ -2,12 +2,19 @@ import * as dotenv from 'dotenv'
 import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module'
 import { BadRequestException, Logger, ValidationPipe } from '@nestjs/common'
+import {
+  assertSeoSafeRuntimeDatabase,
+  assertSeoSafeRuntimeEnvironment,
+  resolveBackendListenOptions
+} from './config/database-safety'
 dotenv.config()
 
 // const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',')
 // test ci
 
 async function bootstrap() {
+  assertSeoSafeRuntimeEnvironment(process.env)
+  await assertSeoSafeRuntimeDatabase(process.env)
   const app = await NestFactory.create(AppModule)
   const logger = new Logger('ValidationPipe')
 
@@ -38,7 +45,12 @@ async function bootstrap() {
       }
     })
   )
-  await app.listen(process.env.PORT || 3000)
+  const listenOptions = resolveBackendListenOptions(process.env)
+  if (listenOptions.host) {
+    await app.listen(listenOptions.port, listenOptions.host)
+  } else {
+    await app.listen(listenOptions.port)
+  }
 }
 
 bootstrap()
