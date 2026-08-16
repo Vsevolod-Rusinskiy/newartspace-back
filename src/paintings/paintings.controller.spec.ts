@@ -65,7 +65,7 @@ describe('PaintingsController response contracts', () => {
     expect(response).not.toEqual({ data: updatedPainting })
   })
 
-  it('keeps the data wrapper only for the paginated collection response', async () => {
+  it('keeps the data wrapper and HTTP query value for the paginated collection response', async () => {
     paintingService.getAllSortedPaintings.mockResolvedValue({
       data: [painting],
       total: 1
@@ -74,8 +74,8 @@ describe('PaintingsController response contracts', () => {
     const response = await controller.getAllSortedPaintings(
       undefined,
       'ASC',
-      1,
-      9,
+      '1',
+      '9',
       undefined,
       undefined,
       undefined
@@ -84,7 +84,7 @@ describe('PaintingsController response contracts', () => {
     expect(response).toEqual({
       data: [painting],
       total: 1,
-      page: 1,
+      page: '1',
       pageCount: 1
     })
   })
