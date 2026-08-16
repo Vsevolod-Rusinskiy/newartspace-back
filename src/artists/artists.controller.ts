@@ -23,20 +23,28 @@ import { UpdateArtistDto } from './dto/update-artist.dto'
 import { ArtistsService } from './artists.service'
 import { StorageService } from '../common/services/storage.service'
 import { AdminJwtGuard } from 'src/auth/guards/admin-jwt.guard'
+import { CacheRevalidationPublisher } from '../common/cache-revalidation/cache-revalidation.publisher'
 
 @Controller('artists')
 export class ArtistsController {
   constructor(
     private readonly artistsService: ArtistsService,
-    private readonly storageService: StorageService
+    private readonly storageService: StorageService,
+    private readonly cacheRevalidationPublisher: CacheRevalidationPublisher
   ) {}
 
   @UseGuards(AdminJwtGuard)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Header('Content-Type', 'application/json')
-  createArtist(@Body() createArtist: CreateArtistDto) {
-    return this.artistsService.create(createArtist)
+  async createArtist(@Body() createArtist: CreateArtistDto) {
+    const artist = await this.artistsService.create(createArtist)
+    this.cacheRevalidationPublisher.schedule({
+      entity: 'artist',
+      action: 'created',
+      ids: [artist.id]
+    })
+    return artist
   }
 
   @UseGuards(AdminJwtGuard)
@@ -98,6 +106,11 @@ export class ArtistsController {
     @Param('id') id: string
   ) {
     const artist = await this.artistsService.update(+id, updateArtist)
+    this.cacheRevalidationPublisher.schedule({
+      entity: 'artist',
+      action: 'updated',
+      ids: [id]
+    })
     return artist
   }
 
@@ -115,13 +128,24 @@ export class ArtistsController {
   @Delete(':id')
   async deleteArtist(@Param('id') id: string) {
     await this.artistsService.delete(id)
+    this.cacheRevalidationPublisher.schedule({
+      entity: 'artist',
+      action: 'deleted',
+      ids: [id]
+    })
     return { message: 'Artist deleted successfully' }
   }
 
   @UseGuards(AdminJwtGuard)
   @Delete('deleteMany/:ids')
   async deleteManyArtists(@Param('ids') ids: string) {
+    const parsedIds = JSON.parse(ids) as Array<string | number>
     const deletedCount = await this.artistsService.deleteMany(ids)
+    this.cacheRevalidationPublisher.schedule({
+      entity: 'artist',
+      action: 'deleted',
+      ids: parsedIds
+    })
     return { message: 'Artists deleted successfully', deletedCount }
   }
 }

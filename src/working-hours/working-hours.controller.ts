@@ -16,10 +16,14 @@ import { CreateWorkingHoursDto } from './dto/create-working-hours.dto'
 import { UpdateWorkingHoursDto } from './dto/update-working-hours.dto'
 import { WorkingHoursService } from './working-hours.service'
 import { AdminJwtGuard } from 'src/auth/guards/admin-jwt.guard'
+import { CacheRevalidationPublisher } from '../common/cache-revalidation/cache-revalidation.publisher'
 
 @Controller('working-hours')
 export class WorkingHoursController {
-  constructor(private readonly workingHoursService: WorkingHoursService) {}
+  constructor(
+    private readonly workingHoursService: WorkingHoursService,
+    private readonly cacheRevalidationPublisher: CacheRevalidationPublisher
+  ) {}
 
   @UseGuards(AdminJwtGuard)
   @Post()
@@ -28,6 +32,11 @@ export class WorkingHoursController {
     const workingHours = await this.workingHoursService.create(
       createWorkingHoursDto
     )
+    this.cacheRevalidationPublisher.schedule({
+      entity: 'working-hours',
+      action: 'created',
+      ids: [workingHours.id]
+    })
     return workingHours
   }
 
@@ -64,6 +73,11 @@ export class WorkingHoursController {
       Number(id),
       updateWorkingHoursDto
     )
+    this.cacheRevalidationPublisher.schedule({
+      entity: 'working-hours',
+      action: 'updated',
+      ids: [id]
+    })
     return workingHours
   }
 
@@ -71,6 +85,11 @@ export class WorkingHoursController {
   @Delete(':id')
   async remove(@Param('id') id: string) {
     await this.workingHoursService.delete(id)
+    this.cacheRevalidationPublisher.schedule({
+      entity: 'working-hours',
+      action: 'deleted',
+      ids: [id]
+    })
     return { success: true }
   }
 }

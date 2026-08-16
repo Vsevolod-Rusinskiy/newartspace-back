@@ -15,6 +15,7 @@ describe('PaintingsController response contracts', () => {
     update: jest.Mock
     getAllSortedPaintings: jest.Mock
   }
+  const publisher = { schedule: jest.fn() }
 
   const painting = {
     id: 301,
@@ -32,9 +33,11 @@ describe('PaintingsController response contracts', () => {
       update: jest.fn(),
       getAllSortedPaintings: jest.fn()
     }
+    publisher.schedule.mockReset()
     controller = new PaintingsController(
       paintingService as unknown as PaintingsService,
-      {} as StorageService
+      {} as StorageService,
+      publisher as never
     )
   })
 

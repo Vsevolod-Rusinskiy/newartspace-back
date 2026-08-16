@@ -23,20 +23,28 @@ import { UpdateEventDto } from './dto/update-event.dto'
 import { EventsService } from './events.service'
 import { StorageService } from '../common/services/storage.service'
 import { AdminJwtGuard } from 'src/auth/guards/admin-jwt.guard'
+import { CacheRevalidationPublisher } from '../common/cache-revalidation/cache-revalidation.publisher'
 
 @Controller('events')
 export class EventsController {
   constructor(
     private readonly eventsService: EventsService,
-    private readonly storageService: StorageService
+    private readonly storageService: StorageService,
+    private readonly cacheRevalidationPublisher: CacheRevalidationPublisher
   ) {}
 
   @UseGuards(AdminJwtGuard)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Header('Content-Type', 'application/json')
-  createEvent(@Body() createEvent: CreateEventDto) {
-    return this.eventsService.create(createEvent)
+  async createEvent(@Body() createEvent: CreateEventDto) {
+    const event = await this.eventsService.create(createEvent)
+    this.cacheRevalidationPublisher.schedule({
+      entity: 'event',
+      action: 'created',
+      ids: [event.id]
+    })
+    return event
   }
 
   @Get()
@@ -70,6 +78,11 @@ export class EventsController {
     @Param('id') id: string
   ) {
     const event = await this.eventsService.update(+id, updateEvent)
+    this.cacheRevalidationPublisher.schedule({
+      entity: 'event',
+      action: 'updated',
+      ids: [id]
+    })
     return event
   }
 
@@ -87,13 +100,24 @@ export class EventsController {
   @Delete(':id')
   async deleteEvent(@Param('id') id: string) {
     await this.eventsService.delete(id)
+    this.cacheRevalidationPublisher.schedule({
+      entity: 'event',
+      action: 'deleted',
+      ids: [id]
+    })
     return { message: 'Event deleted successfully' }
   }
 
   @UseGuards(AdminJwtGuard)
   @Delete('deleteMany/:ids')
   async deleteManyArtists(@Param('ids') ids: string) {
+    const parsedIds = JSON.parse(ids) as Array<string | number>
     const deletedCount = await this.eventsService.deleteMany(ids)
+    this.cacheRevalidationPublisher.schedule({
+      entity: 'event',
+      action: 'deleted',
+      ids: parsedIds
+    })
     return { message: 'Events deleted successfully', deletedCount }
   }
 

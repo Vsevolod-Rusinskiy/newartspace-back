@@ -21,12 +21,14 @@ import { UpdateAboutDto } from './dto/update-about.dto'
 import { AboutService } from './about.service'
 import { StorageService } from '../common/services/storage.service'
 import { AdminJwtGuard } from 'src/auth/guards/admin-jwt.guard'
+import { CacheRevalidationPublisher } from '../common/cache-revalidation/cache-revalidation.publisher'
 
 @Controller('about')
 export class AboutController {
   constructor(
     private readonly aboutService: AboutService,
-    private readonly storageService: StorageService
+    private readonly storageService: StorageService,
+    private readonly cacheRevalidationPublisher: CacheRevalidationPublisher
   ) {}
 
   @UseGuards(AdminJwtGuard)
@@ -34,6 +36,11 @@ export class AboutController {
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createAboutDto: CreateAboutDto) {
     const about = await this.aboutService.create(createAboutDto)
+    this.cacheRevalidationPublisher.schedule({
+      entity: 'about',
+      action: 'created',
+      ids: [about.id]
+    })
     return about
   }
 
@@ -90,6 +97,11 @@ export class AboutController {
     @Body() updateAboutDto: UpdateAboutDto
   ) {
     const about = await this.aboutService.update(Number(id), updateAboutDto)
+    this.cacheRevalidationPublisher.schedule({
+      entity: 'about',
+      action: 'updated',
+      ids: [id]
+    })
     return about
   }
 
@@ -107,6 +119,11 @@ export class AboutController {
   @Delete(':id')
   async remove(@Param('id') id: string) {
     await this.aboutService.delete(id)
+    this.cacheRevalidationPublisher.schedule({
+      entity: 'about',
+      action: 'deleted',
+      ids: [id]
+    })
     return { success: true }
   }
 }
