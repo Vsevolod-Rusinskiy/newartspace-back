@@ -89,6 +89,30 @@ export class StorageService {
     }
   }
 
+  async fileExists(fileName: string, category: string): Promise<boolean> {
+    this.assertStorageEnabled()
+    const key = `${category}/${fileName}`
+
+    try {
+      await this.s3!.headObject({ Bucket: this.bucketName, Key: key }).promise()
+      return true
+    } catch (error) {
+      if (
+        error?.code === 'NotFound' ||
+        error?.code === 'NoSuchKey' ||
+        error?.statusCode === 404
+      ) {
+        return false
+      }
+      this.logger.error(
+        `Error checking file ${fileName} in category ${category}: ${error?.message || 'unknown error'}`
+      )
+      throw new InternalServerErrorException(
+        `Error checking file ${fileName} in category ${category}`
+      )
+    }
+  }
+
   private assertStorageEnabled(): void {
     if (process.env.SEO_SAFE_MODE === 'true') {
       throw new ServiceUnavailableException(

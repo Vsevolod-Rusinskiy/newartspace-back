@@ -160,6 +160,24 @@ describe('Cache revalidation controller hooks', () => {
     expect(publisher.schedule).not.toHaveBeenCalled()
   })
 
+  it('does not publish a bulk painting deletion when the transaction rejects', async () => {
+    const service = {
+      deleteMany: jest.fn().mockRejectedValue(new Error('bulk rejected'))
+    }
+    const publisher = { schedule: jest.fn() } as PublisherMock
+    const controller = new PaintingsController(
+      service as unknown as PaintingsService,
+      storageService,
+      publisher
+    )
+
+    await expect(controller.deleteManyPaintings('[401,402]')).rejects.toThrow(
+      'bulk rejected'
+    )
+
+    expect(publisher.schedule).not.toHaveBeenCalled()
+  })
+
   it('does not schedule a painting event when the mutation rejects', async () => {
     const service = { create: jest.fn().mockRejectedValue(new Error('failed')) }
     const publisher = { schedule: jest.fn() } as PublisherMock

@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  Logger,
   NotFoundException
 } from '@nestjs/common'
 import { Painting } from './models/painting.model'
@@ -17,14 +18,22 @@ interface HarnessOptions {
   countResult?: number
   countError?: Error
   storageError?: Error
+  commitError?: Error
 }
 
 const createHarness = (options: HarnessOptions = {}) => {
   const sequence: string[] = []
-  const transaction = {
+  const transaction: {
+    LOCK: { UPDATE: string }
+    finished?: string
+    commit: jest.Mock
+    rollback: jest.Mock
+  } = {
     LOCK: { UPDATE: 'UPDATE' },
     commit: jest.fn(async () => {
       sequence.push('commit')
+      transaction.finished = 'commit'
+      if (options.commitError) throw options.commitError
     }),
     rollback: jest.fn(async () => {
       sequence.push('rollback')
@@ -71,7 +80,10 @@ const createHarness = (options: HarnessOptions = {}) => {
     })
   }
   const sequelize = {
-    transaction: jest.fn(async () => transaction)
+    transaction: jest.fn(async (callback?: (value: unknown) => unknown) =>
+      callback ? callback(transaction) : transaction
+    ),
+    query: jest.fn()
   }
   const service = new (PaintingsService as any)(
     paintingModel as unknown as typeof Painting,
@@ -85,6 +97,7 @@ const createHarness = (options: HarnessOptions = {}) => {
     paintingModel,
     paintingAttributesModel,
     storageService,
+    sequelize,
     transaction,
     sequence,
     service
@@ -94,6 +107,7 @@ const createHarness = (options: HarnessOptions = {}) => {
 interface BulkHarnessOptions {
   foundIds?: number[]
   sharedImage?: boolean
+  countResult?: number
   failingPaintingId?: number
   paintingError?: Error
 }
@@ -135,7 +149,7 @@ const createBulkHarness = (options: BulkHarnessOptions = {}) => {
     }),
     count: jest.fn(async () => {
       sequence.push('count-references')
-      return 0
+      return options.countResult || 0
     })
   }
   const paintingAttributesModel = {
@@ -150,7 +164,10 @@ const createBulkHarness = (options: BulkHarnessOptions = {}) => {
     })
   }
   const sequelize = {
-    transaction: jest.fn(async () => transaction)
+    transaction: jest.fn(async (callback?: (value: unknown) => unknown) =>
+      callback ? callback(transaction) : transaction
+    ),
+    query: jest.fn()
   }
   const service = new (PaintingsService as any)(
     paintingModel as unknown as typeof Painting,
@@ -175,8 +192,10 @@ describe('PaintingsService.delete', () => {
   it('commits the database deletion before cleaning the unreferenced image', async () => {
     const {
       painting,
+      paintingModel,
       paintingAttributesModel,
       storageService,
+      sequelize,
       transaction,
       sequence,
       service
@@ -201,10 +220,26 @@ describe('PaintingsService.delete', () => {
     expect(paintingAttributesModel.destroy).toHaveBeenCalledWith(
       expect.objectContaining({ transaction })
     )
+    expect(paintingModel.findAll).toHaveBeenCalledWith(
+      expect.objectContaining({
+        transaction,
+        lock: transaction.LOCK.UPDATE
+      })
+    )
     expect(painting.destroy).toHaveBeenCalledWith({ transaction })
     expect(storageService.deleteFile).toHaveBeenCalledWith(
       'delete-me.jpg',
       'paintings'
+    )
+    expect(sequelize.query).toHaveBeenCalledWith(
+      expect.stringContaining('pg_advisory_xact_lock'),
+      expect.objectContaining({
+        replacements: { imgUrl: imageUrl },
+        transaction
+      })
+    )
+    expect(paintingModel.count).toHaveBeenCalledWith(
+      expect.objectContaining({ transaction })
     )
     expect(transaction.rollback).not.toHaveBeenCalled()
   })
@@ -325,6 +360,46 @@ describe('PaintingsService.delete', () => {
     ])
     expect(transaction.rollback).not.toHaveBeenCalled()
   })
+
+  it('preserves a commit failure without masking it with rollback', async () => {
+    const commitError = new Error('commit outcome unknown')
+    const { storageService, transaction, sequence, service } = createHarness({
+      commitError
+    })
+
+    await expect(service.delete('21')).rejects.toBe(commitError)
+
+    expect(sequence).toEqual(['find', 'attributes', 'painting', 'commit'])
+    expect(transaction.rollback).not.toHaveBeenCalled()
+    expect(storageService.deleteFile).not.toHaveBeenCalled()
+  })
+
+  it('logs enough structured context to recover a post-commit orphan', async () => {
+    const errorSpy = jest
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => undefined)
+    const { service } = createHarness({
+      storageError: new Error('storage unavailable')
+    })
+
+    await service.delete('21')
+
+    const cleanupLog = errorSpy.mock.calls
+      .map(([message]) => String(message))
+      .find((message) => message.includes('painting_image_cleanup_failed'))
+    expect(JSON.parse(cleanupLog)).toMatchObject({
+      event: 'painting_image_cleanup_failed',
+      deletedPaintingIds: [21],
+      phase: 'storage_delete',
+      imgUrl: imageUrl,
+      objectKey: 'paintings/delete-me.jpg',
+      category: 'paintings',
+      errorName: 'Error',
+      errorMessage: 'storage unavailable'
+    })
+
+    errorSpy.mockRestore()
+  })
 })
 
 describe('PaintingsService.deleteMany', () => {
@@ -335,13 +410,37 @@ describe('PaintingsService.deleteMany', () => {
     ['zero id', '[0]'],
     ['negative id', '[-1]'],
     ['decimal id', '[21.5]'],
-    ['non-numeric id', '["painting"]']
+    ['non-numeric id', '["painting"]'],
+    ['boolean id', '[true]'],
+    ['nested-array id', '[[21]]'],
+    ['whitespace id', '[" 21 "]'],
+    ['exponent string id', '["1e2"]'],
+    ['unsafe integer id', '[9007199254740992]']
   ])('rejects %s before starting a transaction', async (_label, ids) => {
     const { sequelize, service } = createBulkHarness()
 
     await expect(service.deleteMany(ids)).rejects.toBeInstanceOf(
       BadRequestException
     )
+
+    expect(sequelize.transaction).not.toHaveBeenCalled()
+  })
+
+  it('accepts only explicit decimal digit strings within the safe range', async () => {
+    const { service } = createBulkHarness({ foundIds: [21] })
+
+    await expect(service.deleteMany('["21"]')).resolves.toMatchObject({
+      deletedPaintingIds: [21]
+    })
+  })
+
+  it('rejects more than 100 unique ids before starting a transaction', async () => {
+    const { sequelize, service } = createBulkHarness()
+    const ids = Array.from({ length: 101 }, (_, index) => index + 1)
+
+    await expect(
+      service.deleteMany(JSON.stringify(ids))
+    ).rejects.toBeInstanceOf(BadRequestException)
 
     expect(sequelize.transaction).not.toHaveBeenCalled()
   })
@@ -430,5 +529,20 @@ describe('PaintingsService.deleteMany', () => {
 
     expect(paintingModel.count).toHaveBeenCalledTimes(1)
     expect(storageService.deleteFile).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps a bulk image URL that is still referenced after commit', async () => {
+    const { paintingModel, storageService, service } = createBulkHarness({
+      sharedImage: true,
+      countResult: 1
+    })
+
+    await expect(service.deleteMany('[21,22]')).resolves.toMatchObject({
+      skippedSharedImageCount: 1,
+      storageCleanupErrorCount: 0
+    })
+
+    expect(paintingModel.count).toHaveBeenCalledTimes(1)
+    expect(storageService.deleteFile).not.toHaveBeenCalled()
   })
 })

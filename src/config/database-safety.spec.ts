@@ -161,4 +161,25 @@ describe('database safety', () => {
     expect(query).toHaveBeenCalled()
     expect(end).toHaveBeenCalled()
   })
+
+  it('rejects a DEV_CRUD connection that resolves to an unsafe runtime database', async () => {
+    const connect = jest.fn()
+    const end = jest.fn()
+    const query = jest.fn().mockResolvedValue({
+      rows: [
+        {
+          current_database: 'production_database',
+          inet_server_addr: '10.0.0.5',
+          inet_server_port: 5432
+        }
+      ]
+    })
+    const Client = jest.fn().mockImplementation(() => ({ connect, query, end }))
+
+    await expect(
+      assertDevCrudRuntimeDatabase(devCrudEnv(), { Client })
+    ).rejects.toThrow('DEV_CRUD database server verification failed')
+
+    expect(end).toHaveBeenCalled()
+  })
 })
