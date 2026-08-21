@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { getModelToken } from '@nestjs/sequelize'
 import { NotFoundException } from '@nestjs/common'
+import { Sequelize } from 'sequelize-typescript'
 import { PaintingsService } from './paintings.service'
 import { Painting } from './models/painting.model'
 import { PaintingAttributes } from './models/painting-attributes.model'
@@ -29,7 +30,8 @@ describe('PaintingsService public visibility', () => {
           provide: getModelToken(PaintingAttributes),
           useValue: { destroy: jest.fn(), create: jest.fn() }
         },
-        { provide: StorageService, useValue: { deleteFile: jest.fn() } }
+        { provide: StorageService, useValue: { deleteFile: jest.fn() } },
+        { provide: Sequelize, useValue: { transaction: jest.fn() } }
       ]
     }).compile()
 

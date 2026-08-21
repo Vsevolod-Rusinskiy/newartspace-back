@@ -27,7 +27,12 @@ export class StorageService {
       credentials: credentials,
       region: 'ru-central1',
       endpoint: 'https://storage.yandexcloud.net',
-      s3ForcePathStyle: true
+      s3ForcePathStyle: true,
+      httpOptions: {
+        connectTimeout: 2000,
+        timeout: 5000
+      },
+      maxRetries: 1
     })
   }
 
@@ -85,6 +90,30 @@ export class StorageService {
       )
       throw new InternalServerErrorException(
         `Error deleting file ${fileName} in category ${category}: ${error.message}`
+      )
+    }
+  }
+
+  async fileExists(fileName: string, category: string): Promise<boolean> {
+    this.assertStorageEnabled()
+    const key = `${category}/${fileName}`
+
+    try {
+      await this.s3!.headObject({ Bucket: this.bucketName, Key: key }).promise()
+      return true
+    } catch (error) {
+      if (
+        error?.code === 'NotFound' ||
+        error?.code === 'NoSuchKey' ||
+        error?.statusCode === 404
+      ) {
+        return false
+      }
+      this.logger.error(
+        `Error checking file ${fileName} in category ${category}: ${error?.message || 'unknown error'}`
+      )
+      throw new InternalServerErrorException(
+        `Error checking file ${fileName} in category ${category}`
       )
     }
   }

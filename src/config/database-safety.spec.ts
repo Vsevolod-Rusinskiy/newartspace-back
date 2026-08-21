@@ -1,4 +1,5 @@
 import {
+  assertDevCrudRuntimeDatabase,
   assertSeoSafeRuntimeDatabase,
   assertSeoSafeRuntimeEnvironment,
   resolveBackendListenOptions,
@@ -16,6 +17,19 @@ const safeEnv = () => ({
   BUCKET_NAME: 'seo-storage-disabled',
   PORT: '3200',
   FRONTEND_URL: 'http://localhost:3201'
+})
+
+const devCrudEnv = () => ({
+  DEV_CRUD_MODE: 'true',
+  POSTGRES_HOST: 'localhost',
+  POSTGRES_PORT: '5432',
+  POSTGRES_NAME: 'newartspace',
+  POSTGRES_USER: 'postgres',
+  POSTGRES_PASSWORD: 'local-password',
+  DB_SYNCHRONIZE: 'false',
+  BUCKET_NAME: 'newartspace-images-dev',
+  PORT: '3300',
+  FRONTEND_URL: 'http://localhost:5173'
 })
 
 describe('database safety', () => {
@@ -36,6 +50,31 @@ describe('database safety', () => {
     expect(resolveDatabaseSynchronize({ DB_SYNCHRONIZE: 'false' })).toBe(false)
     expect(() =>
       resolveDatabaseSynchronize({ SEO_SAFE_MODE: 'true' })
+    ).toThrow()
+  })
+
+  it('binds DEV_CRUD to loopback and rejects the production bucket before startup', () => {
+    expect(resolveBackendListenOptions(devCrudEnv())).toEqual({
+      port: '3300',
+      host: '127.0.0.1'
+    })
+    expect(() => resolveDatabaseSynchronize(devCrudEnv())).not.toThrow()
+    expect(() =>
+      resolveDatabaseSynchronize({
+        ...devCrudEnv(),
+        BUCKET_NAME: 'newartspace-images'
+      })
+    ).toThrow('DEV_CRUD requires BUCKET_NAME=newartspace-images-dev')
+  })
+
+  it.each([
+    ['remote database', { POSTGRES_HOST: 'db.example.test' }],
+    ['SEO database', { POSTGRES_NAME: 'newartspace_seo' }],
+    ['schema synchronize', { DB_SYNCHRONIZE: 'true' }],
+    ['SEO_SAFE at the same time', { SEO_SAFE_MODE: 'true' }]
+  ])('rejects unsafe DEV_CRUD target: %s', (_label, override) => {
+    expect(() =>
+      resolveDatabaseSynchronize({ ...devCrudEnv(), ...override })
     ).toThrow()
   })
 
@@ -90,6 +129,57 @@ describe('database safety', () => {
       })
     )
     expect(query).toHaveBeenCalled()
+    expect(end).toHaveBeenCalled()
+  })
+
+  it('verifies the exact DEV_CRUD database identity before Nest starts', async () => {
+    const connect = jest.fn()
+    const end = jest.fn()
+    const query = jest.fn().mockResolvedValue({
+      rows: [
+        {
+          current_database: 'newartspace',
+          inet_server_addr: '127.0.0.1',
+          inet_server_port: 5432
+        }
+      ]
+    })
+    const Client = jest
+      .fn()
+      .mockImplementation((config) => ({ connect, query, end, config }))
+
+    await assertDevCrudRuntimeDatabase(devCrudEnv(), { Client })
+
+    expect(Client).toHaveBeenCalledWith(
+      expect.objectContaining({
+        database: 'newartspace',
+        host: 'localhost',
+        port: 5432,
+        user: 'postgres'
+      })
+    )
+    expect(query).toHaveBeenCalled()
+    expect(end).toHaveBeenCalled()
+  })
+
+  it('rejects a DEV_CRUD connection that resolves to an unsafe runtime database', async () => {
+    const connect = jest.fn()
+    const end = jest.fn()
+    const query = jest.fn().mockResolvedValue({
+      rows: [
+        {
+          current_database: 'production_database',
+          inet_server_addr: '10.0.0.5',
+          inet_server_port: 5432
+        }
+      ]
+    })
+    const Client = jest.fn().mockImplementation(() => ({ connect, query, end }))
+
+    await expect(
+      assertDevCrudRuntimeDatabase(devCrudEnv(), { Client })
+    ).rejects.toThrow('DEV_CRUD database server verification failed')
+
     expect(end).toHaveBeenCalled()
   })
 })

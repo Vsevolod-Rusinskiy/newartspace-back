@@ -1,6 +1,8 @@
 import { InjectModel } from '@nestjs/sequelize'
-import { FindOptions, Op } from 'sequelize'
+import { FindOptions, Op, Transaction } from 'sequelize'
 import {
+  BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -10,7 +12,6 @@ import { CreatePaintingDto } from './dto/create-painting.dto'
 import { UpdatePaintingDto } from './dto/update-painting.dto'
 import { Painting } from './models/painting.model'
 import { StorageService } from '../common/services/storage.service'
-import { getFileNameFromUrl } from '../utils'
 import { Artist } from '../artists/models/artist.model'
 import { Attributes } from '../attributes/models/attributes.model'
 import { parsePriceRange } from '../utils/parsePriceRange'
@@ -21,10 +22,25 @@ import {
   rankSimilarPaintings,
   SimilarPaintingCandidate
 } from './similar-paintings'
+import {
+  ManagedPaintingImageReference,
+  isSafeManagedPaintingImageFileName,
+  resolveManagedPaintingImageFileName,
+  resolveManagedPaintingImageUrl
+} from './painting-image-reference'
 
 export interface PaintingWithAuthor extends Painting {
   author: string | null
 }
+
+export interface PaintingDeletionResult {
+  deletedPaintingIds: number[]
+  deletedPaintingCount: number
+  skippedSharedImageCount: number
+  storageCleanupErrorCount: number
+}
+
+const MAX_BULK_PAINTING_DELETE_IDS = 100
 
 @Injectable()
 export class PaintingsService {
@@ -35,72 +51,57 @@ export class PaintingsService {
     private paintingModel: typeof Painting,
     @InjectModel(PaintingAttributes)
     private paintingAttributesModel: typeof PaintingAttributes,
-    private readonly storageService: StorageService
+    private readonly storageService: StorageService,
+    private readonly sequelize: Sequelize
   ) {}
 
   async create(createPaintingDto: CreatePaintingDto): Promise<Painting> {
+    if (createPaintingDto.imgUrl === '') {
+      throw new BadRequestException('Painting image URL cannot be empty')
+    }
     try {
-      const painting = new Painting({
-        ...createPaintingDto,
-        artistId: createPaintingDto.artistId,
-        priority: 0
+      return await this.sequelize.transaction(async (transaction) => {
+        let imageReference: ManagedPaintingImageReference | undefined
+        if (createPaintingDto.imgUrl) {
+          imageReference = await this.assertImageReferenceAvailable(
+            createPaintingDto.imgUrl,
+            transaction
+          )
+        }
+        const painting = this.paintingModel.build({
+          ...createPaintingDto,
+          ...(imageReference ? { imgUrl: imageReference.canonicalUrl } : {}),
+          artistId: createPaintingDto.artistId,
+          priority: 0
+        })
+        await painting.save({ transaction })
+
+        const attributeGroups = [
+          ['materialsList', createPaintingDto.materials],
+          ['techniquesList', createPaintingDto.techniques],
+          ['themesList', createPaintingDto.themes],
+          ['colorsList', createPaintingDto.colors]
+        ] as const
+        for (const [type, attributeIds] of attributeGroups) {
+          for (const attributeId of attributeIds || []) {
+            await this.paintingAttributesModel.create(
+              { paintingId: painting.id, attributeId, type },
+              { transaction }
+            )
+          }
+        }
+
+        return this.paintingModel.findOne({
+          where: { id: painting.id },
+          include: [
+            { model: Artist, attributes: ['artistName'] },
+            { model: Attributes, through: { attributes: ['type'] } }
+          ],
+          transaction
+        })
       })
-      await painting.save()
-
-      // Сохраняем связи с материалами
-      if (createPaintingDto.materials) {
-        for (const materialId of createPaintingDto.materials) {
-          await this.paintingAttributesModel.create({
-            paintingId: painting.id,
-            attributeId: materialId,
-            type: 'materialsList'
-          })
-        }
-      }
-
-      // Сохраняем связи с техниками
-      if (createPaintingDto.techniques) {
-        for (const techniqueId of createPaintingDto.techniques) {
-          await this.paintingAttributesModel.create({
-            paintingId: painting.id,
-            attributeId: techniqueId,
-            type: 'techniquesList'
-          })
-        }
-      }
-
-      // Сохраняем связи с темами
-      if (createPaintingDto.themes) {
-        for (const themeId of createPaintingDto.themes) {
-          await this.paintingAttributesModel.create({
-            paintingId: painting.id,
-            attributeId: themeId,
-            type: 'themesList'
-          })
-        }
-      }
-
-      if (createPaintingDto.colors) {
-        for (const colorId of createPaintingDto.colors) {
-          await this.paintingAttributesModel.create({
-            paintingId: painting.id,
-            attributeId: colorId,
-            type: 'colorsList'
-          })
-        }
-      }
-
-      // Получаем полные данные о картине с атрибутами
-      const fullPainting = await this.paintingModel.findOne({
-        where: { id: painting.id },
-        include: [
-          { model: Artist, attributes: ['artistName'] },
-          { model: Attributes, through: { attributes: ['type'] } }
-        ]
-      })
-
-      return fullPainting
     } catch (error) {
+      if (error instanceof BadRequestException) throw error
       this.logger.error(
         `Error creating painting: ${error.message}`,
         error.stack
@@ -427,169 +428,409 @@ export class PaintingsService {
   }
 
   async update(id: number, painting: UpdatePaintingDto): Promise<Painting> {
-    const existingPainting = await this.findOne(id.toString())
-    if (!existingPainting) {
-      throw new NotFoundException(`Painting with id ${id} not found`)
+    if (painting.imgUrl === '') {
+      throw new BadRequestException('Painting image URL cannot be empty')
     }
+    let previousImgUrl: string | null = null
+    let replacesImage = false
+    const updatedPainting = await this.sequelize.transaction(
+      async (transaction) => {
+        await this.setTransactionTimeouts(transaction)
+        const existingPainting = await this.paintingModel.findOne({
+          where: { id },
+          transaction,
+          lock: transaction.LOCK.UPDATE
+        })
+        if (!existingPainting) {
+          throw new NotFoundException(`Painting with id ${id} not found`)
+        }
 
-    // Удаляем старый файл только если явно передан новый imgUrl и он другой.
-    // Иначе PATCH без картинки (например, только title) сравнивает URL с undefined
-    // и стирает файл в Object Storage.
-    if (
-      painting.imgUrl !== undefined &&
-      painting.imgUrl !== null &&
-      existingPainting.imgUrl !== painting.imgUrl
-    ) {
-      const prevImgUrl = existingPainting.imgUrl
-      if (prevImgUrl) {
-        const fileName = getFileNameFromUrl(prevImgUrl)
-        await this.storageService.deleteFile(fileName, 'paintings')
-      }
-    }
+        let updateData: UpdatePaintingDto = painting
+        if (
+          painting.imgUrl !== undefined &&
+          painting.imgUrl !== null &&
+          existingPainting.imgUrl !== painting.imgUrl
+        ) {
+          const imageReference = await this.assertImageReferenceAvailable(
+            painting.imgUrl,
+            transaction
+          )
+          previousImgUrl = existingPainting.imgUrl
+          replacesImage = true
+          updateData = { ...painting, imgUrl: imageReference.canonicalUrl }
+        }
+        await this.paintingModel.update(
+          { ...updateData, artistId: updateData.artistId },
+          { where: { id }, transaction }
+        )
 
-    // Обновляем картину без include
-    await this.paintingModel.update(
-      {
-        ...painting,
-        artistId: painting.artistId
-      },
-      {
-        where: { id: id }
+        const attributeGroups = [
+          ['materialsList', painting.materials],
+          ['techniquesList', painting.techniques],
+          ['themesList', painting.themes],
+          ['colorsList', painting.colors]
+        ] as const
+        for (const [type, attributeIds] of attributeGroups) {
+          if (!attributeIds) continue
+          await this.paintingAttributesModel.destroy({
+            where: { paintingId: id, type },
+            transaction
+          })
+          for (const attributeId of attributeIds) {
+            await this.paintingAttributesModel.create(
+              { paintingId: id, attributeId, type },
+              { transaction }
+            )
+          }
+        }
+
+        return this.paintingModel.findOne({
+          where: { id },
+          include: [
+            { model: Artist, attributes: ['artistName'] },
+            { model: Attributes, through: { attributes: ['type'] } }
+          ],
+          transaction
+        })
       }
     )
-
-    // Обновляем связи с материалами
-    if (painting.materials) {
-      await PaintingAttributes.destroy({
-        where: { paintingId: id, type: 'materialsList' }
-      })
-      for (const materialId of painting.materials) {
-        await PaintingAttributes.create({
-          paintingId: id,
-          attributeId: materialId,
-          type: 'materialsList'
-        })
-      }
-    }
-
-    // Обновляем связи с техниками
-    if (painting.techniques) {
-      await this.paintingAttributesModel.destroy({
-        where: { paintingId: id, type: 'techniquesList' }
-      })
-      for (const techniqueId of painting.techniques) {
-        await PaintingAttributes.create({
-          paintingId: id,
-          attributeId: techniqueId,
-          type: 'techniquesList'
-        })
-      }
-    }
-
-    // Обновляем связи с темами
-    if (painting.themes) {
-      await PaintingAttributes.destroy({
-        where: { paintingId: id, type: 'themesList' }
-      })
-      for (const themeId of painting.themes) {
-        await this.paintingAttributesModel.create({
-          paintingId: id,
-          attributeId: themeId,
-          type: 'themesList'
-        })
-      }
-    }
-
-    if (painting.colors) {
-      await PaintingAttributes.destroy({
-        where: { paintingId: id, type: 'colorsList' }
-      })
-      for (const colorId of painting.colors) {
-        await PaintingAttributes.create({
-          paintingId: id,
-          attributeId: colorId,
-          type: 'colorsList'
-        })
-      }
-    }
-
-    // Теперь делаем запрос для получения обновленных данных с автором
-    const updatedPainting = await this.paintingModel.findOne({
-      where: { id: id },
-      include: [
-        { model: Artist, attributes: ['artistName'] },
-        { model: Attributes, through: { attributes: ['type'] } }
-      ]
-    })
 
     if (!updatedPainting) {
       throw new NotFoundException(`Updated painting with id ${id} not found`)
     }
 
+    if (replacesImage && previousImgUrl) {
+      await this.cleanupDeletedPaintingImages([{ id, imgUrl: previousImgUrl }])
+    }
+
     return updatedPainting
   }
 
-  async delete(id: string): Promise<void> {
-    const painting = await this.findOne(id)
+  async delete(id: string): Promise<PaintingDeletionResult> {
+    const paintingId = this.parsePaintingId(id)
+    return this.deletePaintingsByIds([paintingId])
+  }
 
-    if (!painting) {
-      this.logger.error(`Painting with id ${id} not found`)
-      throw new NotFoundException(`Painting with id ${id} not found`)
+  private parsePaintingId(id: unknown): number {
+    const paintingId =
+      typeof id === 'number'
+        ? id
+        : typeof id === 'string' && /^[1-9]\d*$/.test(id)
+          ? Number(id)
+          : Number.NaN
+    if (!Number.isSafeInteger(paintingId) || paintingId <= 0) {
+      throw new BadRequestException('Painting ids must be positive integers')
+    }
+    return paintingId
+  }
+
+  private parsePaintingIds(ids: string): number[] {
+    let parsedIds: unknown
+    try {
+      parsedIds = JSON.parse(ids)
+    } catch {
+      throw new BadRequestException('Painting ids must be a JSON array')
+    }
+    if (!Array.isArray(parsedIds) || parsedIds.length === 0) {
+      throw new BadRequestException('Painting ids must be a non-empty array')
+    }
+    const paintingIds = [
+      ...new Set(parsedIds.map((id) => this.parsePaintingId(id)))
+    ]
+    if (paintingIds.length > MAX_BULK_PAINTING_DELETE_IDS) {
+      throw new BadRequestException(
+        `At most ${MAX_BULK_PAINTING_DELETE_IDS} paintings can be deleted at once`
+      )
+    }
+    return paintingIds
+  }
+
+  private async deletePaintingsByIds(
+    paintingIds: number[]
+  ): Promise<PaintingDeletionResult> {
+    const transaction = await this.sequelize.transaction()
+    let paintings: Painting[]
+    try {
+      await this.setTransactionTimeouts(transaction)
+      const foundPaintings = await this.paintingModel.findAll({
+        where: { id: { [Op.in]: paintingIds } },
+        transaction,
+        lock: transaction.LOCK.UPDATE
+      })
+      const paintingsById = new Map(
+        foundPaintings.map((painting) => [Number(painting.id), painting])
+      )
+      const missingIds = paintingIds.filter((id) => !paintingsById.has(id))
+      if (missingIds.length > 0) {
+        throw new NotFoundException(
+          `Paintings with ids ${missingIds.join(',')} not found`
+        )
+      }
+      paintings = paintingIds.map((id) => paintingsById.get(id))
+
+      await this.paintingAttributesModel.destroy({
+        where: { paintingId: { [Op.in]: paintingIds } },
+        transaction
+      })
+      for (const painting of paintings) {
+        await painting.destroy({ transaction })
+      }
+      await transaction.commit()
+    } catch (error) {
+      const transactionFinished = (
+        transaction as unknown as { finished?: string }
+      ).finished
+      if (!transactionFinished) {
+        try {
+          await transaction.rollback()
+        } catch (rollbackError) {
+          this.logger.error(
+            JSON.stringify({
+              event: 'painting_delete_rollback_failed',
+              paintingIds,
+              errorName: rollbackError?.name || 'UnknownError'
+            })
+          )
+        }
+      }
+      if (error?.name === 'SequelizeForeignKeyConstraintError') {
+        throw new ConflictException(
+          `At least one painting is referenced by another record`
+        )
+      }
+      throw error
     }
 
-    const imgUrl = painting.imgUrl
-    const fileName = getFileNameFromUrl(imgUrl)
-
-    try {
-      // Удаляем связанные записи из PaintingAttributes
-      await PaintingAttributes.destroy({
-        where: { paintingId: id }
-      })
-
-      await this.storageService.deleteFile(fileName, 'paintings')
-      await painting.destroy()
-    } catch (error) {
-      this.logger.error(`Error deleting painting: ${error.message}`)
-      throw new InternalServerErrorException(
-        `Error deleting painting: ${error.message}`
-      )
+    const cleanup = await this.cleanupDeletedPaintingImages(
+      paintings.map(({ id, imgUrl }) => ({ id: Number(id), imgUrl }))
+    )
+    return {
+      deletedPaintingIds: paintingIds,
+      deletedPaintingCount: paintingIds.length,
+      ...cleanup
     }
   }
 
-  async deleteMany(ids: string): Promise<{ deletedPaintingCount: number }> {
-    const idArray = JSON.parse(ids).map((id) => id.toString())
-    let deletedPaintingCount = 0
+  private async cleanupDeletedPaintingImages(
+    paintings: Array<{ id: number; imgUrl: string }>
+  ): Promise<
+    Pick<
+      PaintingDeletionResult,
+      'skippedSharedImageCount' | 'storageCleanupErrorCount'
+    >
+  > {
+    const paintingsByImage = new Map<
+      string,
+      Array<{ id: number; imgUrl: string }>
+    >()
+    for (const painting of paintings) {
+      const group = paintingsByImage.get(painting.imgUrl) || []
+      group.push(painting)
+      paintingsByImage.set(painting.imgUrl, group)
+    }
 
-    for (const id of idArray) {
+    let skippedSharedImageCount = 0
+    let storageCleanupErrorCount = 0
+    for (const [imgUrl, deletedPaintings] of paintingsByImage) {
+      const deletedPaintingIds = deletedPaintings.map(({ id }) => id)
+      let imageReference: ManagedPaintingImageReference | null = null
       try {
-        const painting = await this.findOne(id)
-
-        if (!painting) {
-          this.logger.error(`Painting with id ${id} not found`)
-          continue // Пропускаем, если картина не найдена
-        }
-
-        const imgUrl = painting.dataValues.imgUrl
-        const fileName = getFileNameFromUrl(imgUrl)
-
-        // Удаляем связанные записи из PaintingAttributes
-        await PaintingAttributes.destroy({
-          where: { paintingId: id }
-        })
-
-        await this.storageService.deleteFile(fileName, 'paintings')
-        await painting.destroy()
-        deletedPaintingCount++
-      } catch (error) {
-        this.logger.error(
-          `Error deleting painting with id ${id}: ${error.message}`
+        imageReference = resolveManagedPaintingImageUrl(
+          imgUrl,
+          process.env.BUCKET_NAME || ''
         )
-        throw new InternalServerErrorException(
-          `Error deleting paintings: ${error.message}`
+      } catch {
+        imageReference = null
+      }
+      const objectKey = imageReference?.objectKey || null
+      let phase: 'reference_check' | 'storage_delete' = 'reference_check'
+      try {
+        if (!imageReference) {
+          throw new Error('Painting image URL is not a managed canonical URL')
+        }
+        const cleanupResult = await this.withImageReferenceLock(
+          imageReference.objectKey,
+          async (transaction) => {
+            const remainingReferences = await this.paintingModel.count({
+              where: { imgUrl: imageReference.canonicalUrl },
+              transaction
+            })
+            if (remainingReferences > 0) return 'skipped' as const
+            if (
+              await this.hasPotentialImageReference(
+                imageReference.fileName,
+                imageReference.canonicalUrl,
+                transaction
+              )
+            ) {
+              return 'skipped' as const
+            }
+
+            phase = 'storage_delete'
+            await this.storageService.deleteFile(
+              imageReference.fileName,
+              'paintings'
+            )
+            return 'deleted' as const
+          }
+        )
+        if (cleanupResult === 'skipped') {
+          skippedSharedImageCount++
+          this.logger.log(
+            `Skipping shared painting image cleanup for deleted ids ${deletedPaintings.map(({ id }) => id).join(',')}`
+          )
+        }
+      } catch (error) {
+        storageCleanupErrorCount++
+        const errorName = error?.name || 'UnknownError'
+        const errorMessage = this.sanitizeCleanupErrorMessage(error?.message)
+        this.logger.error(
+          JSON.stringify({
+            event: 'painting_image_cleanup_failed',
+            deletedPaintingIds,
+            phase,
+            objectKey,
+            category: 'paintings',
+            errorName,
+            errorMessage
+          })
         )
       }
     }
-    return { deletedPaintingCount }
+
+    return { skippedSharedImageCount, storageCleanupErrorCount }
+  }
+
+  private async withImageReferenceLock<T>(
+    objectKey: string,
+    operation: (transaction: Transaction) => Promise<T>
+  ): Promise<T> {
+    return this.sequelize.transaction(async (transaction) => {
+      await this.setTransactionTimeouts(transaction)
+      await this.lockImageReference(objectKey, transaction)
+      return operation(transaction)
+    })
+  }
+
+  private async assertImageReferenceAvailable(
+    imgUrl: string,
+    transaction: Transaction
+  ): Promise<ManagedPaintingImageReference> {
+    const imageReference = resolveManagedPaintingImageUrl(
+      imgUrl,
+      process.env.BUCKET_NAME || ''
+    )
+    await this.setTransactionTimeouts(transaction)
+    await this.lockImageReference(imageReference.objectKey, transaction)
+    if (
+      !(await this.storageService.fileExists(
+        imageReference.fileName,
+        'paintings'
+      ))
+    ) {
+      throw new BadRequestException('Painting image does not exist')
+    }
+    return imageReference
+  }
+
+  private async lockImageReference(
+    objectKey: string,
+    transaction: Transaction
+  ): Promise<void> {
+    await this.sequelize.query(
+      'SELECT pg_advisory_xact_lock(hashtextextended(:objectKey, 0))',
+      { replacements: { objectKey }, transaction }
+    )
+  }
+
+  async deleteUnusedImage(fileName: string): Promise<{ message: string }> {
+    const imageReference = resolveManagedPaintingImageFileName(
+      fileName,
+      process.env.BUCKET_NAME || ''
+    )
+    await this.withImageReferenceLock(
+      imageReference.objectKey,
+      async (transaction) => {
+        const remainingReferences = await this.paintingModel.count({
+          where: { imgUrl: imageReference.canonicalUrl },
+          transaction
+        })
+        if (remainingReferences > 0) {
+          throw new ConflictException(
+            'Painting image is still referenced by a painting'
+          )
+        }
+        if (
+          await this.hasPotentialImageReference(
+            imageReference.fileName,
+            imageReference.canonicalUrl,
+            transaction
+          )
+        ) {
+          throw new ConflictException(
+            'Painting image is still referenced by a painting'
+          )
+        }
+        await this.storageService.deleteFile(
+          imageReference.fileName,
+          'paintings'
+        )
+      }
+    )
+    return { message: 'File deleted successfully' }
+  }
+
+  private async setTransactionTimeouts(
+    transaction: Transaction
+  ): Promise<void> {
+    await this.sequelize.query(
+      `SET LOCAL lock_timeout = '2s'; SET LOCAL statement_timeout = '7s'`,
+      { transaction }
+    )
+  }
+
+  private async hasPotentialImageReference(
+    fileName: string,
+    canonicalUrl: string,
+    transaction: Transaction
+  ): Promise<boolean> {
+    const paintings = await this.paintingModel.findAll({
+      attributes: ['imgUrl'],
+      transaction
+    })
+    return paintings.some((painting) => {
+      const imgUrl = painting?.imgUrl
+      if (typeof imgUrl !== 'string' || imgUrl.length === 0) return false
+      if (imgUrl === canonicalUrl) return false
+      return this.getImageBasename(imgUrl) === fileName
+    })
+  }
+
+  private getImageBasename(imgUrl: string): string | null {
+    const withoutQueryOrHash = imgUrl.split(/[?#]/, 1)[0]
+    const rawBasename = withoutQueryOrHash.split('/').pop() || ''
+    let basename = rawBasename
+    try {
+      basename = decodeURIComponent(rawBasename)
+    } catch {
+      return null
+    }
+    return isSafeManagedPaintingImageFileName(basename) ? basename : null
+  }
+
+  private sanitizeCleanupErrorMessage(message: unknown): string {
+    const normalized =
+      typeof message === 'string' ? message : 'Unknown cleanup error'
+    return normalized
+      .replace(
+        /(access[_-]?key|secret[_-]?access[_-]?key|authorization|token|password)(\s*[:=]\s*)[^\s,;]+/gi,
+        '$1$2[redacted]'
+      )
+      .slice(0, 500)
+  }
+
+  async deleteMany(ids: string): Promise<PaintingDeletionResult> {
+    return this.deletePaintingsByIds(this.parsePaintingIds(ids))
   }
 
   async getFilteredPaintings(

@@ -31,6 +31,9 @@ describe('StorageService SEO_SAFE isolation', () => {
     await expect(service.deleteFile('file.png', 'paintings')).rejects.toThrow(
       ServiceUnavailableException
     )
+    await expect(service.fileExists('file.png', 'paintings')).rejects.toThrow(
+      ServiceUnavailableException
+    )
     expect(credentials).not.toHaveBeenCalled()
     expect(s3).not.toHaveBeenCalled()
   })
@@ -44,5 +47,43 @@ describe('StorageService SEO_SAFE isolation', () => {
 
     expect(credentials).toHaveBeenCalledTimes(1)
     expect(s3).toHaveBeenCalledTimes(1)
+    expect(s3).toHaveBeenCalledWith(
+      expect.objectContaining({
+        httpOptions: { connectTimeout: 2000, timeout: 5000 },
+        maxRetries: 1
+      })
+    )
+  })
+
+  it('checks an exact managed object without changing storage', async () => {
+    delete process.env.SEO_SAFE_MODE
+    const promise = jest.fn().mockResolvedValue({})
+    const headObject = jest.fn(() => ({ promise }))
+    credentials.mockImplementation(() => ({}))
+    s3.mockImplementation(() => ({ headObject }))
+    const service = new StorageService()
+
+    await expect(service.fileExists('file.png', 'paintings')).resolves.toBe(
+      true
+    )
+
+    expect(headObject).toHaveBeenCalledWith({
+      Bucket: 'bucket',
+      Key: 'paintings/file.png'
+    })
+  })
+
+  it('returns false only for an exact missing managed object', async () => {
+    delete process.env.SEO_SAFE_MODE
+    const promise = jest.fn().mockRejectedValue({ code: 'NotFound' })
+    credentials.mockImplementation(() => ({}))
+    s3.mockImplementation(() => ({
+      headObject: jest.fn(() => ({ promise }))
+    }))
+    const service = new StorageService()
+
+    await expect(service.fileExists('missing.png', 'paintings')).resolves.toBe(
+      false
+    )
   })
 })

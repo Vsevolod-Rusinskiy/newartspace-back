@@ -3,6 +3,8 @@ import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module'
 import { BadRequestException, Logger, ValidationPipe } from '@nestjs/common'
 import {
+  assertDevCrudRuntimeDatabase,
+  assertDevCrudRuntimeEnvironment,
   assertSeoSafeRuntimeDatabase,
   assertSeoSafeRuntimeEnvironment,
   resolveBackendListenOptions
@@ -14,7 +16,9 @@ dotenv.config()
 
 async function bootstrap() {
   assertSeoSafeRuntimeEnvironment(process.env)
+  assertDevCrudRuntimeEnvironment(process.env)
   await assertSeoSafeRuntimeDatabase(process.env)
+  await assertDevCrudRuntimeDatabase(process.env)
   const app = await NestFactory.create(AppModule)
   const logger = new Logger('ValidationPipe')
 
