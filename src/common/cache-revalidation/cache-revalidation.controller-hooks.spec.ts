@@ -82,7 +82,14 @@ describe('Cache revalidation controller hooks', () => {
   })
 
   it('schedules the deleted painting with its route id', async () => {
-    const service = { delete: jest.fn().mockResolvedValue(undefined) }
+    const service = {
+      delete: jest.fn().mockResolvedValue({
+        deletedPaintingIds: [301],
+        deletedPaintingCount: 1,
+        skippedSharedImageCount: 0,
+        storageCleanupErrorCount: 0
+      })
+    }
     const publisher = { schedule: jest.fn() } as PublisherMock
     const controller = new PaintingsController(
       service as unknown as PaintingsService,
@@ -92,17 +99,27 @@ describe('Cache revalidation controller hooks', () => {
 
     const response = await controller.deletePainting('301')
 
-    expect(response).toEqual({ message: 'Painting deleted successfully' })
+    expect(response).toEqual({
+      message: 'Painting deleted successfully',
+      cleanup: { skippedSharedImages: 0, errors: 0 }
+    })
     expect(publisher.schedule).toHaveBeenCalledTimes(1)
     expect(publisher.schedule).toHaveBeenCalledWith({
       entity: 'painting',
       action: 'deleted',
-      ids: ['301']
+      ids: [301]
     })
   })
 
   it('schedules parsed painting ids after a successful bulk delete', async () => {
-    const service = { deleteMany: jest.fn().mockResolvedValue(2) }
+    const service = {
+      deleteMany: jest.fn().mockResolvedValue({
+        deletedPaintingIds: [401, 402],
+        deletedPaintingCount: 2,
+        skippedSharedImageCount: 0,
+        storageCleanupErrorCount: 0
+      })
+    }
     const publisher = { schedule: jest.fn() } as PublisherMock
     const controller = new PaintingsController(
       service as unknown as PaintingsService,
@@ -114,14 +131,33 @@ describe('Cache revalidation controller hooks', () => {
 
     expect(response).toEqual({
       message: 'Paintings deleted successfully',
-      deletedCount: 2
+      deletedCount: 2,
+      cleanup: { skippedSharedImages: 0, errors: 0 }
     })
     expect(publisher.schedule).toHaveBeenCalledTimes(1)
     expect(publisher.schedule).toHaveBeenCalledWith({
       entity: 'painting',
       action: 'deleted',
-      ids: ['401', '402']
+      ids: [401, 402]
     })
+  })
+
+  it('does not publish a painting deletion when the database mutation rejects', async () => {
+    const service = {
+      delete: jest.fn().mockRejectedValue(new Error('database rejected'))
+    }
+    const publisher = { schedule: jest.fn() } as PublisherMock
+    const controller = new PaintingsController(
+      service as unknown as PaintingsService,
+      storageService,
+      publisher
+    )
+
+    await expect(controller.deletePainting('301')).rejects.toThrow(
+      'database rejected'
+    )
+
+    expect(publisher.schedule).not.toHaveBeenCalled()
   })
 
   it('does not schedule a painting event when the mutation rejects', async () => {

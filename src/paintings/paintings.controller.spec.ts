@@ -13,6 +13,8 @@ describe('PaintingsController response contracts', () => {
   let paintingService: {
     create: jest.Mock
     update: jest.Mock
+    delete: jest.Mock
+    deleteMany: jest.Mock
     getAllSortedPaintings: jest.Mock
   }
   const publisher = { schedule: jest.fn() }
@@ -31,6 +33,8 @@ describe('PaintingsController response contracts', () => {
     paintingService = {
       create: jest.fn(),
       update: jest.fn(),
+      delete: jest.fn(),
+      deleteMany: jest.fn(),
       getAllSortedPaintings: jest.fn()
     }
     publisher.schedule.mockReset()
@@ -89,6 +93,49 @@ describe('PaintingsController response contracts', () => {
       total: 1,
       page: '1',
       pageCount: 1
+    })
+  })
+
+  it('returns cleanup counters and publishes the validated id after single delete', async () => {
+    paintingService.delete.mockResolvedValue({
+      deletedPaintingIds: [301],
+      deletedPaintingCount: 1,
+      skippedSharedImageCount: 0,
+      storageCleanupErrorCount: 1
+    })
+
+    const response = await controller.deletePainting('000301')
+
+    expect(response).toEqual({
+      message: 'Painting deleted successfully',
+      cleanup: { skippedSharedImages: 0, errors: 1 }
+    })
+    expect(publisher.schedule).toHaveBeenCalledWith({
+      entity: 'painting',
+      action: 'deleted',
+      ids: [301]
+    })
+  })
+
+  it('returns the numeric bulk count and publishes only validated unique ids', async () => {
+    paintingService.deleteMany.mockResolvedValue({
+      deletedPaintingIds: [401],
+      deletedPaintingCount: 1,
+      skippedSharedImageCount: 1,
+      storageCleanupErrorCount: 0
+    })
+
+    const response = await controller.deleteManyPaintings('[401,401]')
+
+    expect(response).toEqual({
+      message: 'Paintings deleted successfully',
+      deletedCount: 1,
+      cleanup: { skippedSharedImages: 1, errors: 0 }
+    })
+    expect(publisher.schedule).toHaveBeenCalledWith({
+      entity: 'painting',
+      action: 'deleted',
+      ids: [401]
     })
   })
 })

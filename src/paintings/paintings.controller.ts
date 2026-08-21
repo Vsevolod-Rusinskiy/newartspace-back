@@ -185,25 +185,37 @@ export class PaintingsController {
   @UseGuards(AdminJwtGuard)
   @Delete(':id')
   async deletePainting(@Param('id') id: string) {
-    await this.paintingService.delete(id)
+    const result = await this.paintingService.delete(id)
     this.cacheRevalidationPublisher.schedule({
       entity: 'painting',
       action: 'deleted',
-      ids: [id]
+      ids: result.deletedPaintingIds
     })
-    return { message: 'Painting deleted successfully' }
+    return {
+      message: 'Painting deleted successfully',
+      cleanup: {
+        skippedSharedImages: result.skippedSharedImageCount,
+        errors: result.storageCleanupErrorCount
+      }
+    }
   }
 
   @UseGuards(AdminJwtGuard)
   @Delete('deleteMany/:ids')
   async deleteManyPaintings(@Param('ids') ids: string) {
-    const parsedIds = JSON.parse(ids) as Array<string | number>
-    const deletedCount = await this.paintingService.deleteMany(ids)
+    const result = await this.paintingService.deleteMany(ids)
     this.cacheRevalidationPublisher.schedule({
       entity: 'painting',
       action: 'deleted',
-      ids: parsedIds
+      ids: result.deletedPaintingIds
     })
-    return { message: 'Paintings deleted successfully', deletedCount }
+    return {
+      message: 'Paintings deleted successfully',
+      deletedCount: result.deletedPaintingCount,
+      cleanup: {
+        skippedSharedImages: result.skippedSharedImageCount,
+        errors: result.storageCleanupErrorCount
+      }
+    }
   }
 }
