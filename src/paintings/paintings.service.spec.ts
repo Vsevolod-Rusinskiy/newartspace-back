@@ -4,6 +4,7 @@ import { PaintingsService } from './paintings.service'
 import { Painting } from './models/painting.model'
 import { PaintingAttributes } from './models/painting-attributes.model'
 import { StorageService } from '../common/services/storage.service'
+import { Sequelize } from 'sequelize-typescript'
 
 describe('PaintingsService.update — storage delete guard', () => {
   let service: PaintingsService
@@ -46,7 +47,8 @@ describe('PaintingsService.update — storage delete guard', () => {
             create: jest.fn()
           }
         },
-        { provide: StorageService, useValue: storageService }
+        { provide: StorageService, useValue: storageService },
+        { provide: Sequelize, useValue: { transaction: jest.fn() } }
       ]
     }).compile()
 

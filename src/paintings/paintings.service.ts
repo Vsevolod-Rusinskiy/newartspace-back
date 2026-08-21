@@ -1,6 +1,7 @@
 import { InjectModel } from '@nestjs/sequelize'
 import { FindOptions, Op } from 'sequelize'
 import {
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -26,6 +27,13 @@ export interface PaintingWithAuthor extends Painting {
   author: string | null
 }
 
+export interface PaintingDeletionResult {
+  deletedPaintingIds: number[]
+  deletedPaintingCount: number
+  skippedSharedImageCount: number
+  storageCleanupErrorCount: number
+}
+
 @Injectable()
 export class PaintingsService {
   private readonly logger = new Logger(PaintingsService.name)
@@ -35,7 +43,8 @@ export class PaintingsService {
     private paintingModel: typeof Painting,
     @InjectModel(PaintingAttributes)
     private paintingAttributesModel: typeof PaintingAttributes,
-    private readonly storageService: StorageService
+    private readonly storageService: StorageService,
+    private readonly sequelize: Sequelize
   ) {}
 
   async create(createPaintingDto: CreatePaintingDto): Promise<Painting> {
@@ -529,31 +538,93 @@ export class PaintingsService {
     return updatedPainting
   }
 
-  async delete(id: string): Promise<void> {
-    const painting = await this.findOne(id)
-
-    if (!painting) {
-      this.logger.error(`Painting with id ${id} not found`)
-      throw new NotFoundException(`Painting with id ${id} not found`)
-    }
-
-    const imgUrl = painting.imgUrl
-    const fileName = getFileNameFromUrl(imgUrl)
-
+  async delete(id: string): Promise<PaintingDeletionResult> {
+    const paintingId = Number(id)
+    const transaction = await this.sequelize.transaction()
+    let painting: Painting
     try {
-      // Удаляем связанные записи из PaintingAttributes
-      await PaintingAttributes.destroy({
-        where: { paintingId: id }
+      painting = await this.paintingModel.findOne({
+        where: { id: paintingId },
+        transaction,
+        lock: transaction.LOCK.UPDATE
       })
+      if (!painting) {
+        throw new NotFoundException(`Painting with id ${id} not found`)
+      }
 
-      await this.storageService.deleteFile(fileName, 'paintings')
-      await painting.destroy()
+      await this.paintingAttributesModel.destroy({
+        where: { paintingId: { [Op.in]: [paintingId] } },
+        transaction
+      })
+      await painting.destroy({ transaction })
+      await transaction.commit()
     } catch (error) {
-      this.logger.error(`Error deleting painting: ${error.message}`)
-      throw new InternalServerErrorException(
-        `Error deleting painting: ${error.message}`
-      )
+      await transaction.rollback()
+      if (error?.name === 'SequelizeForeignKeyConstraintError') {
+        throw new ConflictException(
+          `Painting with id ${id} is referenced by another record`
+        )
+      }
+      throw error
     }
+
+    const cleanup = await this.cleanupDeletedPaintingImages([
+      { id: painting.id, imgUrl: painting.imgUrl }
+    ])
+    return {
+      deletedPaintingIds: [paintingId],
+      deletedPaintingCount: 1,
+      ...cleanup
+    }
+  }
+
+  private async cleanupDeletedPaintingImages(
+    paintings: Array<{ id: number; imgUrl: string }>
+  ): Promise<
+    Pick<
+      PaintingDeletionResult,
+      'skippedSharedImageCount' | 'storageCleanupErrorCount'
+    >
+  > {
+    const paintingsByImage = new Map<
+      string,
+      Array<{ id: number; imgUrl: string }>
+    >()
+    for (const painting of paintings) {
+      const group = paintingsByImage.get(painting.imgUrl) || []
+      group.push(painting)
+      paintingsByImage.set(painting.imgUrl, group)
+    }
+
+    let skippedSharedImageCount = 0
+    let storageCleanupErrorCount = 0
+    for (const [imgUrl, deletedPaintings] of paintingsByImage) {
+      try {
+        const remainingReferences = await this.paintingModel.count({
+          where: { imgUrl }
+        })
+        if (remainingReferences > 0) {
+          skippedSharedImageCount++
+          this.logger.log(
+            `Skipping shared painting image cleanup for deleted ids ${deletedPaintings.map(({ id }) => id).join(',')}`
+          )
+          continue
+        }
+
+        const fileName = getFileNameFromUrl(imgUrl)
+        if (!fileName) {
+          throw new Error('Painting image URL does not contain a file name')
+        }
+        await this.storageService.deleteFile(fileName, 'paintings')
+      } catch (error) {
+        storageCleanupErrorCount++
+        this.logger.error(
+          `Post-commit painting image cleanup failed for deleted ids ${deletedPaintings.map(({ id }) => id).join(',')}: ${error.message}`
+        )
+      }
+    }
+
+    return { skippedSharedImageCount, storageCleanupErrorCount }
   }
 
   async deleteMany(ids: string): Promise<{ deletedPaintingCount: number }> {
