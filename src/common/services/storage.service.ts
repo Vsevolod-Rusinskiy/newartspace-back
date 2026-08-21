@@ -27,7 +27,12 @@ export class StorageService {
       credentials: credentials,
       region: 'ru-central1',
       endpoint: 'https://storage.yandexcloud.net',
-      s3ForcePathStyle: true
+      s3ForcePathStyle: true,
+      httpOptions: {
+        connectTimeout: 2000,
+        timeout: 5000
+      },
+      maxRetries: 1
     })
   }
 

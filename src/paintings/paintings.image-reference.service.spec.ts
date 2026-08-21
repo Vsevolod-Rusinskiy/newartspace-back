@@ -3,6 +3,8 @@ import { Painting } from './models/painting.model'
 import { PaintingAttributes } from './models/painting-attributes.model'
 import { PaintingsService } from './paintings.service'
 
+process.env.BUCKET_NAME = 'newartspace-images-dev'
+
 describe('PaintingsService image reference coordination', () => {
   const imgUrl =
     'https://storage.yandexcloud.net/newartspace-images-dev/paintings/new-file.jpg'
@@ -59,11 +61,17 @@ describe('PaintingsService image reference coordination', () => {
 
     expect(sequelize.query).toHaveBeenCalledWith(
       expect.stringContaining('pg_advisory_xact_lock'),
-      expect.objectContaining({ replacements: { imgUrl }, transaction })
+      expect.objectContaining({
+        replacements: { objectKey: 'paintings/new-file.jpg' },
+        transaction
+      })
     )
     expect(storageService.fileExists).toHaveBeenCalledWith(
       'new-file.jpg',
       'paintings'
+    )
+    expect(sequelize.query.mock.invocationCallOrder[0]).toBeLessThan(
+      sequelize.query.mock.invocationCallOrder[1]
     )
     expect(paintingModel.build).toHaveBeenCalled()
     expect(painting.save).toHaveBeenCalledWith({ transaction })
@@ -77,5 +85,17 @@ describe('PaintingsService image reference coordination', () => {
     ).rejects.toBeInstanceOf(BadRequestException)
 
     expect(paintingModel.build).not.toHaveBeenCalled()
+  })
+
+  it('rejects an explicitly empty image URL before building a painting', async () => {
+    const { painting, paintingModel, sequelize, service } = createHarness(true)
+
+    await expect(
+      service.create({ imgUrl: '', title: 'Пустая ссылка', artistId: 32 })
+    ).rejects.toBeInstanceOf(BadRequestException)
+
+    expect(sequelize.transaction).not.toHaveBeenCalled()
+    expect(paintingModel.build).not.toHaveBeenCalled()
+    expect(painting.save).not.toHaveBeenCalled()
   })
 })

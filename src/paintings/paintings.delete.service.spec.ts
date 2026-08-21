@@ -8,6 +8,8 @@ import { Painting } from './models/painting.model'
 import { PaintingAttributes } from './models/painting-attributes.model'
 import { PaintingsService } from './paintings.service'
 
+process.env.BUCKET_NAME = 'newartspace-images-dev'
+
 const imageUrl =
   'https://storage.yandexcloud.net/newartspace-images-dev/paintings/delete-me.jpg'
 
@@ -215,6 +217,7 @@ describe('PaintingsService.delete', () => {
       'painting',
       'commit',
       'count-references',
+      'find',
       'storage'
     ])
     expect(paintingAttributesModel.destroy).toHaveBeenCalledWith(
@@ -226,6 +229,9 @@ describe('PaintingsService.delete', () => {
         lock: transaction.LOCK.UPDATE
       })
     )
+    expect(sequelize.query.mock.invocationCallOrder[0]).toBeLessThan(
+      paintingModel.findAll.mock.invocationCallOrder[0]
+    )
     expect(painting.destroy).toHaveBeenCalledWith({ transaction })
     expect(storageService.deleteFile).toHaveBeenCalledWith(
       'delete-me.jpg',
@@ -234,7 +240,7 @@ describe('PaintingsService.delete', () => {
     expect(sequelize.query).toHaveBeenCalledWith(
       expect.stringContaining('pg_advisory_xact_lock'),
       expect.objectContaining({
-        replacements: { imgUrl: imageUrl },
+        replacements: { objectKey: 'paintings/delete-me.jpg' },
         transaction
       })
     )
@@ -356,6 +362,7 @@ describe('PaintingsService.delete', () => {
       'painting',
       'commit',
       'count-references',
+      'find',
       'storage'
     ])
     expect(transaction.rollback).not.toHaveBeenCalled()
@@ -391,7 +398,6 @@ describe('PaintingsService.delete', () => {
       event: 'painting_image_cleanup_failed',
       deletedPaintingIds: [21],
       phase: 'storage_delete',
-      imgUrl: imageUrl,
       objectKey: 'paintings/delete-me.jpg',
       category: 'paintings',
       errorName: 'Error',
@@ -463,8 +469,10 @@ describe('PaintingsService.deleteMany', () => {
       'painting-22',
       'commit',
       'count-references',
+      'find-many',
       'storage-delete-21.jpg',
       'count-references',
+      'find-many',
       'storage-delete-22.jpg'
     ])
     expect(storageService.deleteFile).toHaveBeenCalledTimes(2)

@@ -201,7 +201,11 @@ describe('Cache revalidation controller hooks', () => {
       deleteFile: jest.fn().mockResolvedValue(undefined)
     }
     const controller = new PaintingsController(
-      {} as PaintingsService,
+      {
+        deleteUnusedImage: jest
+          .fn()
+          .mockResolvedValue({ message: 'File deleted successfully' })
+      } as unknown as PaintingsService,
       storage as unknown as StorageService,
       publisher
     )

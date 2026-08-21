@@ -47,6 +47,12 @@ describe('StorageService SEO_SAFE isolation', () => {
 
     expect(credentials).toHaveBeenCalledTimes(1)
     expect(s3).toHaveBeenCalledTimes(1)
+    expect(s3).toHaveBeenCalledWith(
+      expect.objectContaining({
+        httpOptions: { connectTimeout: 2000, timeout: 5000 },
+        maxRetries: 1
+      })
+    )
   })
 
   it('checks an exact managed object without changing storage', async () => {

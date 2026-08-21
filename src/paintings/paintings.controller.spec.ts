@@ -15,6 +15,7 @@ describe('PaintingsController response contracts', () => {
     update: jest.Mock
     delete: jest.Mock
     deleteMany: jest.Mock
+    deleteUnusedImage: jest.Mock
     getAllSortedPaintings: jest.Mock
   }
   const publisher = { schedule: jest.fn() }
@@ -35,6 +36,7 @@ describe('PaintingsController response contracts', () => {
       update: jest.fn(),
       delete: jest.fn(),
       deleteMany: jest.fn(),
+      deleteUnusedImage: jest.fn(),
       getAllSortedPaintings: jest.fn()
     }
     publisher.schedule.mockReset()
@@ -115,6 +117,17 @@ describe('PaintingsController response contracts', () => {
       action: 'deleted',
       ids: [301]
     })
+  })
+
+  it('delegates unused image deletion to the painting service guard', async () => {
+    paintingService.deleteUnusedImage.mockResolvedValue({
+      message: 'File deleted successfully'
+    })
+
+    await expect(controller.deleteFile('unused.jpg')).resolves.toEqual({
+      message: 'File deleted successfully'
+    })
+    expect(paintingService.deleteUnusedImage).toHaveBeenCalledWith('unused.jpg')
   })
 
   it('returns the numeric bulk count and publishes only validated unique ids', async () => {

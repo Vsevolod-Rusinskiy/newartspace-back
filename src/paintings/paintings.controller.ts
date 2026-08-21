@@ -178,8 +178,7 @@ export class PaintingsController {
     if (!fileName) {
       throw new BadRequestException('File name is required')
     }
-    await this.storageService.deleteFile(fileName, 'paintings')
-    return { message: 'File deleted successfully' }
+    return this.paintingService.deleteUnusedImage(fileName)
   }
 
   @UseGuards(AdminJwtGuard)

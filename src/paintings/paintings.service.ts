@@ -12,7 +12,6 @@ import { CreatePaintingDto } from './dto/create-painting.dto'
 import { UpdatePaintingDto } from './dto/update-painting.dto'
 import { Painting } from './models/painting.model'
 import { StorageService } from '../common/services/storage.service'
-import { getFileNameFromUrl } from '../utils'
 import { Artist } from '../artists/models/artist.model'
 import { Attributes } from '../attributes/models/attributes.model'
 import { parsePriceRange } from '../utils/parsePriceRange'
@@ -23,6 +22,12 @@ import {
   rankSimilarPaintings,
   SimilarPaintingCandidate
 } from './similar-paintings'
+import {
+  ManagedPaintingImageReference,
+  isSafeManagedPaintingImageFileName,
+  resolveManagedPaintingImageFileName,
+  resolveManagedPaintingImageUrl
+} from './painting-image-reference'
 
 export interface PaintingWithAuthor extends Painting {
   author: string | null
@@ -51,16 +56,21 @@ export class PaintingsService {
   ) {}
 
   async create(createPaintingDto: CreatePaintingDto): Promise<Painting> {
+    if (createPaintingDto.imgUrl === '') {
+      throw new BadRequestException('Painting image URL cannot be empty')
+    }
     try {
       return await this.sequelize.transaction(async (transaction) => {
+        let imageReference: ManagedPaintingImageReference | undefined
         if (createPaintingDto.imgUrl) {
-          await this.assertImageReferenceAvailable(
+          imageReference = await this.assertImageReferenceAvailable(
             createPaintingDto.imgUrl,
             transaction
           )
         }
         const painting = this.paintingModel.build({
           ...createPaintingDto,
+          ...(imageReference ? { imgUrl: imageReference.canonicalUrl } : {}),
           artistId: createPaintingDto.artistId,
           priority: 0
         })
@@ -418,22 +428,39 @@ export class PaintingsService {
   }
 
   async update(id: number, painting: UpdatePaintingDto): Promise<Painting> {
-    const existingPainting = await this.findOne(id.toString())
-    if (!existingPainting) {
-      throw new NotFoundException(`Painting with id ${id} not found`)
+    if (painting.imgUrl === '') {
+      throw new BadRequestException('Painting image URL cannot be empty')
     }
-
-    const replacesImage =
-      painting.imgUrl !== undefined &&
-      painting.imgUrl !== null &&
-      existingPainting.imgUrl !== painting.imgUrl
+    let previousImgUrl: string | null = null
+    let replacesImage = false
     const updatedPainting = await this.sequelize.transaction(
       async (transaction) => {
-        if (replacesImage) {
-          await this.assertImageReferenceAvailable(painting.imgUrl, transaction)
+        await this.setTransactionTimeouts(transaction)
+        const existingPainting = await this.paintingModel.findOne({
+          where: { id },
+          transaction,
+          lock: transaction.LOCK.UPDATE
+        })
+        if (!existingPainting) {
+          throw new NotFoundException(`Painting with id ${id} not found`)
+        }
+
+        let updateData: UpdatePaintingDto = painting
+        if (
+          painting.imgUrl !== undefined &&
+          painting.imgUrl !== null &&
+          existingPainting.imgUrl !== painting.imgUrl
+        ) {
+          const imageReference = await this.assertImageReferenceAvailable(
+            painting.imgUrl,
+            transaction
+          )
+          previousImgUrl = existingPainting.imgUrl
+          replacesImage = true
+          updateData = { ...painting, imgUrl: imageReference.canonicalUrl }
         }
         await this.paintingModel.update(
-          { ...painting, artistId: painting.artistId },
+          { ...updateData, artistId: updateData.artistId },
           { where: { id }, transaction }
         )
 
@@ -472,10 +499,8 @@ export class PaintingsService {
       throw new NotFoundException(`Updated painting with id ${id} not found`)
     }
 
-    if (replacesImage && existingPainting.imgUrl) {
-      await this.cleanupDeletedPaintingImages([
-        { id, imgUrl: existingPainting.imgUrl }
-      ])
+    if (replacesImage && previousImgUrl) {
+      await this.cleanupDeletedPaintingImages([{ id, imgUrl: previousImgUrl }])
     }
 
     return updatedPainting
@@ -526,6 +551,7 @@ export class PaintingsService {
     const transaction = await this.sequelize.transaction()
     let paintings: Painting[]
     try {
+      await this.setTransactionTimeouts(transaction)
       const foundPaintings = await this.paintingModel.findAll({
         where: { id: { [Op.in]: paintingIds } },
         transaction,
@@ -607,28 +633,44 @@ export class PaintingsService {
     let storageCleanupErrorCount = 0
     for (const [imgUrl, deletedPaintings] of paintingsByImage) {
       const deletedPaintingIds = deletedPaintings.map(({ id }) => id)
-      const fileName =
-        typeof imgUrl === 'string' ? getFileNameFromUrl(imgUrl) : ''
-      const objectKey = fileName ? `paintings/${fileName}` : null
+      let imageReference: ManagedPaintingImageReference | null = null
+      try {
+        imageReference = resolveManagedPaintingImageUrl(
+          imgUrl,
+          process.env.BUCKET_NAME || ''
+        )
+      } catch {
+        imageReference = null
+      }
+      const objectKey = imageReference?.objectKey || null
       let phase: 'reference_check' | 'storage_delete' = 'reference_check'
       try {
-        if (typeof imgUrl !== 'string' || imgUrl.length === 0) {
-          throw new Error('Painting image URL is missing')
+        if (!imageReference) {
+          throw new Error('Painting image URL is not a managed canonical URL')
         }
         const cleanupResult = await this.withImageReferenceLock(
-          imgUrl,
+          imageReference.objectKey,
           async (transaction) => {
             const remainingReferences = await this.paintingModel.count({
-              where: { imgUrl },
+              where: { imgUrl: imageReference.canonicalUrl },
               transaction
             })
             if (remainingReferences > 0) return 'skipped' as const
-
-            if (!fileName) {
-              throw new Error('Painting image URL does not contain a file name')
+            if (
+              await this.hasPotentialImageReference(
+                imageReference.fileName,
+                imageReference.canonicalUrl,
+                transaction
+              )
+            ) {
+              return 'skipped' as const
             }
+
             phase = 'storage_delete'
-            await this.storageService.deleteFile(fileName, 'paintings')
+            await this.storageService.deleteFile(
+              imageReference.fileName,
+              'paintings'
+            )
             return 'deleted' as const
           }
         )
@@ -647,7 +689,6 @@ export class PaintingsService {
             event: 'painting_image_cleanup_failed',
             deletedPaintingIds,
             phase,
-            imgUrl: typeof imgUrl === 'string' ? imgUrl : null,
             objectKey,
             category: 'paintings',
             errorName,
@@ -661,11 +702,12 @@ export class PaintingsService {
   }
 
   private async withImageReferenceLock<T>(
-    imgUrl: string,
+    objectKey: string,
     operation: (transaction: Transaction) => Promise<T>
   ): Promise<T> {
     return this.sequelize.transaction(async (transaction) => {
-      await this.lockImageReference(imgUrl, transaction)
+      await this.setTransactionTimeouts(transaction)
+      await this.lockImageReference(objectKey, transaction)
       return operation(transaction)
     })
   }
@@ -673,27 +715,107 @@ export class PaintingsService {
   private async assertImageReferenceAvailable(
     imgUrl: string,
     transaction: Transaction
-  ): Promise<void> {
-    const fileName = getFileNameFromUrl(imgUrl)
-    if (!fileName) {
-      throw new BadRequestException(
-        'Painting image URL does not contain a file name'
-      )
-    }
-    await this.lockImageReference(imgUrl, transaction)
-    if (!(await this.storageService.fileExists(fileName, 'paintings'))) {
+  ): Promise<ManagedPaintingImageReference> {
+    const imageReference = resolveManagedPaintingImageUrl(
+      imgUrl,
+      process.env.BUCKET_NAME || ''
+    )
+    await this.setTransactionTimeouts(transaction)
+    await this.lockImageReference(imageReference.objectKey, transaction)
+    if (
+      !(await this.storageService.fileExists(
+        imageReference.fileName,
+        'paintings'
+      ))
+    ) {
       throw new BadRequestException('Painting image does not exist')
     }
+    return imageReference
   }
 
   private async lockImageReference(
-    imgUrl: string,
+    objectKey: string,
     transaction: Transaction
   ): Promise<void> {
     await this.sequelize.query(
-      'SELECT pg_advisory_xact_lock(hashtextextended(:imgUrl, 0))',
-      { replacements: { imgUrl }, transaction }
+      'SELECT pg_advisory_xact_lock(hashtextextended(:objectKey, 0))',
+      { replacements: { objectKey }, transaction }
     )
+  }
+
+  async deleteUnusedImage(fileName: string): Promise<{ message: string }> {
+    const imageReference = resolveManagedPaintingImageFileName(
+      fileName,
+      process.env.BUCKET_NAME || ''
+    )
+    await this.withImageReferenceLock(
+      imageReference.objectKey,
+      async (transaction) => {
+        const remainingReferences = await this.paintingModel.count({
+          where: { imgUrl: imageReference.canonicalUrl },
+          transaction
+        })
+        if (remainingReferences > 0) {
+          throw new ConflictException(
+            'Painting image is still referenced by a painting'
+          )
+        }
+        if (
+          await this.hasPotentialImageReference(
+            imageReference.fileName,
+            imageReference.canonicalUrl,
+            transaction
+          )
+        ) {
+          throw new ConflictException(
+            'Painting image is still referenced by a painting'
+          )
+        }
+        await this.storageService.deleteFile(
+          imageReference.fileName,
+          'paintings'
+        )
+      }
+    )
+    return { message: 'File deleted successfully' }
+  }
+
+  private async setTransactionTimeouts(
+    transaction: Transaction
+  ): Promise<void> {
+    await this.sequelize.query(
+      `SET LOCAL lock_timeout = '2s'; SET LOCAL statement_timeout = '7s'`,
+      { transaction }
+    )
+  }
+
+  private async hasPotentialImageReference(
+    fileName: string,
+    canonicalUrl: string,
+    transaction: Transaction
+  ): Promise<boolean> {
+    const paintings = await this.paintingModel.findAll({
+      attributes: ['imgUrl'],
+      transaction
+    })
+    return paintings.some((painting) => {
+      const imgUrl = painting?.imgUrl
+      if (typeof imgUrl !== 'string' || imgUrl.length === 0) return false
+      if (imgUrl === canonicalUrl) return false
+      return this.getImageBasename(imgUrl) === fileName
+    })
+  }
+
+  private getImageBasename(imgUrl: string): string | null {
+    const withoutQueryOrHash = imgUrl.split(/[?#]/, 1)[0]
+    const rawBasename = withoutQueryOrHash.split('/').pop() || ''
+    let basename = rawBasename
+    try {
+      basename = decodeURIComponent(rawBasename)
+    } catch {
+      return null
+    }
+    return isSafeManagedPaintingImageFileName(basename) ? basename : null
   }
 
   private sanitizeCleanupErrorMessage(message: unknown): string {
