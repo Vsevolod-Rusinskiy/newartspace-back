@@ -112,6 +112,8 @@ run_case error 1 'df failed'
 run_case error-inodes 1 'df failed'
 run_case oversized-equal 0 '' 9223372036854775808 10 9223372036854775808
 run_case oversized-above 0 '' 9223372036854775808 10 9223372036854775808
+run_case huge-bytes-threshold 1 'free bytes' 9223372036854775808 10 100
+run_case huge-inodes-threshold 1 'free inodes' 100 10 9223372036854775808
 run_case huge-percent-threshold 2 '' 100 9223372036854775808 100
 
 set +e
