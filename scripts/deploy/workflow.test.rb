@@ -18,6 +18,10 @@ assert(Array(triggers.dig('pull_request', 'branches')).include?('master'), 'pull
 
 jobs = workflow.fetch('jobs')
 checks = jobs.fetch('checks')
+workflow_permissions = workflow.fetch('permissions')
+assert(workflow_permissions['contents'] == 'read', 'workflow contents permission must be read')
+assert(workflow_permissions['packages'] != 'write', 'packages write must not apply to pull-request checks')
+assert(checks['permissions'].nil?, 'checks must use the read-only workflow permissions')
 check_commands = checks.fetch('steps').map { |step| step['run'] }.compact.join("\n")
 [
   'bash scripts/deploy/preflight.test.sh',
@@ -33,6 +37,9 @@ end
 
 build_job = jobs.fetch('build-and-push')
 deploy_job = jobs.fetch('deploy')
+build_permissions = build_job.fetch('permissions')
+assert(build_permissions['contents'] == 'read', 'build-and-push contents permission must be read')
+assert(build_permissions['packages'] == 'write', 'build-and-push packages permission must be write')
 assert(build_job['if'] == "github.event_name == 'push'", 'build-and-push must be push-only')
 assert(deploy_job['if'] == "github.event_name == 'push'", 'deploy must be push-only')
 
