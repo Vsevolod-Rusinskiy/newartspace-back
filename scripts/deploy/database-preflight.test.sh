@@ -13,6 +13,19 @@ set -euo pipefail
 state_file=${DOCKER_STATE_FILE:?}
 record() { printf '%s\n' "$1" >>"$state_file"; }
 count() { awk -v item="$1" '$0 == item { count++ } END { print count + 0 }' "$state_file"; }
+record "argv:$*"
+
+if [[ "$1" == exec && "$*" == *"sh -euc"* ]]; then
+  record db-check
+  case "${DOCKER_MODE:-}" in
+    recovery) [[ "$(count db-check)" -eq 1 ]] && exit 11 ;;
+    exhaustion) exit 11 ;;
+    missing-credentials) exit 14 ;;
+    query-failure) exit 12 ;;
+    bad-result) exit 13 ;;
+  esac
+  exit 0
+fi
 
 if [[ "$1" == inspect ]]; then
   if [[ "$*" == *State.Running* ]]; then
@@ -85,6 +98,16 @@ run_case() {
   if [[ -n "$expected_text" && "$output" != *"$expected_text"* ]]; then
     printf 'FAIL %s: expected output containing %q\n' "$mode" "$expected_text" >&2
     exit 1
+  fi
+  if [[ "$mode" == success ]]; then
+    if grep -q 'inspect-env\|secret' "$state_file" || [[ "$output" == *secret* ]]; then
+      printf '%s\n' 'FAIL password leaked through docker inspect/argv/output' >&2
+      exit 1
+    fi
+    if ! grep -q 'sh -euc' "$state_file" || ! grep -q '127.0.0.1' "$state_file"; then
+      printf '%s\n' 'FAIL database check did not use fixed local sh flow' >&2
+      exit 1
+    fi
   fi
   rm -f "$state_file"
 }

@@ -91,16 +91,14 @@ if decimal_gt "$delay_seconds" 60; then
   exit 2
 fi
 
-extract_env() {
-  local key=$1 env_dump=$2
-  printf '%s\n' "$env_dump" | awk -v key="$key" '
-    index($0, key "=") == 1 {
-      sub("^[^=]*=", "")
-      print
-      exit
-    }
-  '
-}
+db_check_script='if [ -z "${POSTGRES_USER:-}" ] || [ -z "${POSTGRES_DB:-}" ] || [ -z "${POSTGRES_PASSWORD:-}" ]; then
+  exit 14
+fi
+export PGPASSWORD="$POSTGRES_PASSWORD"
+pg_isready -h 127.0.0.1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" >/dev/null 2>&1 || exit 11
+query_result=$(psql -X -qAt -h 127.0.0.1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT 1") || exit 12
+query_result=$(printf "%s" "$query_result" | tr -d "[:space:]")
+[ "$query_result" = 1 ] || exit 13'
 
 last_error='no successful database readiness check'
 for ((attempt=1; attempt<=attempts; attempt++)); do
@@ -110,34 +108,19 @@ for ((attempt=1; attempt<=attempts; attempt++)); do
   elif [[ "$running" != true ]]; then
     last_error='database container is not running'
   else
-    env_dump=''
-    if ! env_dump=$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$container" 2>/dev/null); then
-      last_error='container credentials inspect failed'
+    check_status=0
+    if docker exec "$container" sh -euc "$db_check_script" >/dev/null 2>&1; then
+      printf 'database preflight passed: container=%s attempts=%s\n' "$container" "$attempt"
+      exit 0
     else
-      db_user=$(extract_env POSTGRES_USER "$env_dump")
-      db_name=$(extract_env POSTGRES_DB "$env_dump")
-      db_password=$(extract_env POSTGRES_PASSWORD "$env_dump")
-      if [[ -z "$db_user" || -z "$db_name" || -z "$db_password" ]]; then
-        fail 'container credentials are missing or empty'
-      fi
-
-      if ! docker exec -e "PGPASSWORD=$db_password" "$container" pg_isready \
-        -U "$db_user" -d "$db_name" >/dev/null 2>&1; then
-        last_error='pg_isready failed'
-      else
-        query_result=''
-        if ! query_result=$(docker exec -e "PGPASSWORD=$db_password" "$container" \
-          psql -X -qAt -U "$db_user" -d "$db_name" -c 'SELECT 1' 2>/dev/null); then
-          last_error='SELECT 1 query failed'
-        else
-          query_result=$(printf '%s' "$query_result" | tr -d '[:space:]')
-          if [[ "$query_result" == 1 ]]; then
-            printf 'database preflight passed: container=%s attempts=%s\n' "$container" "$attempt"
-            exit 0
-          fi
-          last_error='SELECT 1 returned an unexpected result'
-        fi
-      fi
+      check_status=$?
+      case "$check_status" in
+        11) last_error='pg_isready failed' ;;
+        12) last_error='SELECT 1 query failed' ;;
+        13) last_error='SELECT 1 returned an unexpected result' ;;
+        14) fail 'container credentials are missing or empty' ;;
+        *) last_error='container database check failed' ;;
+      esac
     fi
   fi
 
