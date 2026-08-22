@@ -38,6 +38,9 @@ jobs:
       - name: Run disk/inode preflight tests
         run: bash scripts/deploy/preflight.test.sh
 
+      - name: Run database preflight tests
+        run: bash scripts/deploy/database-preflight.test.sh
+
   build-and-push:
     needs: checks
     runs-on: ubuntu-latest
@@ -82,6 +85,20 @@ jobs:
           command_timeout: 60m
           script_path: scripts/deploy/preflight.sh
           envs: NAS_DEPLOY_MOUNTPOINT,NAS_DEPLOY_MIN_FREE_BYTES,NAS_DEPLOY_MIN_FREE_PERCENT,NAS_DEPLOY_MIN_FREE_INODES
+
+      - name: Database preflight
+        uses: appleboy/ssh-action@v1.2.5
+        env:
+          NAS_DEPLOY_DB_CONTAINER: database
+          NAS_DEPLOY_DB_ATTEMPTS: "3"
+          NAS_DEPLOY_DB_DELAY_SECONDS: "5"
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 60m
+          script_path: scripts/deploy/database-preflight.sh
+          envs: NAS_DEPLOY_DB_CONTAINER,NAS_DEPLOY_DB_ATTEMPTS,NAS_DEPLOY_DB_DELAY_SECONDS
 
       - name: Deploy to Server
         uses: appleboy/ssh-action@v1.0.3
