@@ -82,7 +82,9 @@ run_case() {
   local threshold_bytes=${4:-100} threshold_percent=${5:-10} threshold_inodes=${6:-100}
   local output status
   set +e
-  output=$(DF_MODE="$mode" PATH="$MOCK_BIN:$PATH" "$PREFLIGHT" \
+  output=$(env -u NAS_DEPLOY_MOUNTPOINT -u NAS_DEPLOY_MIN_FREE_BYTES \
+    -u NAS_DEPLOY_MIN_FREE_PERCENT -u NAS_DEPLOY_MIN_FREE_INODES \
+    DF_MODE="$mode" PATH="$MOCK_BIN:$PATH" "$PREFLIGHT" \
     --mountpoint / --min-free-bytes "$threshold_bytes" \
     --min-free-percent "$threshold_percent" --min-free-inodes "$threshold_inodes" 2>&1)
   status=$?
@@ -117,7 +119,37 @@ run_case huge-inodes-threshold 1 'free inodes' 100 10 9223372036854775808
 run_case huge-percent-threshold 2 '' 100 9223372036854775808 100
 
 set +e
-PATH="$MOCK_BIN:$PATH" "$PREFLIGHT" --mountpoint / --min-free-bytes 100 --min-free-percent 10 >/dev/null 2>&1
+env -u NAS_DEPLOY_MOUNTPOINT -u NAS_DEPLOY_MIN_FREE_BYTES \
+  -u NAS_DEPLOY_MIN_FREE_PERCENT -u NAS_DEPLOY_MIN_FREE_INODES \
+  NAS_DEPLOY_MOUNTPOINT=/ NAS_DEPLOY_MIN_FREE_BYTES=100 \
+  NAS_DEPLOY_MIN_FREE_PERCENT=10 NAS_DEPLOY_MIN_FREE_INODES=100 \
+  DF_MODE=pass PATH="$MOCK_BIN:$PATH" "$PREFLIGHT" >/dev/null 2>&1
+status=$?
+set -e
+if [[ "$status" -ne 0 ]]; then
+  printf '%s\n' 'FAIL env-only configuration was rejected' >&2
+  exit 1
+fi
+
+set +e
+env -u NAS_DEPLOY_MOUNTPOINT -u NAS_DEPLOY_MIN_FREE_BYTES \
+  -u NAS_DEPLOY_MIN_FREE_PERCENT -u NAS_DEPLOY_MIN_FREE_INODES \
+  NAS_DEPLOY_MOUNTPOINT=/ NAS_DEPLOY_MIN_FREE_BYTES=9223372036854775808 \
+  NAS_DEPLOY_MIN_FREE_PERCENT=9223372036854775808 \
+  NAS_DEPLOY_MIN_FREE_INODES=9223372036854775808 \
+  DF_MODE=pass PATH="$MOCK_BIN:$PATH" "$PREFLIGHT" \
+  --mountpoint / --min-free-bytes 100 --min-free-percent 10 --min-free-inodes 100 >/dev/null 2>&1
+status=$?
+set -e
+if [[ "$status" -ne 0 ]]; then
+  printf '%s\n' 'FAIL CLI did not override environment configuration' >&2
+  exit 1
+fi
+
+set +e
+env -u NAS_DEPLOY_MOUNTPOINT -u NAS_DEPLOY_MIN_FREE_BYTES \
+  -u NAS_DEPLOY_MIN_FREE_PERCENT -u NAS_DEPLOY_MIN_FREE_INODES \
+  PATH="$MOCK_BIN:$PATH" "$PREFLIGHT" >/dev/null 2>&1
 status=$?
 set -e
 if [[ "$status" -eq 0 ]]; then

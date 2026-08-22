@@ -33,6 +33,8 @@ decimal_gt() {
 usage() {
   cat >&2 <<'USAGE'
 Usage: preflight.sh --mountpoint PATH --min-free-bytes N --min-free-percent N --min-free-inodes N
+       or NAS_DEPLOY_MOUNTPOINT, NAS_DEPLOY_MIN_FREE_BYTES,
+       NAS_DEPLOY_MIN_FREE_PERCENT, NAS_DEPLOY_MIN_FREE_INODES
 USAGE
 }
 
@@ -48,10 +50,10 @@ require_value() {
   fi
 }
 
-mountpoint=
-min_free_bytes=
-min_free_percent=
-min_free_inodes=
+mountpoint=${NAS_DEPLOY_MOUNTPOINT-}
+min_free_bytes=${NAS_DEPLOY_MIN_FREE_BYTES-}
+min_free_percent=${NAS_DEPLOY_MIN_FREE_PERCENT-}
+min_free_inodes=${NAS_DEPLOY_MIN_FREE_INODES-}
 
 while (($#)); do
   case "$1" in
