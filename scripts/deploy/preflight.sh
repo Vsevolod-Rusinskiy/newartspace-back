@@ -1,5 +1,34 @@
 #!/usr/bin/env bash
 set -euo pipefail
+export LC_ALL=C
+
+normalize_decimal() {
+  local value=$1
+  while [[ ${#value} -gt 1 && ${value:0:1} == 0 ]]; do
+    value=${value:1}
+  done
+  printf '%s' "$value"
+}
+
+decimal_lt() {
+  local left right
+  left=$(normalize_decimal "$1")
+  right=$(normalize_decimal "$2")
+  if (( ${#left} < ${#right} )); then
+    return 0
+  fi
+  if (( ${#left} > ${#right} )); then
+    return 1
+  fi
+  if [[ "$left" < "$right" ]]; then
+    return 0
+  fi
+  return 1
+}
+
+decimal_gt() {
+  decimal_lt "$2" "$1"
+}
 
 usage() {
   cat >&2 <<'USAGE'
@@ -69,7 +98,7 @@ for threshold in "$min_free_bytes" "$min_free_percent" "$min_free_inodes"; do
   fi
 done
 
-if (( min_free_percent > 100 )); then
+if decimal_gt "$min_free_percent" 100; then
   usage
   exit 2
 fi
@@ -86,15 +115,15 @@ if [[ -z "$bytes_row" || ! "$free_bytes" =~ ^[0-9]+$ || ! "$used_percent" =~ ^[0
 fi
 
 used_percent=${used_percent%%%}
-if (( used_percent > 100 )); then
+if decimal_gt "$used_percent" 100; then
   fail 'invalid free percent measurement'
 fi
 free_percent=$((100 - used_percent))
 
-if (( free_bytes < min_free_bytes )); then
+if decimal_lt "$free_bytes" "$min_free_bytes"; then
   fail "free bytes $free_bytes below threshold $min_free_bytes"
 fi
-if (( free_percent < min_free_percent )); then
+if decimal_lt "$free_percent" "$min_free_percent"; then
   fail "free percent $free_percent below threshold $min_free_percent"
 fi
 
@@ -109,7 +138,7 @@ if [[ -z "$inodes_row" || ! "$free_inodes" =~ ^[0-9]+$ ]]; then
   fail 'invalid or empty free inodes measurement'
 fi
 
-if (( free_inodes < min_free_inodes )); then
+if decimal_lt "$free_inodes" "$min_free_inodes"; then
   fail "free inodes $free_inodes below threshold $min_free_inodes"
 fi
 
