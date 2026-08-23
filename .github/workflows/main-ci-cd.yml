@@ -46,6 +46,9 @@ jobs:
       - name: Run service readiness tests
         run: bash scripts/deploy/service-readiness.test.sh
 
+      - name: Run locked production release tests
+        run: bash scripts/deploy/production-release.test.sh
+
       - name: Run Jest tests
         run: yarn test --runInBand
 
@@ -87,76 +90,39 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Disk/inode preflight
+      - name: Run locked production release
         uses: appleboy/ssh-action@v1.2.5
         env:
+          NAS_RETENTION_MODE: dry-run
+          NAS_RELEASE_LOCK_PATH: /var/lock/newartspace-deploy-cleanup.lock
+          NAS_RELEASE_LOCK_WAIT_SECONDS: "300"
+          NAS_RETENTION_STATE_DIR: /var/lib/newartspace/image-retention
+          NAS_RETENTION_OWNER_UID: "0"
+          NAS_RETENTION_LEDGER_NAME: back.successful-images
+          NAS_IMAGE_REPOSITORY: ghcr.io/vsevolod-rusinskiy/newartspace-back
+          NAS_DEPLOY_EXPECTED_IMAGE: ghcr.io/vsevolod-rusinskiy/newartspace-back:sha-${{ github.sha }}
+          NAS_DEPLOY_SERVICE_CONTAINER: back
+          NAS_DEPLOY_DB_CONTAINER: database
+          NAS_DEPLOY_LOCAL_URL: http://127.0.0.1:3000/version
+          NAS_DEPLOY_SITE_URL: https://newartspace.ru/
           NAS_DEPLOY_MOUNTPOINT: /
           NAS_DEPLOY_MIN_FREE_BYTES: "10737418240"
           NAS_DEPLOY_MIN_FREE_PERCENT: "10"
           NAS_DEPLOY_MIN_FREE_INODES: "1000000"
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 60m
-          script_path: scripts/deploy/preflight.sh
-          envs: NAS_DEPLOY_MOUNTPOINT,NAS_DEPLOY_MIN_FREE_BYTES,NAS_DEPLOY_MIN_FREE_PERCENT,NAS_DEPLOY_MIN_FREE_INODES
-
-      - name: Database preflight
-        uses: appleboy/ssh-action@v1.2.5
-        env:
-          NAS_DEPLOY_DB_CONTAINER: database
+          NAS_RETENTION_SOFT_MIN_FREE_BYTES: "16106127360"
           NAS_DEPLOY_DB_ATTEMPTS: "3"
           NAS_DEPLOY_DB_DELAY_SECONDS: "5"
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 60m
-          script_path: scripts/deploy/database-preflight.sh
-          envs: NAS_DEPLOY_DB_CONTAINER,NAS_DEPLOY_DB_ATTEMPTS,NAS_DEPLOY_DB_DELAY_SECONDS
-
-      - name: Deploy to Server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 60m
-          script: |
-            set -e
-            cd /var/www/newartspace/scripts
-            ./deploy.sh back sha-${{ github.sha }}
-            docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | sed -n '1,30p'
-
-      - name: Post-deploy database readiness
-        uses: appleboy/ssh-action@v1.2.5
-        env:
-          NAS_DEPLOY_DB_CONTAINER: database
-          NAS_DEPLOY_DB_ATTEMPTS: "3"
-          NAS_DEPLOY_DB_DELAY_SECONDS: "5"
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 60m
-          script_path: scripts/deploy/database-preflight.sh
-          envs: NAS_DEPLOY_DB_CONTAINER,NAS_DEPLOY_DB_ATTEMPTS,NAS_DEPLOY_DB_DELAY_SECONDS
-
-      - name: Post-deploy service readiness
-        uses: appleboy/ssh-action@v1.2.5
-        env:
-          NAS_DEPLOY_SERVICE_CONTAINER: back
-          NAS_DEPLOY_EXPECTED_IMAGE: ghcr.io/vsevolod-rusinskiy/newartspace-back:sha-${{ github.sha }}
-          NAS_DEPLOY_LOCAL_URL: http://127.0.0.1:3000/version
-          NAS_DEPLOY_SITE_URL: https://newartspace.ru/
           NAS_DEPLOY_SERVICE_ATTEMPTS: "10"
           NAS_DEPLOY_SERVICE_DELAY_SECONDS: "5"
           NAS_DEPLOY_REQUEST_TIMEOUT_SECONDS: "10"
+          NAS_RETENTION_SEED_1: ghcr.io/vsevolod-rusinskiy/newartspace-back:sha-c5a5d1c3a0f57b1fc1c49c0dd39c503000037b7d
+          NAS_RETENTION_SEED_2: ghcr.io/vsevolod-rusinskiy/newartspace-back:sha-25f399f352b311462caf53e12baa230bc1049366
+          NAS_RETENTION_SEED_3: ghcr.io/vsevolod-rusinskiy/newartspace-back:sha-492304ccfad8038d047e5228e989eedb3da04f38
+          NAS_BACKEND_DEPLOY_SCRIPT: /var/www/newartspace/scripts/deploy.sh
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           command_timeout: 60m
-          script_path: scripts/deploy/service-readiness.sh
-          envs: NAS_DEPLOY_SERVICE_CONTAINER,NAS_DEPLOY_EXPECTED_IMAGE,NAS_DEPLOY_LOCAL_URL,NAS_DEPLOY_SITE_URL,NAS_DEPLOY_SERVICE_ATTEMPTS,NAS_DEPLOY_SERVICE_DELAY_SECONDS,NAS_DEPLOY_REQUEST_TIMEOUT_SECONDS
+          script_path: scripts/deploy/production-release.sh
+          envs: NAS_RETENTION_MODE,NAS_RELEASE_LOCK_PATH,NAS_RELEASE_LOCK_WAIT_SECONDS,NAS_RETENTION_STATE_DIR,NAS_RETENTION_OWNER_UID,NAS_RETENTION_LEDGER_NAME,NAS_IMAGE_REPOSITORY,NAS_DEPLOY_EXPECTED_IMAGE,NAS_DEPLOY_SERVICE_CONTAINER,NAS_DEPLOY_DB_CONTAINER,NAS_DEPLOY_LOCAL_URL,NAS_DEPLOY_SITE_URL,NAS_DEPLOY_MOUNTPOINT,NAS_DEPLOY_MIN_FREE_BYTES,NAS_DEPLOY_MIN_FREE_PERCENT,NAS_DEPLOY_MIN_FREE_INODES,NAS_RETENTION_SOFT_MIN_FREE_BYTES,NAS_DEPLOY_DB_ATTEMPTS,NAS_DEPLOY_DB_DELAY_SECONDS,NAS_DEPLOY_SERVICE_ATTEMPTS,NAS_DEPLOY_SERVICE_DELAY_SECONDS,NAS_DEPLOY_REQUEST_TIMEOUT_SECONDS,NAS_RETENTION_SEED_1,NAS_RETENTION_SEED_2,NAS_RETENTION_SEED_3,NAS_BACKEND_DEPLOY_SCRIPT
