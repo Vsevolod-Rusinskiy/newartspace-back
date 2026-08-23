@@ -234,7 +234,14 @@ case "${1-}" in
   image)
     case "${2-}" in
       ls)
-        if [[ "${RELEASE_IMAGE_LS_MODE:-healthy}" == failure ]]; then exit 1; fi
+        [[ $# -eq 5 && "${3-}" == --format && "${4-}" == '{{.Repository}}:{{.Tag}}' && "${5-}" == "${RELEASE_IMAGE_REPOSITORY:?}" ]] || exit 97
+        image_ls_count=$(grep -Fc 'docker|image ls --format {{.Repository}}:{{.Tag}} ' "$commands")
+        if [[ "${RELEASE_IMAGE_LS_MODE:-healthy}" == failure ||
+              "${RELEASE_IMAGE_LS_MODE:-healthy}" == failure-after-first && "$image_ls_count" -gt 1 ]]; then exit 1; fi
+        if [[ "${RELEASE_IMAGE_LS_MODE:-healthy}" == malformed-after-first && "$image_ls_count" -gt 1 ]]; then
+          printf 'ghcrXio/vsevolod-rusinskiy/newartspace-back:sha-9999999999999999999999999999999999999999\n'
+          exit 0
+        fi
         awk -F '\t' '{ print $1 }' "$images"
         ;;
       inspect)
@@ -436,6 +443,7 @@ run_release() {
     RELEASE_FIXTURE_DIR="$FIXTURE_DIR" \
     RELEASE_EXPECTED_IMAGE="$REVISION" \
     RELEASE_EXPECTED_IMAGE_ID="$ID_REVISION" \
+    RELEASE_IMAGE_REPOSITORY="$REPOSITORY" \
     NAS_RETENTION_MODE="$mode" \
     NAS_RELEASE_LOCK_PATH="$CASE_ROOT/release.lock" \
     NAS_RELEASE_LOCK_WAIT_SECONDS=300 \
@@ -982,6 +990,26 @@ test_successful_incomplete_removal_keeps_extended_ledger() {
   done
 }
 
+test_post_delete_repository_inventory_failure_keeps_extended_ledger() {
+  local mode expected_message
+  for mode in failure-after-first malformed-after-first; do
+    setup_fixture
+    if [[ "$mode" == failure-after-first ]]; then
+      expected_message='cannot list post-retention local repository images'
+    else
+      expected_message='invalid post-retention repository tag'
+    fi
+    run_release apply RELEASE_IMAGE_LS_MODE="$mode"
+    assert_status 1
+    assert_contains "$expected_message"
+    assert_ledger "$SEED_1" "$SEED_2" "$SEED_3" "$REVISION"
+    assert_front_container_healthy
+    local image_ls_calls
+    image_ls_calls=$(grep -Fc 'docker|image ls --format {{.Repository}}:{{.Tag}} ' "$FIXTURE_DIR/commands.log")
+    [[ "$image_ls_calls" -eq 2 ]] || fail_test "expected exactly two repository inventory calls, got $image_ls_calls"
+  done
+}
+
 test_rejects_permissive_ledger_before_pull() {
   setup_fixture
   write_ledger "$SEED_1" "$SEED_2" "$SEED_3"
@@ -1129,6 +1157,7 @@ run_test 'detects an early FATAL in fresh logs larger than the pipe buffer' test
 run_test 'preserves every protected exact tag to full image ID mapping' test_protected_tag_mapping_is_immutable
 run_test 'requires the post-retention restart count to equal the deployed sample' test_restart_count_must_match_deployed_sample
 run_test 'rejects successful no-op and partial image removal without compacting' test_successful_incomplete_removal_keeps_extended_ledger
+run_test 'rejects failed or malformed post-delete repository inventory without compacting' test_post_delete_repository_inventory_failure_keeps_extended_ledger
 run_test 'rejects an existing 0644 ledger before docker pull' test_rejects_permissive_ledger_before_pull
 run_test 'preserves old ledger bytes when pre-rename fsync fails' test_sync_failure_preserves_old_ledger_bytes
 run_test 'keeps the healthy container and extended ledger after an apply database postcheck failure' test_apply_database_postcheck_failure_does_not_compact_or_rollback

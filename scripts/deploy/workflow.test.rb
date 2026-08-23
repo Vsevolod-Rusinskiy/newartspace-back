@@ -14,6 +14,15 @@ def assert(condition, message)
   raise "workflow contract failed: #{message}" unless condition
 end
 
+def exact_key_set?(actual, expected)
+  actual.keys.sort == expected.keys.sort
+end
+
+def approved_deploy_application?(release_text, approved_body)
+  function_match = release_text.match(/^deploy_application\(\) \{\n.*?^\}\n/m)
+  !function_match.nil? && function_match[0] == approved_body
+end
+
 triggers = workflow['on'] || workflow[true]
 assert(triggers.is_a?(Hash), 'workflow triggers are missing')
 assert(Array(triggers.dig('push', 'branches')).include?('master'), 'push must target master')
@@ -96,6 +105,15 @@ expected_release_env = {
   'NAS_RETENTION_SEED_3' => 'ghcr.io/vsevolod-rusinskiy/newartspace-back:sha-492304ccfad8038d047e5228e989eedb3da04f38',
   'NAS_BACKEND_DEPLOY_SCRIPT' => '/var/www/newartspace/scripts/deploy.sh'
 }
+release_env = release_step.fetch('env')
+assert(
+  exact_key_set?(release_env, expected_release_env),
+  'locked release env must contain exactly the approved key set'
+)
+assert(
+  !exact_key_set?(release_env.merge('NAS_UNAPPROVED_MUTATION' => '1'), expected_release_env),
+  'locked release env key-set guard must reject an injected key'
+)
 expected_release_env.each do |key, value|
   assert(release_step.dig('env', key).to_s == value, "locked release #{key} is wrong")
 end
@@ -109,12 +127,13 @@ assert(release_text.scan(common_end).length == 1, 'release must contain exactly 
 common_start = release_text.index(common_begin)
 common_finish = release_text.index(common_end)
 assert(common_start < common_finish, 'common-core markers are out of order')
-common_core = release_text[common_start..(common_finish + common_end.length)]
+common_finish = release_text.index("\n", common_finish) || release_text.length - 1
+common_core = release_text[common_start..common_finish]
 assert(
-  Digest::SHA256.hexdigest(common_core) == '030229ab4e04b5e3cb01aa4519294b51ef8fecb9686e1f8619f1eb3de52fa2a3',
+  Digest::SHA256.hexdigest(common_core) == 'd485c0c4b2c3e7f999205a3e45ccbb1002f447b6255e8a439e796f47b5c43011',
   'common core must match the hardened canonical implementation byte-for-byte'
 )
-outside_core = release_text[0...common_start] + release_text[(common_finish + common_end.length)..]
+outside_core = release_text[0...common_start] + release_text[(common_finish + 1)..]
 assert(common_core.include?('require_application_configuration'), 'common configuration must call the application validator')
 assert(common_core.match?(/^main\(\) \{/), 'main must be defined in the common core')
 assert(!common_core.match?(/^deploy_application\(\) \{/), 'application deploy body must be outside the common core')
@@ -128,14 +147,26 @@ assert(
 )
 assert(release_text.rstrip.end_with?('main "$@"'), 'main invocation must follow the application-specific definitions')
 
-[
-  'backend_deploy_script=${NAS_BACKEND_DEPLOY_SCRIPT-}',
-  '[[ "$backend_deploy_script" == /var/www/newartspace/scripts/deploy.sh ]]',
-  'revision=${expected_image#"$image_repository:"}',
-  '"$backend_deploy_script" back "$revision"'
-].each do |fragment|
-  assert(release_text.include?(fragment), "deploy body lost #{fragment}")
-end
+approved_deploy_application = <<~'BASH'
+  deploy_application() {
+    local revision
+    revision=${expected_image#"$image_repository:"}
+    printf "Delegate backend deploy: service=back revision=%s\n" "$revision"
+    "$backend_deploy_script" back "$revision" || fail "backend deploy command failed"
+  }
+BASH
+assert(
+  approved_deploy_application?(release_text, approved_deploy_application),
+  'deploy_application must equal the complete approved backend deploy body'
+)
+mutated_release_text = release_text.sub(
+  '"$backend_deploy_script" back "$revision"',
+  '"$backend_deploy_script" back "$revision" extra'
+)
+assert(
+  !approved_deploy_application?(mutated_release_text, approved_deploy_application),
+  'deploy_application equality guard must reject an argv mutation'
+)
 assert(release_text.scan('docker image rm --').length == 1, 'apply must have exactly one exact image-removal call')
 assert(!release_text.match?(/^\s*(source|\.)\s+/), 'production release must not source sibling scripts')
 ['preflight.sh', 'database-preflight.sh', 'service-readiness.sh'].each do |sibling|

@@ -596,18 +596,31 @@ run_retention() {
 }
 
 verify_retention_result() {
-  local index tag expected_id output
+  local index tag expected_id image_list sorted_image_list
+  local post_retention_tags=()
   for ((index=0; index<${#PROTECTED_TAGS[@]}; index++)); do
     tag=${PROTECTED_TAGS[$index]}
     expected_id=${PROTECTED_TAG_IDS[$index]}
     read_image_metadata "$tag"
     [[ "$IMAGE_ID" == "$expected_id" ]] || fail "protected image ID changed for $tag"
   done
-  if [[ "$retention_mode" == apply && ${#CANDIDATE_TAGS[@]} -gt 0 ]]; then
-    for tag in "${CANDIDATE_TAGS[@]}"; do
-      output=$(docker image inspect --format '{{.Id}}|{{.Size}}' -- "$tag" 2>/dev/null) || continue
-      [[ -z "$output" ]] || fail "deleted candidate remains locally tagged: $tag"
-    done
+  if [[ "$retention_mode" == apply ]]; then
+    image_list=$(docker image ls --format '{{.Repository}}:{{.Tag}}' "$image_repository") || \
+      fail 'cannot list post-retention local repository images'
+    sorted_image_list=$(printf '%s\n' "$image_list" | LC_ALL=C sort -u) || \
+      fail 'cannot sort post-retention local repository images'
+    while IFS= read -r tag; do
+      [[ -n "$tag" ]] || continue
+      exact_tag "$tag" || fail "invalid post-retention repository tag: $tag"
+      post_retention_tags+=("$tag")
+    done <<<"$sorted_image_list"
+    if (( ${#CANDIDATE_TAGS[@]} > 0 )); then
+      for tag in "${CANDIDATE_TAGS[@]}"; do
+        if array_contains "$tag" "${post_retention_tags[@]-}"; then
+          fail "deleted candidate remains locally tagged: $tag"
+        fi
+      done
+    fi
   fi
 }
 
