@@ -27,6 +27,7 @@ check_commands = checks.fetch('steps').map { |step| step['run'] }.compact.join("
   'bash scripts/deploy/preflight.test.sh',
   'bash scripts/deploy/database-preflight.test.sh',
   'bash scripts/deploy/service-readiness.test.sh',
+  'bash scripts/deploy/production-release.test.sh',
   'yarn test --runInBand',
   'yarn prettier-check',
   'yarn lint',
@@ -44,57 +45,58 @@ assert(build_job['if'] == "github.event_name == 'push'", 'build-and-push must be
 assert(deploy_job['if'] == "github.event_name == 'push'", 'deploy must be push-only')
 
 deploy_steps = deploy_job.fetch('steps')
-required_order = [
-  'Checkout code',
-  'Disk/inode preflight',
-  'Database preflight',
-  'Deploy to Server',
-  'Post-deploy database readiness',
-  'Post-deploy service readiness'
-]
-positions = required_order.map do |name|
-  index = deploy_steps.index { |step| step['name'] == name }
-  assert(!index.nil?, "missing deploy step #{name}")
-  index
-end
-assert(positions == positions.sort, 'deploy gates are in the wrong order')
+assert(deploy_steps.map { |step| step['name'] } == ['Checkout code', 'Run locked production release'],
+       'deploy must contain checkout followed by exactly one locked release step')
+remote_steps = deploy_steps.select { |step| step['uses']&.start_with?('appleboy/ssh-action@') }
+assert(remote_steps.length == 1, 'deploy must contain exactly one remote SSH step')
+release = remote_steps.fetch(0)
+assert(release['name'] == 'Run locked production release', 'locked release step name is wrong')
+assert(release['uses'] == 'appleboy/ssh-action@v1.2.5', 'locked release must use ssh-action v1.2.5')
+assert(release.dig('with', 'script_path') == 'scripts/deploy/production-release.sh',
+       'locked release script_path is wrong')
+assert(release.dig('with', 'script').nil?, 'locked release must not duplicate an inline deploy body')
 
-step = ->(name) { deploy_steps.fetch(positions[required_order.index(name)]) }
-
-disk = step.call('Disk/inode preflight')
-assert(disk['uses'] == 'appleboy/ssh-action@v1.2.5', 'disk gate must use ssh-action v1.2.5')
-assert(disk.dig('with', 'script_path') == 'scripts/deploy/preflight.sh', 'disk gate script_path is wrong')
-assert(disk.dig('env', 'NAS_DEPLOY_MOUNTPOINT') == '/', 'disk mountpoint must be /')
-assert(disk.dig('env', 'NAS_DEPLOY_MIN_FREE_BYTES').to_s == '10737418240', 'free-byte threshold is wrong')
-assert(disk.dig('env', 'NAS_DEPLOY_MIN_FREE_PERCENT').to_s == '10', 'free-percent threshold is wrong')
-assert(disk.dig('env', 'NAS_DEPLOY_MIN_FREE_INODES').to_s == '1000000', 'free-inode threshold is wrong')
-
-['Database preflight', 'Post-deploy database readiness'].each do |name|
-  database = step.call(name)
-  assert(database['uses'] == 'appleboy/ssh-action@v1.2.5', "#{name} must use ssh-action v1.2.5")
-  assert(database.dig('with', 'script_path') == 'scripts/deploy/database-preflight.sh', "#{name} script_path is wrong")
-  assert(database.dig('env', 'NAS_DEPLOY_DB_CONTAINER') == 'database', "#{name} container is wrong")
-  assert(database.dig('env', 'NAS_DEPLOY_DB_ATTEMPTS').to_s == '3', "#{name} attempts are wrong")
-  assert(database.dig('env', 'NAS_DEPLOY_DB_DELAY_SECONDS').to_s == '5', "#{name} delay is wrong")
-end
-
-service = step.call('Post-deploy service readiness')
-assert(service['uses'] == 'appleboy/ssh-action@v1.2.5', 'service readiness must use ssh-action v1.2.5')
-assert(service.dig('with', 'script_path') == 'scripts/deploy/service-readiness.sh', 'service readiness script_path is wrong')
-expected_service_env = {
-  'NAS_DEPLOY_SERVICE_CONTAINER' => 'back',
-  'NAS_DEPLOY_EXPECTED_IMAGE' => 'ghcr.io/vsevolod-rusinskiy/newartspace-back:sha-${{ github.sha }}',
-  'NAS_DEPLOY_LOCAL_URL' => 'http://127.0.0.1:3000/version',
-  'NAS_DEPLOY_SITE_URL' => 'https://newartspace.ru/',
-  'NAS_DEPLOY_SERVICE_ATTEMPTS' => '10',
-  'NAS_DEPLOY_SERVICE_DELAY_SECONDS' => '5',
-  'NAS_DEPLOY_REQUEST_TIMEOUT_SECONDS' => '10'
+expected_release_env = {
+  'NAS_RELEASE_GIT_SHA' => '${{ github.sha }}',
+  'NAS_RETENTION_MODE' => 'dry-run',
+  'NAS_RELEASE_LOCK_PATH' => '/var/lock/newartspace-deploy-cleanup.lock',
+  'NAS_RELEASE_LOCK_WAIT_SECONDS' => '60',
+  'NAS_RETENTION_STATE_DIR' => '/var/lib/newartspace/image-retention',
+  'NAS_RETENTION_OWNER_UID' => '0',
+  'NAS_RELEASE_REPOSITORY' => 'ghcr.io/vsevolod-rusinskiy/newartspace-back',
+  'NAS_RELEASE_SERVICE_CONTAINER' => 'back',
+  'NAS_RELEASE_DB_CONTAINER' => 'database',
+  'NAS_RELEASE_MOUNTPOINT' => '/',
+  'NAS_RELEASE_LOCAL_URL' => 'http://127.0.0.1:3000/version',
+  'NAS_RELEASE_SITE_URL' => 'https://newartspace.ru/',
+  'NAS_RELEASE_MIN_FREE_BYTES' => '10737418240',
+  'NAS_RELEASE_MIN_FREE_PERCENT' => '10',
+  'NAS_RELEASE_MIN_FREE_INODES' => '1000000',
+  'NAS_RETENTION_SOFT_MIN_FREE_BYTES' => '16106127360',
+  'NAS_RELEASE_DB_ATTEMPTS' => '3',
+  'NAS_RELEASE_DB_DELAY_SECONDS' => '5',
+  'NAS_RELEASE_SERVICE_ATTEMPTS' => '10',
+  'NAS_RELEASE_SERVICE_DELAY_SECONDS' => '5',
+  'NAS_RELEASE_REQUEST_TIMEOUT_SECONDS' => '10',
+  'NAS_RETENTION_SEED_OLDEST' => 'ghcr.io/vsevolod-rusinskiy/newartspace-back:sha-c5a5d1c3a0f57b1fc1c49c0dd39c503000037b7d',
+  'NAS_RETENTION_SEED_MIDDLE' => 'ghcr.io/vsevolod-rusinskiy/newartspace-back:sha-25f399f352b311462caf53e12baa230bc1049366',
+  'NAS_RETENTION_SEED_NEWEST' => 'ghcr.io/vsevolod-rusinskiy/newartspace-back:sha-492304ccfad8038d047e5228e989eedb3da04f38',
+  'NAS_BACKEND_DEPLOY_SCRIPT' => '/var/www/newartspace/scripts/deploy.sh'
 }
-expected_service_env.each do |key, value|
-  assert(service.dig('env', key).to_s == value, "service readiness #{key} is wrong")
+expected_release_env.each do |key, value|
+  assert(release.dig('env', key).to_s == value, "locked release #{key} is wrong")
 end
+forwarded_env = release.dig('with', 'envs').to_s.split(',')
+assert(forwarded_env.sort == expected_release_env.keys.sort,
+       'locked release must forward every and only the fixed NAS environment value')
 
-forbidden = ['docker system prune', 'docker image prune', 'docker volume rm', 'docker volume prune']
+forbidden = [
+  'docker system prune',
+  'docker image prune',
+  'docker volume rm',
+  'docker volume prune',
+  'docker volume remove'
+]
 forbidden.each do |command|
   assert(!workflow_text.include?(command), "workflow contains forbidden command #{command}")
 end
