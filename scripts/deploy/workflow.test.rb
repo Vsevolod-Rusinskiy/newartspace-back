@@ -78,7 +78,7 @@ assert(
 assert(release_step.dig('with', 'command_timeout') == '60m', 'locked release command timeout is wrong')
 
 expected_release_env = {
-  'NAS_RETENTION_MODE' => 'dry-run',
+  'NAS_RETENTION_MODE' => 'apply',
   'NAS_RELEASE_LOCK_PATH' => '/var/lock/newartspace-deploy-cleanup.lock',
   'NAS_RELEASE_LOCK_WAIT_SECONDS' => '300',
   'NAS_RETENTION_STATE_DIR' => '/var/lib/newartspace/image-retention',
