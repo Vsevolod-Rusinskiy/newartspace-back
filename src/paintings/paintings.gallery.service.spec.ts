@@ -10,7 +10,10 @@ const url = (name: string) =>
   `https://storage.yandexcloud.net/newartspace-images/paintings/${name}.jpg`
 
 describe('PaintingsService gallery', () => {
-  const makeService = (existingImages: Array<{ imgUrl: string }> = []) => {
+  const makeService = (
+    existingImages: Array<{ imgUrl: string }> = [],
+    coverUrl = url('cover')
+  ) => {
     const transaction = { LOCK: { UPDATE: 'UPDATE' } }
     const imageModel = {
       create: jest.fn(),
@@ -20,9 +23,9 @@ describe('PaintingsService gallery', () => {
     }
     const painting = {
       id: 12,
-      imgUrl: url('cover'),
+      imgUrl: coverUrl,
       save: jest.fn(),
-      toJSON: () => ({ id: 12, imgUrl: url('cover'), images: [] })
+      toJSON: () => ({ id: 12, imgUrl: coverUrl, images: [] })
     }
     const paintingModel = {
       build: jest.fn(() => painting),
@@ -63,6 +66,19 @@ describe('PaintingsService gallery', () => {
       { paintingId: 12, imgUrl: url('second'), position: 1 },
       expect.anything()
     )
+  })
+
+  it('rejects create without a required cover before storing anything', async () => {
+    const { service, imageModel, paintingModel } = makeService()
+
+    await expect(
+      service.create({
+        imgUrl: undefined as unknown as string,
+        additionalImageUrls: [url('first')]
+      })
+    ).rejects.toBeInstanceOf(BadRequestException)
+    expect(imageModel.create).not.toHaveBeenCalled()
+    expect(paintingModel.build).not.toHaveBeenCalled()
   })
 
   it('rejects duplicate and cover URLs before storing gallery rows', async () => {
@@ -167,5 +183,17 @@ describe('PaintingsService gallery', () => {
     await expect(
       service.update(12, { imgUrl: url('gallery') })
     ).rejects.toBeInstanceOf(BadRequestException)
+  })
+
+  it('rejects a canonical gallery URL that aliases a legacy cover object', async () => {
+    const legacyCover =
+      'https://storage.yandexcloud.net/legacy-bucket/old/path/cover.jpg?version=1'
+    const { service, imageModel } = makeService([], legacyCover)
+
+    await expect(
+      service.update(12, { additionalImageUrls: [url('cover')] })
+    ).rejects.toBeInstanceOf(BadRequestException)
+    expect(imageModel.destroy).not.toHaveBeenCalled()
+    expect(imageModel.create).not.toHaveBeenCalled()
   })
 })

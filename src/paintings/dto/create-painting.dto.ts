@@ -19,9 +19,9 @@ import { Attributes } from 'src/attributes/models/attributes.model'
 import { IsNotFilenameTitleConstraint } from './painting-title.validator'
 
 export class CreatePaintingDto {
-  @IsOptional()
   @IsString()
-  readonly imgUrl?: string
+  @IsNotEmpty()
+  readonly imgUrl: string
 
   @IsOptional()
   @IsNumber()

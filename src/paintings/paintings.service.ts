@@ -59,8 +59,11 @@ export class PaintingsService {
   ) {}
 
   async create(createPaintingDto: CreatePaintingDto): Promise<Painting> {
-    if (createPaintingDto.imgUrl === '') {
-      throw new BadRequestException('Painting image URL cannot be empty')
+    if (
+      typeof createPaintingDto.imgUrl !== 'string' ||
+      createPaintingDto.imgUrl.trim() === ''
+    ) {
+      throw new BadRequestException('Painting cover image URL is required')
     }
     try {
       return await this.sequelize.transaction(async (transaction) => {
@@ -491,7 +494,9 @@ export class PaintingsService {
           )
         } else if (
           updateData.imgUrl !== undefined &&
-          existingImages.some((image) => image.imgUrl === effectiveCover)
+          existingImages.some((image) =>
+            this.referencesSameManagedObject(image.imgUrl, effectiveCover)
+          )
         ) {
           throw new BadRequestException(
             'Painting cover image cannot also be an additional image'
@@ -947,9 +952,10 @@ export class PaintingsService {
         transaction
       )
       if (
-        reference.canonicalUrl === coverUrl ||
-        references.some(
-          ({ canonicalUrl }) => canonicalUrl === reference.canonicalUrl
+        (coverUrl !== undefined &&
+          this.referencesSameManagedObject(reference.canonicalUrl, coverUrl)) ||
+        references.some(({ canonicalUrl }) =>
+          this.referencesSameManagedObject(canonicalUrl, reference.canonicalUrl)
         )
       ) {
         throw new BadRequestException(
@@ -959,6 +965,16 @@ export class PaintingsService {
       references.push(reference)
     }
     return references
+  }
+
+  private referencesSameManagedObject(
+    leftUrl: string,
+    rightUrl: string
+  ): boolean {
+    const leftFileName = this.getImageBasename(leftUrl)
+    return (
+      leftFileName !== null && leftFileName === this.getImageBasename(rightUrl)
+    )
   }
 
   private async createGalleryImages(
