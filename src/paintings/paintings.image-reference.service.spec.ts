@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common'
 import { Painting } from './models/painting.model'
 import { PaintingAttributes } from './models/painting-attributes.model'
+import { PaintingImage } from './models/painting-image.model'
 import { PaintingsService } from './paintings.service'
 
 process.env.BUCKET_NAME = 'newartspace-images-dev'
@@ -32,7 +33,11 @@ describe('PaintingsService image reference coordination', () => {
       paintingModel as unknown as typeof Painting,
       paintingAttributesModel as unknown as typeof PaintingAttributes,
       storageService,
-      sequelize
+      sequelize,
+      {
+        findAll: jest.fn().mockResolvedValue([]),
+        count: jest.fn().mockResolvedValue(0)
+      } as unknown as typeof PaintingImage
     ) as PaintingsService
 
     return {

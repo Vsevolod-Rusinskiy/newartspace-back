@@ -9,7 +9,9 @@ import {
   Validate,
   ValidateIf,
   Min,
-  Max
+  Max,
+  ArrayMaxSize,
+  IsNotEmpty
 } from 'class-validator'
 import { Image } from '../../types/image.interface'
 import { Type } from 'class-transformer'
@@ -17,9 +19,9 @@ import { Attributes } from 'src/attributes/models/attributes.model'
 import { IsNotFilenameTitleConstraint } from './painting-title.validator'
 
 export class CreatePaintingDto {
-  @IsOptional()
   @IsString()
-  readonly imgUrl?: string
+  @IsNotEmpty()
+  readonly imgUrl: string
 
   @IsOptional()
   @IsNumber()
@@ -143,6 +145,13 @@ export class CreatePaintingDto {
 
   @IsOptional()
   readonly pictures?: Image
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
+  @ArrayMaxSize(9)
+  readonly additionalImageUrls?: string[]
 
   @IsOptional()
   readonly attributes?: Attributes[]

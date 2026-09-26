@@ -5,12 +5,14 @@ import {
   BelongsTo,
   ForeignKey,
   BelongsToMany,
+  HasMany,
   Default,
   AllowNull
 } from 'sequelize-typescript'
 import { Artist } from '../../artists/models/artist.model'
 import { PaintingAttributes } from './painting-attributes.model'
 import { Attributes } from '../../attributes/models/attributes.model'
+import { PaintingImage } from './painting-image.model'
 
 @Table
 export class Painting extends Model {
@@ -87,4 +89,7 @@ export class Painting extends Model {
 
   @BelongsToMany(() => Attributes, () => PaintingAttributes)
   attributes: Attributes[]
+
+  @HasMany(() => PaintingImage, { as: 'images' })
+  images: PaintingImage[]
 }

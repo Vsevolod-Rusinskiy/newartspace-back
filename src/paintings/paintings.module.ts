@@ -4,6 +4,7 @@ import { PaintingsController } from './paintings.controller'
 import { SequelizeModule } from '@nestjs/sequelize'
 import { Painting } from './models/painting.model'
 import { PaintingAttributes } from './models/painting-attributes.model'
+import { PaintingImage } from './models/painting-image.model'
 import { Attributes } from '../attributes/models/attributes.model'
 import { AttributesModule } from '../attributes/attributes.module'
 import { StorageModule } from 'src/common/services/storage.module'
@@ -11,7 +12,12 @@ import { AuthModule } from 'src/auth/auth.module'
 
 @Module({
   imports: [
-    SequelizeModule.forFeature([Painting, PaintingAttributes, Attributes]),
+    SequelizeModule.forFeature([
+      Painting,
+      PaintingAttributes,
+      PaintingImage,
+      Attributes
+    ]),
     AttributesModule,
     StorageModule,
     AuthModule

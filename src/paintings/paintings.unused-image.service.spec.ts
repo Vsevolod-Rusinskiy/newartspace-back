@@ -2,12 +2,13 @@ import { ConflictException, Logger } from '@nestjs/common'
 import { PaintingsService } from './paintings.service'
 import { Painting } from './models/painting.model'
 import { PaintingAttributes } from './models/painting-attributes.model'
+import { PaintingImage } from './models/painting-image.model'
 
 describe('PaintingsService.deleteUnusedImage', () => {
   const bucketName = 'newartspace-images-dev'
   const fileName = 'unused.jpg'
 
-  const createHarness = (count = 0) => {
+  const createHarness = (count = 0, galleryCount = 0) => {
     const transaction = { LOCK: { UPDATE: 'UPDATE' } }
     const paintingModel = {
       count: jest.fn().mockResolvedValue(count),
@@ -24,7 +25,11 @@ describe('PaintingsService.deleteUnusedImage', () => {
       paintingModel as unknown as typeof Painting,
       {} as typeof PaintingAttributes,
       storageService,
-      sequelize
+      sequelize,
+      {
+        findAll: jest.fn().mockResolvedValue([]),
+        count: jest.fn().mockResolvedValue(galleryCount)
+      } as unknown as typeof PaintingImage
     ) as PaintingsService
     return { paintingModel, storageService, sequelize, transaction, service }
   }
@@ -35,6 +40,15 @@ describe('PaintingsService.deleteUnusedImage', () => {
 
   it('rejects deleting an object still referenced by a painting', async () => {
     const { service, storageService } = createHarness(1)
+
+    await expect(service.deleteUnusedImage(fileName)).rejects.toBeInstanceOf(
+      ConflictException
+    )
+    expect(storageService.deleteFile).not.toHaveBeenCalled()
+  })
+
+  it('rejects deleting an object referenced only by an additional painting image', async () => {
+    const { service, storageService } = createHarness(0, 1)
 
     await expect(service.deleteUnusedImage(fileName)).rejects.toBeInstanceOf(
       ConflictException
