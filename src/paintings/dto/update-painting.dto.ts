@@ -9,7 +9,9 @@ import {
   Validate,
   ValidateIf,
   Min,
-  Max
+  Max,
+  ArrayMaxSize,
+  IsNotEmpty
 } from 'class-validator'
 import { Image } from '../../types/image.interface'
 import { Type } from 'class-transformer'
@@ -151,4 +153,11 @@ export class UpdatePaintingDto {
 
   @IsOptional()
   readonly pictures?: Image | null
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
+  @ArrayMaxSize(9)
+  readonly additionalImageUrls?: string[]
 }

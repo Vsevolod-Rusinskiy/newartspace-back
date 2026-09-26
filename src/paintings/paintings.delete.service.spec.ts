@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common'
 import { Painting } from './models/painting.model'
 import { PaintingAttributes } from './models/painting-attributes.model'
+import { PaintingImage } from './models/painting-image.model'
 import { PaintingsService } from './paintings.service'
 
 process.env.BUCKET_NAME = 'newartspace-images-dev'
@@ -18,6 +19,7 @@ interface HarnessOptions {
   attributesError?: Error
   paintingError?: Error
   countResult?: number
+  galleryImages?: Array<{ paintingId: number; imgUrl: string }>
   countError?: Error
   storageError?: Error
   commitError?: Error
@@ -87,11 +89,19 @@ const createHarness = (options: HarnessOptions = {}) => {
     ),
     query: jest.fn()
   }
+  const paintingImageModel = {
+    findAll: jest
+      .fn()
+      .mockResolvedValueOnce(options.galleryImages || [])
+      .mockResolvedValue([]),
+    count: jest.fn().mockResolvedValue(0)
+  }
   const service = new (PaintingsService as any)(
     paintingModel as unknown as typeof Painting,
     paintingAttributesModel as unknown as typeof PaintingAttributes,
     storageService,
-    sequelize
+    sequelize,
+    paintingImageModel as unknown as typeof PaintingImage
   ) as PaintingsService
 
   return {
@@ -99,6 +109,7 @@ const createHarness = (options: HarnessOptions = {}) => {
     paintingModel,
     paintingAttributesModel,
     storageService,
+    paintingImageModel,
     sequelize,
     transaction,
     sequence,
@@ -175,7 +186,11 @@ const createBulkHarness = (options: BulkHarnessOptions = {}) => {
     paintingModel as unknown as typeof Painting,
     paintingAttributesModel as unknown as typeof PaintingAttributes,
     storageService,
-    sequelize
+    sequelize,
+    {
+      findAll: jest.fn().mockResolvedValue([]),
+      count: jest.fn().mockResolvedValue(0)
+    } as unknown as typeof PaintingImage
   ) as PaintingsService
 
   return {
@@ -248,6 +263,75 @@ describe('PaintingsService.delete', () => {
       expect.objectContaining({ transaction })
     )
     expect(transaction.rollback).not.toHaveBeenCalled()
+  })
+
+  it('cleans the cover and every gallery image only after the painting deletion commits', async () => {
+    const galleryImages = [
+      {
+        paintingId: 21,
+        imgUrl:
+          'https://storage.yandexcloud.net/newartspace-images-dev/paintings/gallery-a.jpg'
+      },
+      {
+        paintingId: 21,
+        imgUrl:
+          'https://storage.yandexcloud.net/newartspace-images-dev/paintings/gallery-b.jpg'
+      }
+    ]
+    const { paintingImageModel, storageService, transaction, service } =
+      createHarness({ galleryImages })
+
+    await expect(service.delete('21')).resolves.toEqual({
+      deletedPaintingIds: [21],
+      deletedPaintingCount: 1,
+      skippedSharedImageCount: 0,
+      storageCleanupErrorCount: 0
+    })
+
+    expect(paintingImageModel.findAll).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        transaction,
+        lock: transaction.LOCK.UPDATE
+      })
+    )
+    expect(storageService.deleteFile.mock.calls).toEqual([
+      ['delete-me.jpg', 'paintings'],
+      ['gallery-a.jpg', 'paintings'],
+      ['gallery-b.jpg', 'paintings']
+    ])
+    expect(transaction.commit.mock.invocationCallOrder[0]).toBeLessThan(
+      storageService.deleteFile.mock.invocationCallOrder[0]
+    )
+  })
+
+  it('keeps a deleted gallery image that another painting still references', async () => {
+    const sharedGalleryUrl =
+      'https://storage.yandexcloud.net/newartspace-images-dev/paintings/shared-gallery.jpg'
+    const { paintingImageModel, storageService, service } = createHarness({
+      galleryImages: [{ paintingId: 21, imgUrl: sharedGalleryUrl }]
+    })
+    paintingImageModel.count.mockResolvedValueOnce(0).mockResolvedValueOnce(1)
+
+    await expect(service.delete('21')).resolves.toEqual({
+      deletedPaintingIds: [21],
+      deletedPaintingCount: 1,
+      skippedSharedImageCount: 1,
+      storageCleanupErrorCount: 0
+    })
+
+    expect(paintingImageModel.count).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ where: { imgUrl: sharedGalleryUrl } })
+    )
+    expect(storageService.deleteFile).toHaveBeenCalledWith(
+      'delete-me.jpg',
+      'paintings'
+    )
+    expect(storageService.deleteFile).not.toHaveBeenCalledWith(
+      'shared-gallery.jpg',
+      'paintings'
+    )
   })
 
   it('rolls back without touching storage when the painting is missing', async () => {

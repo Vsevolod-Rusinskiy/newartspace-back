@@ -18,6 +18,7 @@ import { parsePriceRange } from '../utils/parsePriceRange'
 import { parseSizeList } from '../utils/parseSizeList'
 import { Sequelize } from 'sequelize-typescript'
 import { PaintingAttributes } from './models/painting-attributes.model'
+import { PaintingImage } from './models/painting-image.model'
 import {
   rankSimilarPaintings,
   SimilarPaintingCandidate
@@ -52,7 +53,9 @@ export class PaintingsService {
     @InjectModel(PaintingAttributes)
     private paintingAttributesModel: typeof PaintingAttributes,
     private readonly storageService: StorageService,
-    private readonly sequelize: Sequelize
+    private readonly sequelize: Sequelize,
+    @InjectModel(PaintingImage)
+    private paintingImageModel: typeof PaintingImage
   ) {}
 
   async create(createPaintingDto: CreatePaintingDto): Promise<Painting> {
@@ -68,13 +71,25 @@ export class PaintingsService {
             transaction
           )
         }
+        const additionalImages = await this.resolveAdditionalImages(
+          createPaintingDto.additionalImageUrls,
+          imageReference?.canonicalUrl,
+          transaction
+        )
+        const paintingData = { ...createPaintingDto }
+        delete paintingData.additionalImageUrls
         const painting = this.paintingModel.build({
-          ...createPaintingDto,
+          ...paintingData,
           ...(imageReference ? { imgUrl: imageReference.canonicalUrl } : {}),
           artistId: createPaintingDto.artistId,
           priority: 0
         })
         await painting.save({ transaction })
+        await this.createGalleryImages(
+          painting.id,
+          additionalImages,
+          transaction
+        )
 
         const attributeGroups = [
           ['materialsList', createPaintingDto.materials],
@@ -95,7 +110,8 @@ export class PaintingsService {
           where: { id: painting.id },
           include: [
             { model: Artist, attributes: ['artistName'] },
-            { model: Attributes, through: { attributes: ['type'] } }
+            { model: Attributes, through: { attributes: ['type'] } },
+            this.galleryInclude()
           ],
           transaction
         })
@@ -413,7 +429,8 @@ export class PaintingsService {
       where: includeHidden ? { id } : { id, isHidden: false },
       include: [
         { model: Artist, attributes: ['artistName'] },
-        { model: Attributes, through: { attributes: ['type'] } }
+        { model: Attributes, through: { attributes: ['type'] } },
+        this.galleryInclude()
       ]
     }
     const painting = await this.paintingModel.findOne(options)
@@ -433,6 +450,7 @@ export class PaintingsService {
     }
     let previousImgUrl: string | null = null
     let replacesImage = false
+    let oldGalleryUrls: string[] = []
     const updatedPainting = await this.sequelize.transaction(
       async (transaction) => {
         await this.setTransactionTimeouts(transaction)
@@ -445,7 +463,12 @@ export class PaintingsService {
           throw new NotFoundException(`Painting with id ${id} not found`)
         }
 
+        const existingImages = await this.getPaintingImages(id, transaction)
+        oldGalleryUrls = existingImages.map(({ imgUrl }) => imgUrl)
         let updateData: UpdatePaintingDto = painting
+        let canonicalAdditionalImages:
+          | ManagedPaintingImageReference[]
+          | undefined
         if (
           painting.imgUrl !== undefined &&
           painting.imgUrl !== null &&
@@ -459,10 +482,39 @@ export class PaintingsService {
           replacesImage = true
           updateData = { ...painting, imgUrl: imageReference.canonicalUrl }
         }
+        const effectiveCover = updateData.imgUrl || existingPainting.imgUrl
+        if (painting.additionalImageUrls !== undefined) {
+          canonicalAdditionalImages = await this.resolveAdditionalImages(
+            painting.additionalImageUrls,
+            effectiveCover,
+            transaction
+          )
+        } else if (
+          updateData.imgUrl !== undefined &&
+          existingImages.some((image) => image.imgUrl === effectiveCover)
+        ) {
+          throw new BadRequestException(
+            'Painting cover image cannot also be an additional image'
+          )
+        }
+        const updatePayload = { ...updateData }
+        delete updatePayload.additionalImageUrls
         await this.paintingModel.update(
-          { ...updateData, artistId: updateData.artistId },
+          { ...updatePayload, artistId: updatePayload.artistId },
           { where: { id }, transaction }
         )
+
+        if (canonicalAdditionalImages !== undefined) {
+          await this.paintingImageModel.destroy({
+            where: { paintingId: id },
+            transaction
+          })
+          await this.createGalleryImages(
+            id,
+            canonicalAdditionalImages,
+            transaction
+          )
+        }
 
         const attributeGroups = [
           ['materialsList', painting.materials],
@@ -488,7 +540,8 @@ export class PaintingsService {
           where: { id },
           include: [
             { model: Artist, attributes: ['artistName'] },
-            { model: Attributes, through: { attributes: ['type'] } }
+            { model: Attributes, through: { attributes: ['type'] } },
+            this.galleryInclude()
           ],
           transaction
         })
@@ -501,6 +554,15 @@ export class PaintingsService {
 
     if (replacesImage && previousImgUrl) {
       await this.cleanupDeletedPaintingImages([{ id, imgUrl: previousImgUrl }])
+    }
+
+    if (painting.additionalImageUrls !== undefined) {
+      const nextUrls = new Set(painting.additionalImageUrls)
+      await this.cleanupDeletedPaintingImages(
+        oldGalleryUrls
+          .filter((imgUrl) => !nextUrls.has(imgUrl))
+          .map((imgUrl) => ({ id, imgUrl }))
+      )
     }
 
     return updatedPainting
@@ -550,6 +612,7 @@ export class PaintingsService {
   ): Promise<PaintingDeletionResult> {
     const transaction = await this.sequelize.transaction()
     let paintings: Painting[]
+    let galleryImages: Array<{ id: number; imgUrl: string }> = []
     try {
       await this.setTransactionTimeouts(transaction)
       const foundPaintings = await this.paintingModel.findAll({
@@ -568,6 +631,10 @@ export class PaintingsService {
       }
       paintings = paintingIds.map((id) => paintingsById.get(id))
 
+      galleryImages = await this.getPaintingImagesForDelete(
+        paintingIds,
+        transaction
+      )
       await this.paintingAttributesModel.destroy({
         where: { paintingId: { [Op.in]: paintingIds } },
         transaction
@@ -602,7 +669,9 @@ export class PaintingsService {
     }
 
     const cleanup = await this.cleanupDeletedPaintingImages(
-      paintings.map(({ id, imgUrl }) => ({ id: Number(id), imgUrl }))
+      paintings
+        .map(({ id, imgUrl }) => ({ id: Number(id), imgUrl }))
+        .concat(galleryImages)
     )
     return {
       deletedPaintingIds: paintingIds,
@@ -655,7 +724,13 @@ export class PaintingsService {
               where: { imgUrl: imageReference.canonicalUrl },
               transaction
             })
-            if (remainingReferences > 0) return 'skipped' as const
+            const remainingGalleryReferences =
+              await this.getGalleryImageReferenceCount(
+                imageReference.canonicalUrl,
+                transaction
+              )
+            if (remainingReferences + remainingGalleryReferences > 0)
+              return 'skipped' as const
             if (
               await this.hasPotentialImageReference(
                 imageReference.fileName,
@@ -755,7 +830,12 @@ export class PaintingsService {
           where: { imgUrl: imageReference.canonicalUrl },
           transaction
         })
-        if (remainingReferences > 0) {
+        const remainingGalleryReferences =
+          await this.getGalleryImageReferenceCount(
+            imageReference.canonicalUrl,
+            transaction
+          )
+        if (remainingReferences + remainingGalleryReferences > 0) {
           throw new ConflictException(
             'Painting image is still referenced by a painting'
           )
@@ -798,7 +878,11 @@ export class PaintingsService {
       attributes: ['imgUrl'],
       transaction
     })
-    return paintings.some((painting) => {
+    const galleryImages = await this.paintingImageModel.findAll({
+      attributes: ['imgUrl'],
+      transaction
+    })
+    return [...paintings, ...galleryImages].some((painting) => {
       const imgUrl = painting?.imgUrl
       if (typeof imgUrl !== 'string' || imgUrl.length === 0) return false
       if (imgUrl === canonicalUrl) return false
@@ -831,6 +915,99 @@ export class PaintingsService {
 
   async deleteMany(ids: string): Promise<PaintingDeletionResult> {
     return this.deletePaintingsByIds(this.parsePaintingIds(ids))
+  }
+
+  private galleryInclude(): any {
+    return {
+      model: PaintingImage,
+      as: 'images',
+      separate: true,
+      order: [['position', 'ASC']]
+    }
+  }
+
+  private async resolveAdditionalImages(
+    urls: string[] | undefined,
+    coverUrl: string | undefined,
+    transaction: Transaction
+  ): Promise<ManagedPaintingImageReference[]> {
+    if (urls === undefined) return []
+    if (
+      urls.length > 9 ||
+      urls.some((url) => typeof url !== 'string' || url.trim() === '')
+    ) {
+      throw new BadRequestException(
+        'At most nine non-empty additional image URLs are allowed'
+      )
+    }
+    const references: ManagedPaintingImageReference[] = []
+    for (const url of urls) {
+      const reference = await this.assertImageReferenceAvailable(
+        url,
+        transaction
+      )
+      if (
+        reference.canonicalUrl === coverUrl ||
+        references.some(
+          ({ canonicalUrl }) => canonicalUrl === reference.canonicalUrl
+        )
+      ) {
+        throw new BadRequestException(
+          'Painting images must be unique and cannot match the cover image'
+        )
+      }
+      references.push(reference)
+    }
+    return references
+  }
+
+  private async createGalleryImages(
+    paintingId: number,
+    references: ManagedPaintingImageReference[],
+    transaction: Transaction
+  ): Promise<void> {
+    for (const [position, reference] of references.entries()) {
+      await this.paintingImageModel.create(
+        { paintingId, imgUrl: reference.canonicalUrl, position },
+        { transaction }
+      )
+    }
+  }
+
+  private async getPaintingImages(
+    paintingId: number,
+    transaction?: Transaction
+  ): Promise<PaintingImage[]> {
+    return this.paintingImageModel.findAll({
+      where: { paintingId },
+      order: [['position', 'ASC']],
+      transaction
+    })
+  }
+
+  private async getPaintingImagesForDelete(
+    paintingIds: number[],
+    transaction: Transaction
+  ): Promise<Array<{ id: number; imgUrl: string }>> {
+    const images = await this.paintingImageModel.findAll({
+      where: { paintingId: { [Op.in]: paintingIds } },
+      transaction,
+      lock: transaction.LOCK.UPDATE
+    })
+    return images.map((image) => ({
+      id: Number(image.paintingId),
+      imgUrl: image.imgUrl
+    }))
+  }
+
+  private async getGalleryImageReferenceCount(
+    canonicalUrl: string,
+    transaction: Transaction
+  ): Promise<number> {
+    return this.paintingImageModel.count({
+      where: { imgUrl: canonicalUrl },
+      transaction
+    })
   }
 
   async getFilteredPaintings(

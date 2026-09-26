@@ -3,6 +3,7 @@ import { getModelToken } from '@nestjs/sequelize'
 import { PaintingsService } from './paintings.service'
 import { Painting } from './models/painting.model'
 import { PaintingAttributes } from './models/painting-attributes.model'
+import { PaintingImage } from './models/painting-image.model'
 import { StorageService } from '../common/services/storage.service'
 import { Sequelize } from 'sequelize-typescript'
 import { BadRequestException } from '@nestjs/common'
@@ -63,6 +64,13 @@ describe('PaintingsService.update — storage delete guard', () => {
           useValue: {
             destroy: jest.fn(),
             create: jest.fn()
+          }
+        },
+        {
+          provide: getModelToken(PaintingImage),
+          useValue: {
+            findAll: jest.fn().mockResolvedValue([]),
+            count: jest.fn().mockResolvedValue(0)
           }
         },
         { provide: StorageService, useValue: storageService },

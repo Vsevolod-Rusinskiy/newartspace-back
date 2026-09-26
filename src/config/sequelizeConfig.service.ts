@@ -9,6 +9,7 @@ import { Painting } from '../paintings/models/painting.model'
 import { Artist } from '../artists/models/artist.model'
 import { Attributes } from '../attributes/models/attributes.model'
 import { PaintingAttributes } from '../paintings/models/painting-attributes.model'
+import { PaintingImage } from '../paintings/models/painting-image.model'
 import { Event } from '../events/models/event.model'
 import { User } from '../users/models/user.model'
 import { Order } from '../orders/models/order.model'
@@ -41,6 +42,7 @@ export class SequelizeConfigService implements SequelizeOptionsFactory {
         Artist,
         Attributes,
         PaintingAttributes,
+        PaintingImage,
         Event,
         User,
         Order,

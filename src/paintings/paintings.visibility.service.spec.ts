@@ -5,6 +5,7 @@ import { Sequelize } from 'sequelize-typescript'
 import { PaintingsService } from './paintings.service'
 import { Painting } from './models/painting.model'
 import { PaintingAttributes } from './models/painting-attributes.model'
+import { PaintingImage } from './models/painting-image.model'
 import { StorageService } from '../common/services/storage.service'
 
 describe('PaintingsService public visibility', () => {
@@ -29,6 +30,10 @@ describe('PaintingsService public visibility', () => {
         {
           provide: getModelToken(PaintingAttributes),
           useValue: { destroy: jest.fn(), create: jest.fn() }
+        },
+        {
+          provide: getModelToken(PaintingImage),
+          useValue: { findAll: jest.fn(), count: jest.fn() }
         },
         { provide: StorageService, useValue: { deleteFile: jest.fn() } },
         { provide: Sequelize, useValue: { transaction: jest.fn() } }
