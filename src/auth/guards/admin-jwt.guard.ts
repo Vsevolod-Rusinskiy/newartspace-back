@@ -5,34 +5,22 @@ import {
   UnauthorizedException
 } from '@nestjs/common'
 import { AuthService } from '../auth.service'
+import { bearerToken } from '../bearer-token'
 
 @Injectable()
 export class AdminJwtGuard implements CanActivate {
-  constructor(private authService: AuthService) {}
+  constructor(private readonly authService: AuthService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest()
-
-    const token = request.headers.authorization?.split(' ')[1]
-
-    if (!token) {
-      throw new UnauthorizedException('Ошибка авторизации')
-    }
-
-    const validToken = this.authService.verifyToken(token)
-
-    if (validToken?.error) {
-      throw new UnauthorizedException(validToken.error)
-    }
-
+    const token = bearerToken(request.headers.authorization)
     const user = await this.authService.getUserEmailByTokenData(token)
-
-    if (!user?.isAdmin) {
+    if (!user.isAdmin) {
       throw new UnauthorizedException(
         'Доступ запрещен. Требуются права администратора'
       )
     }
-
-    return (request.token = token)
+    request.token = token
+    return true
   }
 }

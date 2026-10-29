@@ -1,29 +1,23 @@
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  UnauthorizedException
-} from '@nestjs/common'
+import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common'
+import { Request } from 'express'
+import { User } from '../../users/models/user.model'
 import { AuthService } from '../auth.service'
+import { bearerToken } from '../bearer-token'
+
+export interface AuthenticatedRequest extends Request {
+  token: string
+  authUser: User
+}
 
 @Injectable()
 export class JWTGuard implements CanActivate {
-  constructor(private authService: AuthService) {}
+  constructor(private readonly authService: AuthService) {}
+
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest()
-
-    const token = request.headers.authorization.split(' ')[1]
-
-    if (!token) {
-      throw new UnauthorizedException('Ошибка авторизации')
-    }
-
-    const validToken = this.authService.verifyToken(token)
-
-    if (validToken?.error) {
-      throw new UnauthorizedException(validToken.error)
-    }
-
-    return (request.token = token)
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>()
+    const token = bearerToken(request.headers.authorization)
+    request.authUser = await this.authService.getUserEmailByTokenData(token)
+    request.token = token
+    return true
   }
 }
