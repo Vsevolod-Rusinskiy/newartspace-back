@@ -19,8 +19,11 @@ concurrency:
 jobs:
   analyze:
     name: Analyze JavaScript and TypeScript
+    # Private repositories opt in only after Code Security availability is confirmed.
     # Dependabot PRs can upload results; its push token is read-only.
-    if: github.event_name != 'push' || github.actor != 'dependabot[bot]'
+    if: >-
+      (!github.event.repository.private || vars.CODEQL_ENABLED == 'true') &&
+      (github.event_name != 'push' || github.actor != 'dependabot[bot]')
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
