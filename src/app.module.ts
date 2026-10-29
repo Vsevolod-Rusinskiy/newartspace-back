@@ -16,6 +16,7 @@ import { RequestFormModule } from './request-form/request-form.module'
 import { EventsModule } from './events/events.module'
 import { EventPhotosModule } from './events/event-photos.module'
 import { UsersModule } from './users/users.module'
+import { UserPaintingsModule } from './users/user-paintings.module'
 import { AuthModule } from './auth/auth.module'
 import { ProfileModule } from './profile/profile.module'
 import { MailModule } from './mail/mail.module'
@@ -47,6 +48,7 @@ import { CacheRevalidationModule } from './common/cache-revalidation/cache-reval
     RequestFormModule,
     UsersModule,
     AuthModule,
+    UserPaintingsModule,
     ProfileModule,
     MailModule,
     OrdersModule,

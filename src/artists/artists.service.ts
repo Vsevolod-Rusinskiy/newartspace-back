@@ -1,3 +1,4 @@
+import { parseCatalogSort } from '../utils/catalog-sort'
 import { InjectModel } from '@nestjs/sequelize'
 import { FindOptions, Sequelize, Op } from 'sequelize'
 import {
@@ -47,22 +48,19 @@ export class ArtistsService {
     letter?: string,
     filter?: string
   ): Promise<{ data: Artist[]; total: number }> {
-    order = order || 'ASC'
     page = page !== undefined ? page : 1
     limit = limit !== undefined ? limit : 10
-
-    let sortField = 'priority'
-    if (sort) {
-      try {
-        const parsedSort = JSON.parse(sort)
-        if (Array.isArray(parsedSort) && parsedSort.length === 2) {
-          sortField = parsedSort[0]
-          order = parsedSort[1]
-        }
-      } catch (error) {
-        this.logger.error('Failed to parse sort parameter:', error)
-      }
-    }
+    const parsedSort = parseCatalogSort(sort, order, [
+      'id',
+      'priority',
+      'artistName',
+      'artistDescription',
+      'imgUrl',
+      'createdAt',
+      'updatedAt'
+    ])
+    const { sortField } = parsedSort
+    order = parsedSort.order
 
     // Логика для определения порядка сортировки
     // Определяем порядок сортировки в зависимости от типа поля:

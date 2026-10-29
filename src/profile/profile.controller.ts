@@ -8,46 +8,34 @@ import {
   Body
 } from '@nestjs/common'
 import { ProfileService } from './profile.service'
-import { JWTGuard } from 'src/auth/guards/jwt.guard'
-import { AuthService } from 'src/auth/auth.service'
-import { Request as ExpressRequest } from 'express'
+import { JWTGuard, AuthenticatedRequest } from 'src/auth/guards/jwt.guard'
 import { UpdateProfileDto } from './dto/update-profile.dto'
-
-interface Request extends ExpressRequest {
-  token: string
-}
 
 @Controller('profile')
 @UseGuards(JWTGuard)
 export class ProfileController {
   private readonly logger = new Logger(ProfileController.name)
 
-  constructor(
-    private readonly profileService: ProfileService,
-    private readonly authService: AuthService
-  ) {}
+  constructor(private readonly profileService: ProfileService) {}
 
   @Get('info')
-  async getUserInfo(@Req() req: Request) {
-    const token = req.headers.authorization.split(' ')[1]
-    const user = await this.authService.getUserEmailByTokenData(token)
+  async getUserInfo(@Req() req: AuthenticatedRequest) {
+    const user = req.authUser
     return this.profileService.getUserInfo(user.id)
   }
 
   @Patch('info')
   async updateProfile(
-    @Req() req: Request,
+    @Req() req: AuthenticatedRequest,
     @Body() updateProfileDto: UpdateProfileDto
   ) {
-    const token = req.headers.authorization.split(' ')[1]
-    const user = await this.authService.getUserEmailByTokenData(token)
+    const user = req.authUser
     return this.profileService.updateProfile(user.id, updateProfileDto)
   }
 
   @Get('purchases')
-  async getUserPurchases(@Req() req: Request) {
-    const token = req.headers.authorization.split(' ')[1]
-    const user = await this.authService.getUserEmailByTokenData(token)
+  async getUserPurchases(@Req() req: AuthenticatedRequest) {
+    const user = req.authUser
     return this.profileService.getUserPurchases(user.id)
   }
 }

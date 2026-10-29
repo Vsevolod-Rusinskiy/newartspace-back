@@ -3,6 +3,7 @@ import {
   Post,
   Body,
   Res,
+  Req,
   HttpStatus,
   UseGuards,
   UnauthorizedException,
@@ -17,7 +18,7 @@ import { RegistrationGuard } from './guards/registration.guard'
 import { LoginUserDto } from './dto/login-user.dto'
 import { LoginGuard } from './guards/login.guard'
 import { AuthService } from './auth.service'
-import { RefreshJWTGuard } from './guards/refresh-jwt.guard'
+import { RefreshJWTGuard, RefreshRequest } from './guards/refresh-jwt.guard'
 import { RefreshTokenDto } from './dto/refresh-token.dto'
 import { ForgotPasswordDto } from './dto/forgot-password.dto'
 import { ResetPasswordDto } from './dto/reset-password.dto'
@@ -68,49 +69,18 @@ export class AuthController {
   @Post('refresh')
   async refreshToken(
     @Body() refreshTokenDto: RefreshTokenDto,
-    @Res() res: Response
+    @Res() res: Response,
+    @Req() request: RefreshRequest
   ) {
-    const validToken = this.authService.verifyToken(
-      refreshTokenDto.refreshToken
-    )
-
-    if (validToken?.error) {
-      throw new UnauthorizedException(validToken.error)
-    }
-
-    const userId = this.authService
-      .parseJwt(refreshTokenDto.refreshToken)
-      .userId.toString()
-
-    const user = await this.usersService.findOneById(userId)
+    const user = request.refreshUser
     const access = await this.authService.generateAccessToken(user)
-
-    if (validToken?.error) {
-      if (validToken?.error === 'jwt expired') {
-        const refresh = await this.authService.generateRefreshToken(
-          user.id as string
-        )
-
-        res.statusCode = HttpStatus.OK
-        return res.send({
-          ...access,
-          ...refresh,
-          userName: user.userName,
-          isAdmin: user.isAdmin
-        })
-      } else {
-        res.statusCode = HttpStatus.BAD_REQUEST
-        return res.send({ error: validToken?.error })
-      }
-    } else {
-      res.statusCode = HttpStatus.OK
-      return res.send({
-        ...access,
-        refreshToken: refreshTokenDto.refreshToken,
-        userName: user.userName,
-        isAdmin: user.isAdmin
-      })
-    }
+    res.statusCode = HttpStatus.OK
+    return res.send({
+      ...access,
+      refreshToken: refreshTokenDto.refreshToken,
+      userName: user.userName,
+      isAdmin: user.isAdmin
+    })
   }
 
   @Get('verify-email')

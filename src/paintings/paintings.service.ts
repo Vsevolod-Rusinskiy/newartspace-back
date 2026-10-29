@@ -14,6 +14,7 @@ import { Painting } from './models/painting.model'
 import { StorageService } from '../common/services/storage.service'
 import { Artist } from '../artists/models/artist.model'
 import { Attributes } from '../attributes/models/attributes.model'
+import { parseCatalogSort } from '../utils/catalog-sort'
 import { parsePriceRange } from '../utils/parsePriceRange'
 import { parseSizeList } from '../utils/parseSizeList'
 import { Sequelize } from 'sequelize-typescript'
@@ -141,27 +142,43 @@ export class PaintingsService {
     filter?: string,
     includeHidden = false
   ): Promise<{ data: Painting[]; total: number }> {
-    order = order || 'ASC'
     page = page !== undefined ? page : 1
     limit = limit !== undefined ? limit : 10
-
-    let sortField = 'priority'
-
-    if (sort) {
-      try {
-        const parsedSort = JSON.parse(sort)
-        if (Array.isArray(parsedSort) && parsedSort.length === 2) {
-          sortField = parsedSort[0]
-          order = parsedSort[1]
-        }
-      } catch (error) {
-        this.logger.error('Failed to parse sort parameter:', error)
-      }
-    }
+    const parsedSort = parseCatalogSort(sort, order, [
+      'id',
+      'priority',
+      'price',
+      'height',
+      'width',
+      'yearOfCreation',
+      'createdAt',
+      'updatedAt',
+      'discount',
+      'artistId',
+      'isAdult',
+      'isHidden',
+      'isReproducible',
+      'artist.artistName',
+      'imgUrl',
+      'title',
+      'artType',
+      'style',
+      'priceType',
+      'theme',
+      'material',
+      'technique',
+      'format',
+      'color',
+      'description',
+      'artStyle'
+    ])
+    const { sortField } = parsedSort
+    order = parsedSort.order
 
     this.logger.debug(`sortField: ${sortField}, order: ${order}`)
     /* filters starts */
-    const parsedFilters = filters ? JSON.parse(filters) : {}
+    const parsedFilters = this.parseCatalogFilters(filters)
+    const replacements: Record<string, string[]> = {}
     const {
       artTypesList = [],
       formatsList = [],
@@ -214,6 +231,7 @@ export class PaintingsService {
     if (formatsList.length) whereConditions.format = formatsList
     if (stylesList.length) whereConditions.style = stylesList
     if (materialValuesList.length) {
+      replacements.materialsList = materialValuesList
       orConditions.push(
         { material: materialValuesList },
         {
@@ -223,13 +241,14 @@ export class PaintingsService {
               FROM "PaintingAttributes" pa
               JOIN "Attributes" a ON a.id = pa."attributeId"
               WHERE pa.type = 'materialsList'
-              AND a.value IN ('${materialValuesList.join("','")}')
+              AND a.value IN (:materialsList)
             )`)
           }
         }
       )
     }
     if (techniqueValuesList.length) {
+      replacements.techniquesList = techniqueValuesList
       orConditions.push(
         { technique: techniqueValuesList },
         {
@@ -239,13 +258,14 @@ export class PaintingsService {
               FROM "PaintingAttributes" pa
               JOIN "Attributes" a ON a.id = pa."attributeId"
               WHERE pa.type = 'techniquesList'
-              AND a.value IN ('${techniqueValuesList.join("','")}')
+              AND a.value IN (:techniquesList)
             )`)
           }
         }
       )
     }
     if (themeValuesList.length) {
+      replacements.themesList = themeValuesList
       orConditions.push(
         { theme: themeValuesList },
         {
@@ -255,13 +275,14 @@ export class PaintingsService {
               FROM "PaintingAttributes" pa
               JOIN "Attributes" a ON a.id = pa."attributeId"
               WHERE pa.type = 'themesList'
-              AND a.value IN ('${themeValuesList.join("','")}')
+              AND a.value IN (:themesList)
             )`)
           }
         }
       )
     }
     if (colorValuesList.length) {
+      replacements.colorsList = colorValuesList
       orConditions.push(
         { color: colorValuesList },
         {
@@ -271,7 +292,7 @@ export class PaintingsService {
               FROM "PaintingAttributes" pa
               JOIN "Attributes" a ON a.id = pa."attributeId"
               WHERE pa.type = 'colorsList'
-              AND a.value IN ('${colorValuesList.join("','")}')
+              AND a.value IN (:colorsList)
             )`)
           }
         }
@@ -343,7 +364,12 @@ export class PaintingsService {
         'width',
         'yearOfCreation',
         'createdAt',
-        'updatedAt'
+        'updatedAt',
+        'discount',
+        'artistId',
+        'isAdult',
+        'isHidden',
+        'isReproducible'
       ].includes(sortField)
     ) {
       orderBy = Sequelize.col(`Painting.${sortField}`)
@@ -352,6 +378,7 @@ export class PaintingsService {
     }
 
     const options: FindOptions = {
+      replacements,
       order: ['createdAt', 'price'].includes(sortField)
         ? [
             [orderBy, order],
@@ -371,7 +398,9 @@ export class PaintingsService {
       ]
     }
 
+    // Sequelize forwards query replacements at runtime; CountOptions omits them.
     const total = await this.paintingModel.count({
+      ...{ replacements },
       where: whereConditions,
       distinct: true,
       include: [
@@ -383,6 +412,74 @@ export class PaintingsService {
     const data = await this.paintingModel.findAll(options)
 
     return { data, total }
+  }
+
+  private parseCatalogFilters(
+    filters: string | undefined
+  ): Record<string, any> {
+    let parsed: unknown
+    try {
+      parsed = filters ? JSON.parse(filters) : {}
+    } catch {
+      throw new BadRequestException('Filters must be a JSON object')
+    }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new BadRequestException('Filters must be a JSON object')
+    }
+    const result = parsed as Record<string, unknown>
+    for (const group of [
+      'materialsList',
+      'techniquesList',
+      'themesList',
+      'colorsList'
+    ]) {
+      const items = result[group]
+      if (items === undefined) continue
+      if (
+        !Array.isArray(items) ||
+        items.some(
+          (item) =>
+            !item ||
+            typeof item !== 'object' ||
+            Array.isArray(item) ||
+            Object.values(item).length !== 1 ||
+            typeof Object.values(item)[0] !== 'string'
+        )
+      ) {
+        throw new BadRequestException(
+          'Attribute filters must contain string values'
+        )
+      }
+    }
+    for (const group of [
+      'artTypesList',
+      'formatsList',
+      'stylesList',
+      'sizeList'
+    ]) {
+      const items = result[group]
+      if (
+        items !== undefined &&
+        (!Array.isArray(items) ||
+          items.some((item) => typeof item !== 'string'))
+      ) {
+        throw new BadRequestException('Catalog filters must be string arrays')
+      }
+    }
+    if (
+      Array.isArray(result.priceList) &&
+      result.priceList.length === 1 &&
+      typeof result.priceList[0] === 'string'
+    ) {
+      result.priceList = result.priceList[0]
+    }
+    if (
+      result.priceList !== undefined &&
+      typeof result.priceList !== 'string'
+    ) {
+      throw new BadRequestException('Price filter must be a string')
+    }
+    return result
   }
 
   async findOne(id: string): Promise<PaintingWithAuthor> {

@@ -4,42 +4,25 @@ import {
   ExecutionContext,
   UnauthorizedException
 } from '@nestjs/common'
-import { Observable } from 'rxjs'
-import { UsersService } from 'src/users/users.service'
-import { AuthService } from 'src/auth/auth.service'
+import { Request } from 'express'
+import { User } from '../../users/models/user.model'
+import { AuthService } from '../auth.service'
+
+export interface RefreshRequest extends Request {
+  refreshUser: User
+}
 
 @Injectable()
 export class RefreshJWTGuard implements CanActivate {
-  constructor(
-    private usersService: UsersService,
-    private authService: AuthService
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
-  async canActivate(
-    context: ExecutionContext
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-  ): boolean | Promise<boolean> | Observable<boolean> {
-    const request = context.switchToHttp().getRequest()
-
-    const { refreshToken } = request.body
-
-    if (!refreshToken) {
-      console.log('Ошибка: refreshToken отсутствует')
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest<RefreshRequest>()
+    const token = request.body?.refreshToken
+    if (typeof token !== 'string' || !token) {
       throw new UnauthorizedException('Поле refreshToken обязательно')
     }
-
-    const userId = this.authService.parseJwt(refreshToken).userId.toString()
-    // console.log('Извлеченный userId:', userId)
-
-    const user = await this.usersService.findOneById(userId)
-    // console.log('Найденный пользователь:', user)
-
-    if (!user) {
-      console.log('Ошибка: Пользователь не существует')
-      throw new UnauthorizedException('Пользователя не существует')
-    }
-
+    request.refreshUser = await this.authService.getUserByRefreshToken(token)
     return true
   }
 }
