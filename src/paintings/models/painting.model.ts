@@ -7,7 +7,8 @@ import {
   BelongsToMany,
   HasMany,
   Default,
-  AllowNull
+  AllowNull,
+  DataType
 } from 'sequelize-typescript'
 import { Artist } from '../../artists/models/artist.model'
 import { PaintingAttributes } from './painting-attributes.model'
@@ -61,6 +62,12 @@ export class Painting extends Model {
 
   @Column
   width: number
+
+  @Column({ type: DataType.DOUBLE, allowNull: true })
+  depth: number | null
+
+  @Column({ type: DataType.DOUBLE, allowNull: true })
+  diameter: number | null
 
   @Column
   yearOfCreation: number

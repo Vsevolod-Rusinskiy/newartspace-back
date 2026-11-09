@@ -60,6 +60,7 @@ export class PaintingsService {
   ) {}
 
   async create(createPaintingDto: CreatePaintingDto): Promise<Painting> {
+    this.assertStudySection(createPaintingDto)
     if (
       typeof createPaintingDto.imgUrl !== 'string' ||
       createPaintingDto.imgUrl.trim() === ''
@@ -563,6 +564,21 @@ export class PaintingsService {
           throw new NotFoundException(`Painting with id ${id} not found`)
         }
 
+        if (
+          (painting.artType !== undefined &&
+            painting.artType !== existingPainting.artType) ||
+          (painting.artStyle !== undefined &&
+            painting.artStyle !== existingPainting.artStyle)
+        ) {
+          this.assertStudySection({
+            artType: painting.artType ?? existingPainting.artType,
+            artStyle:
+              painting.artStyle !== undefined
+                ? painting.artStyle
+                : existingPainting.artStyle
+          })
+        }
+
         const existingImages = await this.getPaintingImages(id, transaction)
         oldGalleryUrls = existingImages.map(({ imgUrl }) => imgUrl)
         let updateData: UpdatePaintingDto = painting
@@ -668,6 +684,25 @@ export class PaintingsService {
     }
 
     return updatedPainting
+  }
+
+  private assertStudySection(work: {
+    artType?: string
+    artStyle?: string
+  }): void {
+    const studyOnlyTypes = [
+      'Скульптура',
+      'Фотография',
+      'Декоративно-прикладное искусство',
+      'Плоскостная скульптура',
+      'Ювелирное искусство',
+      'Другое'
+    ]
+    if (studyOnlyTypes.includes(work.artType) && work.artStyle !== 'Учеба') {
+      throw new BadRequestException(
+        'Этот вид искусства можно добавлять только в раздел «Учеба»'
+      )
+    }
   }
 
   async delete(id: string): Promise<PaintingDeletionResult> {
