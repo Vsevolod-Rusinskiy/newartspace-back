@@ -1,6 +1,7 @@
 import {
   IsString,
   IsNumber,
+  IsPositive,
   IsOptional,
   IsArray,
   IsInt,
@@ -14,7 +15,7 @@ import {
   IsNotEmpty
 } from 'class-validator'
 import { Image } from '../../types/image.interface'
-import { Type } from 'class-transformer'
+import { Transform, Type } from 'class-transformer'
 import { Attributes } from 'src/attributes/models/attributes.model'
 import { IsNotFilenameTitleConstraint } from './painting-title.validator'
 
@@ -111,6 +112,18 @@ export class CreatePaintingDto {
   @IsOptional()
   @IsNumber()
   readonly width?: number
+
+  @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  @Transform(({ obj, key }) => obj[key], { toClassOnly: true })
+  readonly depth?: number | null
+
+  @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  @Transform(({ obj, key }) => obj[key], { toClassOnly: true })
+  readonly diameter?: number | null
 
   @IsOptional()
   @ValidateIf(
