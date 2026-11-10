@@ -1,0 +1,69 @@
+# Shared policy: proposals only; review and CI are required before merge.
+# Security fixes run independently of the weekly version-update schedule.
+version: 2
+updates:
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '09:00'
+      timezone: 'Europe/Moscow'
+    open-pull-requests-limit: 5
+    assignees:
+      - 'Vsevolod-Rusinskiy'
+    labels:
+      - 'dependencies'
+    commit-message:
+      prefix: 'chore(deps)'
+    # Deliberately no ignore rules: major/security fixes remain visible.
+    # Frameworks, runtime libraries and major updates stay in individual PRs
+    # unless they match the small security HTTP family below.
+    groups:
+      security-http:
+        applies-to: 'security-updates'
+        patterns:
+          - 'axios'
+          - 'follow-redirects'
+          - 'form-data'
+        update-types:
+          - 'patch'
+          - 'minor'
+      version-lint:
+        applies-to: 'version-updates'
+        patterns:
+          - 'eslint*'
+          - '@typescript-eslint/*'
+          - 'prettier'
+        exclude-patterns:
+          - 'eslint-config-next'
+        update-types:
+          - 'patch'
+          - 'minor'
+      version-tests:
+        applies-to: 'version-updates'
+        patterns:
+          - 'jest'
+          - 'jest-*'
+          - 'ts-jest'
+          - '@types/jest'
+          - '@testing-library/*'
+        update-types:
+          - 'patch'
+          - 'minor'
+
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '09:00'
+      timezone: 'Europe/Moscow'
+    open-pull-requests-limit: 2
+    assignees:
+      - 'Vsevolod-Rusinskiy'
+    labels:
+      - 'dependencies'
+    commit-message:
+      prefix: 'chore(ci)'
+    # Action updates remain individual PRs, including major updates.
